@@ -11,6 +11,22 @@ that provide basic DITA-aware link management features:
 * Key space knowledge management: Maintain knowledge of all key spaces defined in all the maps in the repository
 * Key resolution services: A REST API that takes the key space, key name, and applicability conditions, and returns either the applicable key definitions or the resources ultimately referenced by those key definitions (if any).
 
+## Project Organization
+
+The project contains the following directories:
+
+modules/
+
+  Contains XQuery modules to be loaded by BaseX. You can either configure this directory as the BaseX REPO directory in
+  your .basex configuration file or copy the contents of this directory into whatever directory you've configured
+  as the module repository directory (e.g., the "repo/" directory within the BaseX installation directory).
+  
+webapp/
+
+  Contains the link management Web application files. The contents of this directory must be copied to the
+  BaseX webapp/ directory. These are RESTXQ files that implement the user interface and REST API parts
+  of the link management application.
+
 ## Implementation Approach
 
 This code depends on the BaseX-specific git commit hooks provided in the dfst-git-commit-hooks project. Those 
