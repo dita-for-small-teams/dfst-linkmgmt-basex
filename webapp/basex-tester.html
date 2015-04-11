@@ -22,17 +22,18 @@
       <tbody>
         <tr>
           <td>List databases</td>
-          <td><a
+          <td><a target="results"
             href="/rest">/rest</a></td>
         </tr>
         <tr>
           <td>List settings</td>
-          <td><a
+          <td><a target="results"
             href="/rest?command=get" >/rest?command=get</a></td>
         </tr>
         <tr>
-          <td>List files in </td>
-          <td></td>
+          <td>List files in database dfst_dfst-sample-project_develop</td>
+          <td> <a target="results"
+            href="/rest/dfst_dfst-sample-project_develop?query=&lt;html>   &lt;head>     &lt;title>Files in dfst-sample-project [develop]&lt;/title>&lt;base target=&quot;preview&quot;/>   &lt;/head>   &lt;body> &lt;h1>Files in dfst-sample-project [develop]&lt;/h1> &lt;ol>{for $doc in collection() return &lt;li>&lt;a     href=&quot;{document-uri($doc)}&quot; >{document-uri($doc)}&lt;/a>&lt;/li>}&lt;/ol> &lt;/body> &lt;/html>&method=html">for docs in collection return doc</a> </td>
         </tr>
         <tr>
           <td></td>
