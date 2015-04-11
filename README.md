@@ -17,9 +17,14 @@ The project contains the following directories:
 
 modules/
 
-  Contains XQuery modules to be loaded by BaseX. You can either configure this directory as the BaseX REPO directory in
-  your .basex configuration file or copy the contents of this directory into whatever directory you've configured
-  as the module repository directory (e.g., the "repo/" directory within the BaseX installation directory).
+  Contains XQuery modules to be loaded by BaseX. You can configure this directory as the BaseX REPO directory in
+  your .basex configuration file, copy the contents of this directory into whatever directory you've configured
+  as the module repository directory (e.g., the "repo/" directory within the BaseX installation directory), or
+  use the BaseX "REPO INSTALL" command to install them, e.g.:
+  
+  ~~~~
+  for f in modules/*; do basexclient -c "repo install ${PWD}/${f}"; done
+  ~~~~ 
   
 webapp/
 
