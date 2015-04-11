@@ -1,0 +1,18 @@
+/* Styles for BaseX tester */
+
+body {
+  font-family: Verdana, sans-serif;
+}
+
+table {
+  width: 600px;
+}
+
+table, th, td {
+  border: solid black 1pt;
+}
+
+th {
+  text-align: left;
+  background-color: teal;
+}
