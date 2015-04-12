@@ -11,6 +11,8 @@
  :)
 module namespace page = 'http://basex.org/modules/web-page';
 
+import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-utils";
+
 (:~
  : This function generates the welcome page.
  : @return HTML page
@@ -38,11 +40,57 @@ declare
         <h2>DITA for Small Teams Link Manager</h2>
       </div>
       <div class="action-block">
-        <p>Actions go here</p>        
+        <div>
+          <h3>Repositories and Branches</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Repository</th>
+                <th>Branches</th>
+              </tr>
+            </thead>
+            <tbody>
+            {page:listReposAndBranches()}
+           </tbody>
+          </table>
+        </div>
       </div>
     </body>
   </html>
 };
+
+(:~
+ : List the databases that represent git repositories and branches
+ : within those repositories.
+ :
+ : Result is a set of HTML table rows.
+ :)
+ declare function page:listReposAndBranches() as element()* {
+ 
+    (: Get the repository info as an XML structure :)
+    let $repos := bxutil:getGitRepositoryInfos()
+    for $repo in $repos (: Sequence of <repo> elements :)
+        return (
+        <tr>
+         <td rowspan="{$repo/@branchCount}">{string($repo/name)}</td>
+         <td>{string($repo/branch[1]/name)}</td>
+        </tr>,
+        for $branch in $repo/branch[position() gt 1]
+            return 
+              <tr>
+               <td>{string($branch/name)}</td>
+              </tr>
+        ) 
+        (:
+    <tr>
+      <td rowspan="2">some repo</td>
+      <td>master</td>
+    </tr>,
+    <tr>
+      <td>develop</td>
+    </tr>
+    :)
+ };
 
 (:~
  : This function returns an XML response message.
@@ -50,36 +98,15 @@ declare
  : @return response element 
  :)
 declare
-  %rest:path("/hello/{$world}")
+  %rest:path("/linkmgr")
   %rest:GET
-  function page:hello(
-    $world as xs:string)
+  function page:linkmgr(
+    )
     as element(response)
 {
   <response>
-    <title>Hello { $world }!</title>
-    <time>The current time is: { current-time() }</time>
+    <title>Linkmgr</title>
+    <time>Link manager response: The current time is: { current-time() }</time>
   </response>
 };
 
-(:~
- : This function returns the result of a form request.
- : @param  $message  message to be included in the response
- : @param $agent  user agent string
- : @return response element 
- :)
-declare
-  %rest:path("/form")
-  %rest:POST
-  %rest:form-param("message","{$message}", "(no message)")
-  %rest:header-param("User-Agent", "{$agent}")
-  function page:hello-postman(
-    $message as xs:string,
-    $agent   as xs:string*)
-    as element(response)
-{
-  <response type='form'>
-    <message>{ $message }</message>
-    <user-agent>{ $agent }</user-agent>
-  </response>
-};

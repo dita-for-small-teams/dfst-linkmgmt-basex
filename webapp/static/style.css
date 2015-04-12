@@ -22,7 +22,8 @@ dt {
 table {
   font-size: 100%;
   padding: 0;
-  border: 0;
+  border-top: solid 1pt blue;
+  border-bottom: solid 1pt blue;
   table-layout: fixed;
 }
 
@@ -30,10 +31,13 @@ th {
   padding: 0 1.2em .2em 0;
 }
 
+tr {
+}
+
 td {
   padding: 0 1.2em 0 0;
   vertical-align: top;
-  border: 0;
+  border-top: solid 1pt black;
 }
 
 textarea {
