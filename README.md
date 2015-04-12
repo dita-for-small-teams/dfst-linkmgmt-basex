@@ -15,7 +15,7 @@ that provide basic DITA-aware link management features:
 
 The project contains the following directories:
 
-modules/
+* modules/
 
   Contains XQuery modules to be loaded by BaseX. You can configure this directory as the BaseX REPO directory in
   your .basex configuration file, copy the contents of this directory into whatever directory you've configured
@@ -26,11 +26,15 @@ modules/
   for f in modules/*; do basexclient -c "repo install ${PWD}/${f}"; done
   ~~~~ 
   
-webapp/
+* webapp/
 
-  Contains the link management Web application files. The contents of this directory must be copied to the
-  BaseX webapp/ directory. These are RESTXQ files that implement the user interface and REST API parts
-  of the link management application.
+  Contains the BaseX Web application for the link management. You can either use this directory as the BaseX 
+  Web application by setting WEBPATH to this directory your local .basex configuration or you can copy the 
+  contents of this directory to the BaseX installation's webapp/ directory.  
+  
+  If you set this directory as the WEBPATH directory, then when you start the basexhttp server it will create
+  a WEB-INF directory containing the jetty.xml and web.xml configuration files. You can modify those to
+  configure the services for your location (e.g., to change the default port, disable services, etc.).
 
 ## Implementation Approach
 
