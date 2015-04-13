@@ -72,7 +72,7 @@ declare
 {
   <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-      <title>DITA for Small Teams Link Manager [Branch View]</title>
+      <title>DFST {$repo}/{$branch}</title>
       <link rel="stylesheet" type="text/css" href="/static/style.css"/>
     </head>
     <body>
@@ -81,11 +81,12 @@ declare
       <p><img src="/static/dita_logo.svg" width="150"/></p>
       </div>
       <div class="title-block">
-        <h2>Repository {$repo} branch {$branch}</h2>
+        <h2>{$repo}/{$branch}</h2>
       </div>
       <div class="action-block">
-          <h3>DITA Maps</h3>
-          <table>
+        <h3>DITA Maps</h3>
+        <div class="listblock">
+          <table class="listtable">
             <thead>
               <tr>
                 <th>Path</th>
@@ -101,7 +102,26 @@ declare
             }
             </tbody>
           </table>
-      </div>
+        </div>
+        <h3>DITA Topics</h3>
+        <div class="listblock">
+          <table class="listtable">
+            <thead>
+              <tr>
+                <th>Path</th>
+                <th>Title</th>
+                <th>Is Root?</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+            { if (false())
+                 then <tr><td colspan="4">No maps found</td></tr>
+                 else page:listTopicsInBranch($repo, $branch)
+            }
+            </tbody>
+          </table>
+        </div>      </div>
     </body>
   </html>
 };
@@ -151,6 +171,23 @@ declare
       return <tr>
         <td>{bxutil:getPathForDoc($map)}</td>
         <td>{df:getTitleText($map/*)}</td>
+        <td>isRoot</td>
+        <td>[Action 1][Action 2]</td>
+      </tr>
+ };
+
+(:~
+ : List the DITA topics within the specified branch of the specified repository.
+ :
+ : Result is a set of HTML table rows.
+ :)
+ declare function page:listTopicsInBranch($repo as xs:string, $branch as xs:string) as element()* {
+    let $dbName := bxutil:getDbNameForRepoAndBranch($repo, $branch)
+    let $topics := df:getTopicDocs($dbName)
+    for $topic in $topics
+      return <tr>
+        <td>{bxutil:getPathForDoc($topic)}</td>
+        <td>{df:getTitleText($topic/*)}</td>
         <td>isRoot</td>
         <td>[Action 1][Action 2]</td>
       </tr>

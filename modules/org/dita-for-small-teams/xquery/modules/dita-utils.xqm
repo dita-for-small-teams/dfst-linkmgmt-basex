@@ -66,6 +66,14 @@ declare function df:getMaps($collectionSpec as xs:string) as document-node()* {
       return $doc
 };
 
+(: Get all the DITA topic documents in the specified collection, that is,
+ : documents whose root element is of type topic/topic or <dita>
+ :)
+declare function df:getTopicDocs($collectionSpec as xs:string) as document-node()* {
+  for $doc in collection($collectionSpec) where $doc[contains(/*/@class, ' topic/topic ') or /*/self::dita] 
+      return $doc
+};
+
 (: Get the title text for the specified element where the element is expected to have topic/title direct child  
    Simply returns the text nodes of the title, filtering out elements that don't normally show up in output 
    (<data>, <indexterm>, etc.)
