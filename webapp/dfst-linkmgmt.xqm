@@ -59,6 +59,35 @@ declare
   </html>
 };
 
+declare
+  %rest:path("/repo/{$repo}/branch/{$branch}")
+  %output:method("xhtml")
+  %output:omit-xml-declaration("no")
+  %output:doctype-public("-//W3C//DTD XHTML 1.0 Transitional//EN")
+  %output:doctype-system("http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd")
+  function page:branchMainView($repo as xs:string, $branch as xs:string)
+  as element(Q{http://www.w3.org/1999/xhtml}html)
+{
+  <html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+      <title>DITA for Small Teams Link Manager [Branch View]</title>
+      <link rel="stylesheet" type="text/css" href="static/style.css"/>
+    </head>
+    <body>
+      <div class="right">
+      <p><a href="http://www.dita-for-small-teams.org" target="dfst-home">www.dita-for-small-teams.org</a></p>
+      <p><img src="static/dita_logo.svg" width="150"/></p>
+      </div>
+      <div class="title-block">
+        <h2>Repository {$repo} branch {$branch}</h2>
+      </div>
+      <div class="action-block">
+      <p>Stuff for the branch goes here </p>
+      </div>
+    </body>
+  </html>
+};
+
 (:~
  : List the databases that represent git repositories and branches
  : within those repositories.
