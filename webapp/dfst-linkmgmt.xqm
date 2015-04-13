@@ -72,13 +72,13 @@ declare
     for $repo in $repos (: Sequence of <repo> elements :)
         return (
         <tr>
-         <td rowspan="{$repo/@branchCount}">{string($repo/name)}</td>
-         <td>{string($repo/branch[1]/name)}</td>
+         <td rowspan="{$repo/@branchCount}">{string($repo/@name)}</td>
+         <td>{string($repo/branch[1]/@name)}</td>
         </tr>,
         for $branch in $repo/branch[position() gt 1]
             return 
               <tr>
-               <td>{string($branch/name)}</td>
+               <td>{string($branch/@name)}</td>
               </tr>
         ) 
         (:
