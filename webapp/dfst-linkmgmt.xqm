@@ -62,7 +62,7 @@ declare
 };
 
 declare
-  %rest:path("/repo/{$repo}/branch/{$branch}")
+  %rest:path("/repo/{$repo}/{$branch}")
   %output:method("xhtml")
   %output:omit-xml-declaration("no")
   %output:doctype-public("-//W3C//DTD XHTML 1.0 Transitional//EN")
@@ -81,7 +81,7 @@ declare
       <p><img src="/static/dita_logo.svg" width="150"/></p>
       </div>
       <div class="title-block">
-        <h2>{$repo}/{$branch}</h2>
+        <h2>Git repo {$repo}/{$branch}</h2>
       </div>
       <div class="action-block">
         <h3>DITA Maps</h3>
@@ -137,15 +137,20 @@ declare
     (: Get the repository info as an XML structure :)
     let $repos := bxutil:getGitRepositoryInfos()
     for $repo in $repos (: Sequence of <repo> elements :)
+        let $branch := $repo/branch[1]
+        let $path := concat($repo/@name, '/', $branch/@name)
+        let $target := concat($repo/@name, '_', $branch/@name)
         return (
         <tr>
          <td rowspan="{$repo/@branchCount}">{string($repo/@name)}</td>
-         <td>{string($repo/branch[1]/@name)}</td>
-        </tr>,
+         <td><a href="/repo/{$path}" target="{$target}">{string($branch/@name)}</a></td>
+        </tr>,        
         for $branch in $repo/branch[position() gt 1]
+            let $path := concat($repo/@name, '/', $branch/@name)
+            let $target := concat($repo/@name, '_', $branch/@name)
             return 
               <tr>
-               <td>{string($branch/@name)}</td>
+               <td><a href="/repo/{$path}" target="{$target}">{string($branch/@name)}</a></td>
               </tr>
         ) 
         (:
