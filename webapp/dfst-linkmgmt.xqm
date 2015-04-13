@@ -12,6 +12,8 @@
 module namespace page = 'http://basex.org/modules/web-page';
 
 import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-utils";
+import module namespace linkutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
+import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-utils";
 
 (:~
  : This function generates the welcome page.
@@ -71,18 +73,34 @@ declare
   <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
       <title>DITA for Small Teams Link Manager [Branch View]</title>
-      <link rel="stylesheet" type="text/css" href="static/style.css"/>
+      <link rel="stylesheet" type="text/css" href="/static/style.css"/>
     </head>
     <body>
       <div class="right">
       <p><a href="http://www.dita-for-small-teams.org" target="dfst-home">www.dita-for-small-teams.org</a></p>
-      <p><img src="static/dita_logo.svg" width="150"/></p>
+      <p><img src="/static/dita_logo.svg" width="150"/></p>
       </div>
       <div class="title-block">
         <h2>Repository {$repo} branch {$branch}</h2>
       </div>
       <div class="action-block">
-      <p>Stuff for the branch goes here </p>
+          <h3>DITA Maps</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Path</th>
+                <th>Title</th>
+                <th>Is Root?</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+            { if (false())
+                 then <tr><td colspan="4">No maps found</td></tr>
+                 else page:listMapsInBranch($repo, $branch)
+            }
+            </tbody>
+          </table>
       </div>
     </body>
   </html>
@@ -119,6 +137,23 @@ declare
       <td>develop</td>
     </tr>
     :)
+ };
+
+(:~
+ : List the DITA maps within the specified branch of the specified repository.
+ :
+ : Result is a set of HTML table rows.
+ :)
+ declare function page:listMapsInBranch($repo as xs:string, $branch as xs:string) as element()* {
+    let $dbName := bxutil:getDbNameForRepoAndBranch($repo, $branch)
+    let $maps := df:getMaps($dbName)
+    for $map in $maps
+      return <tr>
+        <td>{bxutil:getPathForDoc($map)}</td>
+        <td>{df:getTitleText($map/*)}</td>
+        <td>isRoot</td>
+        <td>[Action 1][Action 2]</td>
+      </tr>
  };
 
 (:~

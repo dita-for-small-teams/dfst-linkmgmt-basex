@@ -12,9 +12,10 @@
    
 
    ===================================================== :)
-   
+
 module namespace linkutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
 
+import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-utils";
 
 
 (: End of Module :)

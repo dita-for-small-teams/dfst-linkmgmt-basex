@@ -8,7 +8,7 @@
    
    Author: W. Eliot Kimber
    
-   Copyright (c) DITA For Small Teams
+   Copyright (c) 2014, 2015 DITA For Small Teams
    Licensed under Apache License 2
    
 
@@ -59,6 +59,28 @@ declare function df:getNavtitleForTopic($topic as element()) as node()* {
                        else $topic/*[df:class(., 'topic/title')]/node()
    return $navtitle
 };
+
+(: Get all the DITA maps in the specified collection :)
+declare function df:getMaps($collectionSpec as xs:string) as document-node()* {
+  for $doc in collection($collectionSpec) where $doc[contains(/*/@class, ' map/map ')] 
+      return $doc
+};
+
+(: Get the title text for the specified element where the element is expected to have topic/title direct child  
+   Simply returns the text nodes of the title, filtering out elements that don't normally show up in output 
+   (<data>, <indexterm>, etc.)
+:)
+declare function df:getTitleText($elem as element()) as xs:string {
+   let $title := df:getTitleElement($elem)
+   (: FIXME: Implement the filtering, which needs to be a general function :)
+   return string($title)
+};
+
+(: Get the title element for the specified element where the element is expected to have topic/title direct child :)
+declare function df:getTitleElement($elem as element()) as element()? {
+   ($elem/*[df:class(., 'topic/title')])[1]
+};
+
 
 
 (: ============== End of Module =================== :)   

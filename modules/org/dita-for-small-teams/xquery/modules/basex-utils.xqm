@@ -44,5 +44,16 @@ module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-ut
                   return <branch name="{$branch/@branch}"/>}</repo>
   
  };
+ 
+ (: Constructs the BaseX database name for git repository and branch pair :)
+ declare function bxutil:getDbNameForRepoAndBranch($repo, $branch) {
+   let $sep := '^'
+   return concat('dfst', $sep, $repo, $sep, $branch) 
+ };
+ 
+ (: Given a document, returns the path to the doc, omitting the database name :)
+ declare function bxutil:getPathForDoc($doc as document-node()) as xs:string {
+   string-join(tokenize(document-uri($doc), '/')[position() gt 1], '/')
+ };
 
 (: End of Module :)
