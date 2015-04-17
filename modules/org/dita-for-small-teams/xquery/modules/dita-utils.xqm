@@ -108,17 +108,17 @@ declare function df:getTitleElement($elem as element()) as element()? {
  :)
 declare function df:resolveTopicRef($topicref as element()) as element()? {
    let $map as document-node() := root($topicref)
-   let $format  as xs:string?  := string($topicref/@format)
+   let $format  as xs:string?  := if ($topicref/@format) then string($topicref/@format) else 'dita'
    let $href  as xs:string?    := string($topicref/@href)
    let $keyref as xs:string?   := string($topicref/@keyref)
-   let $scope as xs:string?    := string($topicref/@scope) 
+   let $scope as xs:string?    := if ($topicref/@scope) then string($topicref/@scope) else 'local' 
    
    return if (not(df:class($topicref, 'map/topicref')))
       then <df:error type="not-topicref" xmlns:df="http://dita-for-small-teams.org/xquery/modules/dita-utils">resolveTopicRef(): Element {name($topicref)} is not of class 'map/topicref', class is "{string($topicref/@class)}"</df:error>
       else (: It's a topicref, check the @format value:)
         if (not($format = ('dita', 'ditamap')) or 
-            not($scope = ('local', 'peer')))
-           then ()
+            ($scope != '' and (not($scope = ('local', 'peer')))))
+           then <df:warn>Not format of 'dita' or 'ditamap' or not local or peer scope </df:warn>
            else 
              let $targetUri as xs:string := df:getEffectiveTargetUri($topicref)
              let $targetFragId as xs:string := 
@@ -227,8 +227,8 @@ declare function df:isTopicRef($topicref as element()) as xs:boolean {
  : 
  : The result is returned a sequence of treeItem elements. 
  :)
-declare function df:getMapTreeItems($map as document-node()) as element(treeItem)* {
-   let $maprefs := $map/*/*[df:isMapRef(.)]
+declare function df:getMapTreeItems($map as element()) as element(treeItem)* {
+   let $maprefs := $map//*[df:isMapRef(.)]
    for $mapref in $maprefs
        let $mapElem := df:resolveTopicRef($mapref)
        let $label := if ($mapElem) then df:getTitleText($mapElem) 

@@ -24,12 +24,9 @@ declare function dftest:testResolveTopicOrMapUri($repo as xs:string, $branchName
    let $dbName := bxutil:getDbNameForRepoAndBranch($repo, $branchName)
    let $db := db:open($dbName)
    let $map := doc(concat($dbName, "/docs/tests/complex_map/complex_map.ditamap"))
-   (: return text { resolve-uri('foo', 'dfst^dfst-sample-project^develop/docs/tests/complex_map/complex_map.ditamap')} :)
-   let $tr := (($map/*/*[df:class(., 'map/topicref')])[2]/*[df:isTopicRef(.)])[1]
-   let $targetUri := df:getEffectiveTargetUri($tr)
-   let $result := df:resolveTopicOrMapUri($tr, $targetUri)
-   return $result
-   (: :)
+   
+   let $mapTree := df:getMapTreeItems($map/*)
+   return $mapTree
 };
 
 declare function dftest:xmlToHtmlCode($nodes as node()*) as node()* {
