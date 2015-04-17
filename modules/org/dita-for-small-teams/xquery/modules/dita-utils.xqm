@@ -95,6 +95,24 @@ declare function df:getTitleElement($elem as element()) as element()? {
 };
 
 (:~
+ : Gets the effective value of the attribute, applying DITA-defined default
+ : value rules when the attribute does not have a value.
+ :
+ :)
+declare function df:getEffectiveAttributeValue($elem as element(), $attName as xs:string) as xs:string {
+   let $att := $elem/@*[name(.) = $attName]
+   return 
+     if ($att)
+        then string($att)
+        else (: Determined the implicit default, if any :)
+         switch ($attName) 
+          case 'scope' return 'local'
+          case 'format' return 'dita'
+          default return ''
+         
+};
+
+(:~
  : Resolve a topicref to its target topic or map element.
  :
  : Topicref must be a peer or local-scope topicref to a topic
@@ -108,10 +126,10 @@ declare function df:getTitleElement($elem as element()) as element()? {
  :)
 declare function df:resolveTopicRef($topicref as element()) as element()? {
    let $map as document-node() := root($topicref)
-   let $format  as xs:string?  := if ($topicref/@format) then string($topicref/@format) else 'dita'
+   let $format  as xs:string?  := df:getEffectiveAttributeValue($topicref, 'format')
    let $href  as xs:string?    := string($topicref/@href)
    let $keyref as xs:string?   := string($topicref/@keyref)
-   let $scope as xs:string?    := if ($topicref/@scope) then string($topicref/@scope) else 'local' 
+   let $scope as xs:string?    := df:getEffectiveAttributeValue($topicref, 'scope') 
    
    return if (not(df:class($topicref, 'map/topicref')))
       then <df:error type="not-topicref" xmlns:df="http://dita-for-small-teams.org/xquery/modules/dita-utils">resolveTopicRef(): Element {name($topicref)} is not of class 'map/topicref', class is "{string($topicref/@class)}"</df:error>
