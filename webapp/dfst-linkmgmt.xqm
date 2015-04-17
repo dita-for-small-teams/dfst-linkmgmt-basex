@@ -11,9 +11,12 @@
  :)
 module namespace page = 'http://basex.org/modules/web-page';
 
+import module namespace html = 'dba/html';
 import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-utils";
 import module namespace linkutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
 import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-utils";
+import module namespace linkmgr='http://basex.org/modules/linkmgr' at "linkmgrViews.xqm";
+
 
 (:~
  : This function generates the welcome page.
@@ -177,7 +180,12 @@ declare
         <td>{bxutil:getPathForDoc($map)}</td>
         <td>{df:getTitleText($map/*)}</td>
         <td>isRoot</td>
-        <td>[Action 1][Action 2]</td>
+        <td>
+        [{html:link('Map&#xa0;Tree', concat('/linkmgr/maptreeView/', document-uri($map)))}] 
+        [{html:link('Dependencies', concat('/linkmgr/dependencyView/', document-uri($map)))}] 
+        [{html:link('Reltables', concat('/linkmgr/reltableView/', document-uri($map)))}] 
+        [{html:link('Key&#xa0;Spaces', concat('/linkmgr/keyspaceView/', document-uri($map)))}] 
+        </td>
       </tr>
  };
 
