@@ -241,6 +241,29 @@ declare function df:isTopicRef($topicref as element()) as xs:boolean {
 };
 
 (:~
+ : Gets the tree of maps rooted at the input map. The result tree
+ : always includes the specified map.
+ : 
+ : Returns a single <treeItem> element representing the input map
+ : and containing any subordinate maps.
+ :)
+declare function df:getMapTree($mapElem as element()) as element(treeItem)* {
+   let $label := if ($mapElem) then df:getTitleText($mapElem) 
+                           else "Failed to resolve reference to map "
+   return <treeItem>
+            <label>{$label}</label>
+            <properties>
+              <property name="maptype">{name($mapElem)}</property>
+              <property name="uri">{bxutil:getPathForDoc(root($mapElem))}</property>
+            </properties>
+            <children>
+              {df:getMapTreeItems($mapElem)}
+            </children>
+          </treeItem>
+};
+
+
+(:~
  : Get the tree of maps descending from a root map
  : 
  : The result is returned a sequence of treeItem elements. 
@@ -249,18 +272,7 @@ declare function df:getMapTreeItems($map as element()) as element(treeItem)* {
    let $maprefs := $map//*[df:isMapRef(.)]
    for $mapref in $maprefs
        let $mapElem := df:resolveTopicRef($mapref)
-       let $label := if ($mapElem) then df:getTitleText($mapElem) 
-                               else "Failed to resolve reference to map "
-       return <treeItem>
-                <label>{$label}</label>
-                <properties>
-                  <property name="maptype">{name($mapElem)}</property>
-                  <property name="url">{bxutil:getPathForDoc(root($mapElem))}</property>
-                </properties>
-                <children>
-                  {df:getMapTreeItems($mapElem)}
-                </children>
-              </treeItem>
+       return df:getMapTree($mapElem)
 };
 
 (:~

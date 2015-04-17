@@ -25,7 +25,7 @@ declare
   as element(Q{http://www.w3.org/1999/xhtml}html)
 {
    let $map := doc($docURI)
-   let $treeItems := df:getMapTreeItems($map/*)
+   let $tree := df:getMapTree($map/*)
    return
    <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
@@ -36,9 +36,8 @@ declare
       <h1>Map Tree for "{df:getTitleText($map/*)}"</h1>
       <p>Map "{bxutil:getPathForDoc($map)}"</p>
       <div class="tree">
-       {if ($treeItems) 
-           then linkmgr:treeToHtml($treeItems)
-           else <p>No subtrees referenced from the map</p>
+       { 
+        linkmgr:treeToHtml($tree)        
        }
       </div>
    </body>
@@ -71,7 +70,8 @@ declare function linkmgr:treeToHtml($treeItems as element()*) as node()* {
 
 declare function linkmgr:treeItemToHtml($treeItem as element()) as node()* {
     <li class="treeitem">
-      <span class="label">{string($treeItem/label)}</span>
+      <span class="label">{string($treeItem/label)}</span> 
+      <span class="uri">[{string($treeItem/properties/property[@name = 'uri'])}]</span>
       {if ($treeItem/children) 
           then linkmgr:treeToHtml($treeItem/children/treeItem)
           else ()

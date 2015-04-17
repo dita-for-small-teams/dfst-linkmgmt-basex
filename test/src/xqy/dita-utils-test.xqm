@@ -25,7 +25,7 @@ declare function dftest:testResolveTopicOrMapUri($repo as xs:string, $branchName
    let $db := db:open($dbName)
    let $map := doc(concat($dbName, "/docs/tests/complex_map/complex_map.ditamap"))
    
-   let $mapTree := df:getMapTreeItems($map/*)
+   let $mapTree := df:getMapTree($map/*)
    return $mapTree
 };
 
