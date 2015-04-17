@@ -16,6 +16,7 @@ module namespace dftest="http://dita-for-small-teams.org/xquery/modules/dita-uti
 import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-utils";
 import module namespace linkutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
 import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-utils";
+import module namespace relpath="http://dita-for-small-teams.org/xquery/modules/relpath-utils";
 
 
 declare function dftest:testResolveTopicOrMapUri($repo as xs:string, $branchName as xs:string) as node()* {
@@ -24,7 +25,7 @@ declare function dftest:testResolveTopicOrMapUri($repo as xs:string, $branchName
    let $db := db:open($dbName)
    let $map := doc(concat($dbName, "/docs/tests/complex_map/complex_map.ditamap"))
    (: return text { resolve-uri('foo', 'dfst^dfst-sample-project^develop/docs/tests/complex_map/complex_map.ditamap')} :)
-   let $tr := ($map/*/*[df:class(., 'map/topicref')]/*[df:isTopicRef(.)])[1]
+   let $tr := (($map/*/*[df:class(., 'map/topicref')])[2]/*[df:isTopicRef(.)])[1]
    let $targetUri := df:getEffectiveTargetUri($tr)
    let $result := df:resolveTopicOrMapUri($tr, $targetUri)
    return $result

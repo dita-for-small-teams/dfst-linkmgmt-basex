@@ -158,7 +158,7 @@ declare function df:resolveTopicOrMapUri($topicref as element(), $targetUri as x
         then $targetDoc/*[1]
         else if ($targetDoc/*/*[df:class(., 'topic/topic')])
           then $targetDoc/*/*[df:class(., 'topic/topic')][1]
-          else ()
+          else $targetDoc/*
  };
 
 (: Give a topicref, return the effective URI of the ultimate target
