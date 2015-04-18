@@ -359,12 +359,8 @@ declare function df:serializeKeyBindings($keyName as xs:string, $keyBindings) as
      where each key definition is a map of property names to values:
      - key name: the key name 
      - resource URI: The URI of the resource the key is bound to (if any)
-     - key-definition element: the topicref element (without nested topicrefs)
+     - key-definition element: the topicref element
          that is the data source for the key definition.
-     - topicref treelocation: A tree location, against the element tree, that locates
-         the topicref within its containing map (NOTE: might be possible to replace
-         this with some sort of element lookup key ala generate-id()).
-     - containing map: The URI of the map that contains the key-defining element
   :)
   <keyBindings keyName="{$keyName}">{
     for $keyBinding in $keyBindings
@@ -390,11 +386,11 @@ declare function df:constructKeySpacesForMapTree($mapTree as element(mapTree)) {
    :)
   let $rootMapItem := $mapTree/* (: The root map of the tree :)
   let $map := df:getMapDocForTreeItem($rootMapItem)
-  let $keySpaces := df:constructKeySpacesForMap(
+  let $keySpaceSet := df:constructKeySpacesForMap(
                      $map, 
-                     map { '#root' : map { } }, 
+                     map { }, 
                      ('#root'))
-  return $keySpaces
+  return $keySpaceSet
 };
 
 (:~
@@ -404,14 +400,42 @@ declare function df:constructKeySpacesForMapTree($mapTree as element(mapTree)) {
  :)
 declare function df:constructKeySpacesForMap(
                     $map as document-node(), 
-                    $keySpaces,
+                    $keySpaceSet,
                     $keyScopes as xs:string+) {
-   let $keySpace := map { 'key01' : map { 'keydef' : <topicref/>, 'resourceURI' : 'foo/bar' } }
-   let $result := for $keyScope in $keyScopes 
-                      return map:put($keySpaces,
-                                     $keyScope,
-                                     $keySpace)
-   return $result
+                    
+   (: Find the key-scope-defining elements and 
+      the key definitions and construct or add to the
+      cooresponding key space maps. 
+      
+      This might be easiest to do by simply walking 
+      the map element tree and accumulating scope
+      context.
+      :)
+   
+   let $keySpaces :=
+       for $keyScope in $keyScopes
+           return 
+           map { $keyScope : 
+                 map { $map : 
+                       map { 'key01' : 
+                              (map { 'keyName' : 'key01',
+                                     'topicref' : <topicref keys="key01"/>,
+                                     'resourceURI' : ''
+                                   },
+                               map { 'keyName' : 'key01',
+                                     'topicref' : <topicref keys="key01 keyxxx"/>,
+                                     'resourceURI' : 'foo/bar'
+                                   }
+                               ),
+                               'key02' :
+                               (map { 'keyName' : 'key02',
+                                 'topicref' : <topicref keys="key02"/>,
+                                 'resourceURI' : 'docs/topics/topic-01.dita'
+                               })}}}
+                           
+              
+   
+   return $keySpaces
 };
 
 (: ============== End of Module =================== :)   
