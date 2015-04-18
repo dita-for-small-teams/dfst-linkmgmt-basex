@@ -34,7 +34,6 @@ declare
     </head>
     <body>
       <h1>Map Tree for "{df:getTitleText($map/*)}"</h1>
-      <p>Map "{bxutil:getPathForDoc($map)}"</p>
       <div class="tree">
        { 
         linkmgr:treeToHtml($tree)        

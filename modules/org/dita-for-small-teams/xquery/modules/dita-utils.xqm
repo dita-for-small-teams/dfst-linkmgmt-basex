@@ -241,13 +241,33 @@ declare function df:isTopicRef($topicref as element()) as xs:boolean {
 };
 
 (:~
- : Gets the tree of maps rooted at the input map. The result tree
+ : Gets the map tree rooted at the input map. The result tree
+ : always includes the specified map.
+ : 
+ : Returns a single <mapTree> element containing tree items
+ : for the complete map tree.
+ :)
+declare function df:getMapTree($map as document-node()) as element(mapTree)* {
+  (: The map Uri is the object ID of the map tree, meaning every map tree
+     is identified by the map from which it is constructed.
+     
+   :)
+  <mapTree 
+     mapUri="{document-uri($map)}"
+     timeStamp="{fn:current-dateTime()}"
+  >
+    { df:getMapTreeItem($map/*) }
+  </mapTree>
+};
+
+(:~
+ : Gets the map tree item for the input map. The result tree
  : always includes the specified map.
  : 
  : Returns a single <treeItem> element representing the input map
  : and containing any subordinate maps.
  :)
-declare function df:getMapTree($mapElem as element()) as element(treeItem)* {
+declare function df:getMapTreeItem($mapElem as element()) as element(treeItem)* {
    let $label := if ($mapElem) then df:getTitleText($mapElem) 
                            else "Failed to resolve reference to map "
    return <treeItem>
@@ -272,7 +292,7 @@ declare function df:getMapTreeItems($map as element()) as element(treeItem)* {
    let $maprefs := $map//*[df:isMapRef(.)]
    for $mapref in $maprefs
        let $mapElem := df:resolveTopicRef($mapref)
-       return df:getMapTree($mapElem)
+       return df:getMapTreeItem($mapElem)
 };
 
 (:~
@@ -290,5 +310,108 @@ declare function df:getMapTreeItems($map as element()) as element(treeItem)* {
    return $result
 }; 
 
+declare function df:getMapDocForTreeItem($treeItem as element(treeItem)) as document-node()? {
+   let $mapUri := string($treeItem/properties/property[@name = 'uri'])
+   let $map := doc($mapUri)
+   return $map
+};
+
+(:~
+ : Constructs the key spaces root at the specified map document.
+ : 
+ : Returns a single <keySpaceSet> element containing the key
+ : spaces defined by the map.
+ :)
+declare function df:constructKeySpaces($map as document-node()) as element(keySpaceSet) {
+  (: The map Uri is the object ID of the key space, meaning every key space
+     is identified by the map from which it is constructed and the fully-qualified
+     key scope.
+     
+   :)
+   let $mapTree := df:getMapTree($map)
+   let $keySpaces := df:constructKeySpacesForMapTree($mapTree) 
+   let $keySpaceSet := <keySpaceSet 
+       mapUri="{document-uri($map)}" 
+       timeStamp="{current-dateTime()}">
+       {
+         df:serializeKeySpacesMap($keySpaces)
+       }
+   </keySpaceSet>
+   return $keySpaceSet
+};
+
+declare function df:serializeKeySpacesMap($keySpaces) as element(keySpace)* {
+  (: The key spaces map is a map of scope names to key spaces.
+     Each key space is a map of key names to key bindings.
+     :)
+
+  for $keyScopeName in map:keys($keySpaces)
+      let $keySpace := map:get($keySpaces, $keyScopeName)
+      return <keySpace scopeName="{$keyScopeName}">{
+        for $keyName in map:keys($keySpace)
+            return df:serializeKeyBindings($keyName, map:get($keySpace, $keyName))
+            }</keySpace>
+};
+
+declare function df:serializeKeyBindings($keyName as xs:string, $keyBindings) as element()* {
+  (:
+     A key bindings is a sequence of key definitions,
+     where each key definition is a map of property names to values:
+     - key name: the key name 
+     - resource URI: The URI of the resource the key is bound to (if any)
+     - key-definition element: the topicref element (without nested topicrefs)
+         that is the data source for the key definition.
+     - topicref treelocation: A tree location, against the element tree, that locates
+         the topicref within its containing map (NOTE: might be possible to replace
+         this with some sort of element lookup key ala generate-id()).
+     - containing map: The URI of the map that contains the key-defining element
+  :)
+  <keyBindings keyName="{$keyName}">{
+    for $keyBinding in $keyBindings
+        return df:serializeKeyBinding($keyBinding)
+  }</keyBindings>
+};
+
+declare function df:serializeKeyBinding($keyBinding) as element()* {
+  <keyBinding><stuff/></keyBinding>
+};
+
+(:~
+ : Constructs the key spaces for a map tree
+ :
+ : Returns a key space, one for the root (anonymous) key space,
+ : one for each key scope defined in the map.
+ :)
+declare function df:constructKeySpacesForMapTree($mapTree as element(mapTree)) {
+  (: Walk the map tree, using a breadth-first traveral per the DITA key space construction
+     rules. Build up the key spaces from each map. There is a always a root key space anchored
+     at the root map.
+     
+   :)
+  let $rootMapItem := $mapTree/* (: The root map of the tree :)
+  let $map := df:getMapDocForTreeItem($rootMapItem)
+  let $keySpaces := df:constructKeySpacesForMap(
+                     $map, 
+                     map { '#root' : map { } }, 
+                     ('#root'))
+  return $keySpaces
+};
+
+(:~
+ : Constructs the key spaces for a single map
+ :
+ : 
+ :)
+declare function df:constructKeySpacesForMap(
+                    $map as document-node(), 
+                    $keySpaces,
+                    $keyScopes as xs:string+) {
+   let $keySpace := map { 'key01' : map { 'keydef' : <topicref/>, 'resourceURI' : 'foo/bar' } }
+   let $result := for $keyScope in $keyScopes 
+                      return map:put($keySpaces,
+                                     $keyScope,
+                                     $keySpace)
+   return $result
+};
 
 (: ============== End of Module =================== :)   

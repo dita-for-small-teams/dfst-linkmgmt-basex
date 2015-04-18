@@ -44,14 +44,28 @@ declare
       <div class="action-block">
         <h3>Tests</h3>
         <div class="resultblock">
-        <p>testResolveTopicOrMapUri():</p>
-        <div class="result">
-        { 
-        let $map := dftest:testResolveTopicOrMapUri($repo, $branch)
-        return dftest:xmlToHtmlCode($map)
-
-        }
+          <h4>testGetMapTree():</h4>
+          <div class="result">
+          <pre>
+          { 
+          let $map := dftest:testGetMapTree($repo, $branch)            
+          return serialize($map)
+  
+          }
+          </pre>
+          </div>
         </div>
+        <div class="resultblock">
+          <h4>testConstructKeySpaces():</h4>
+          <div class="result">
+          <pre>
+          { 
+          let $keyspace := dftest:testConstructKeySpaces($repo, $branch)            
+          return serialize($keyspace)
+  
+          }
+          </pre>
+          </div>
         </div>
       </div>
     </body>
