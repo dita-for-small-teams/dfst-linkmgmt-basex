@@ -520,11 +520,14 @@ declare function df:constructKeySpacesForMap(
  :)
 declare function df:constructKeySpacesForTopicref(
              $topicRef as element(),
-             $keySpaceSet,
-             $keyScopes as xs:string+) {
+             $keySpaces) {
              
-   let $activeKeyScopes := ($keyScopes, tokenize($topicRef/@keyscope, ' '))
+   let $newScopeNames := tokenize($topicRef/@keyscope, ' ')
    let $keyNames := tokenize($topicRef/@keys, ' ')
+   let $currentKeySpaces := 
+       if ($newScopeNames) 
+          then for $scopeName in $newScopeNames return map { $scopeName : () }
+          else $keySpaces
    (: If there are any key names, construct the key bindings for them:
    
       A key binding is the mapping between a key name and the key definition
@@ -540,49 +543,50 @@ declare function df:constructKeySpacesForTopicref(
       
       A key definition is a map of a key name to a set of key bindings.
    :)
-   let $keyDefinitions := 
-       for $keyName in $keyNames
-           return map { $keyName : df:constructKeyBinding($topicRef, $keyName)}
-   let $resultKeySpaceSet :=
-       for $keyScopeName in $keyScopes
-           return df:addKeyDefinitionsToKeySpaces(
+   let $keyDefinitions := df:constructKeyDefinitionsForTopicref($topicRef)
+   let $resultKeySpaces :=
+       for $keySpace in $currentKeySpaces
+           return df:addKeyDefinitionsToKeySpace(
                       $keyDefinitions, 
-                      $keySpaceSet, 
-                      $keyScopes)
-   return $resultKeySpaceSet
+                      $keySpace)
+   return $resultKeySpaces
   
 };
 
 (:~
- : Takes a set of key definition maps and adds them to each of the active key
- : spaces.
+ : Constructs the key definitions defined by the topicref, if any. 
+ : 
+ : Returns a sequence of key-name-to-key-binding maps.
+ :)
+declare function df:constructKeyDefinitionsForTopicref($topicRef as element()) {
+   let $keyNames := tokenize($topicRef/@keys, ' ')
+   for $keyName in $keyNames
+       return map { $keyName : df:constructKeyBinding($topicRef, $keyName)}
+};
+
+(:~
+ : Takes a key space and adds key definitions to it
  :
- : Returns a new key space set reflecting the updated key scopes.
+ : Returns a new key space map reflecting the added key definitions.
  :)
-declare function df:addKeyDefinitionsToKeySpaces(
+declare function df:addKeyDefinitionsToKeySpace(
            $keyDefinitions, (: Sequence of key definition maps :)
-           $keySpaceSet, (: Key space set map :)
-           $keyScopes as xs:string+) {
-(: Each key space is a map of a key space name to
-   a sequence of key definition maps.
- :)
-     let $keyDefinitions :=           
-       for $keyScopeName in $keyScopes
-           let $keyScope := map:get($keySpaceSet, $keyScopeName)
-           return () (: FIXME: Implement :)
-     return $keyDefinitions
+           $keySpace (: Key space map to add the key definitions to :)
+        ) {
+        $keySpace
 };
 
 (:~
  : Constructs a single key-name-to-topicref-and-resource binding map.
  :
- : map { 'keyName' : 'key01',
- :       'topicref' : <topicref keys="key01"/>,
- :       'resourceURI' : '',
- :       'format' : '#undefined',
- :       'scope'  : 'local',
- :       'targetResource' : {topicref or map element}, Ultimately-addressed resource
- :       'resolutionStatus' : 'pending' | 'resolved' | 'failed: {reason}'
+ : map {
+ :        "topicref": db:open-pre("dfst^dfst-sample-project^develop",33),
+ :        "keyName": "topic-01",
+ :        "scope": "local",
+ :        "format": "dita",
+ :        "resourceURI": "topics/topic-01.xml",
+ :        "resolutionStatus": "resolved",
+ :        "targetResource": db:open-pre("dfst^dfst-sample-project^develop",134)
  :     }
  :
  :)
