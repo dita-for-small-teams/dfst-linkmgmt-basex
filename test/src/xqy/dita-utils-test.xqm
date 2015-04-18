@@ -19,9 +19,9 @@ import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-
 import module namespace relpath="http://dita-for-small-teams.org/xquery/modules/relpath-utils";
 
 
-declare function dftest:testGetMapTree($repo as xs:string, $branchName as xs:string) as node()* {
+declare function dftest:testGetMapTree($repo as xs:string, $branch as xs:string) as node()* {
   
-   let $dbName := bxutil:getDbNameForRepoAndBranch($repo, $branchName)
+   let $dbName := bxutil:getDbNameForRepoAndBranch($repo, $branch)
    let $db := db:open($dbName)
    let $map := doc(concat($dbName, "/docs/tests/complex_map/complex_map.ditamap"))
    
@@ -29,8 +29,8 @@ declare function dftest:testGetMapTree($repo as xs:string, $branchName as xs:str
    return $mapTree
 };
 
-declare function dftest:testConstructKeySpaces($repo as xs:string, $branchName as xs:string) as node()* {
-   let $dbName := bxutil:getDbNameForRepoAndBranch($repo, $branchName)
+declare function dftest:testConstructKeySpaces($repo as xs:string, $branch as xs:string) as node()* {
+   let $dbName := bxutil:getDbNameForRepoAndBranch($repo, $branch)
    let $db := db:open($dbName)
    let $map := doc(concat($dbName, "/docs/tests/complex_map/complex_map.ditamap"))
    

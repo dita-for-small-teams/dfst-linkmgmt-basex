@@ -347,6 +347,8 @@ declare function df:constructKeySpaces($map as document-node()) as element(keySp
 declare function df:serializeKeySpacesMap($keySpaces) as element(keySpace)* {
   (: The key spaces map is a map of scope names to key spaces.
      Each key space is a map of key names to key bindings.
+     Each key bindings is a sequence of key definitions for a given
+     key name.
      :)
 
   for $keyScopeName in map:keys($keySpaces)
@@ -373,7 +375,22 @@ declare function df:serializeKeyBindings($keyName as xs:string, $keyBindings) as
 };
 
 declare function df:serializeKeyBinding($keyBinding) as element()* {
-  <keyBinding><stuff/></keyBinding>
+(: Each key binding is:
+     - key name: the key name 
+     - resource URI: The URI of the resource the key is bound to (if any)
+     - key-definition element: the topicref element
+         that is the data source for the key definition.
+     - Note that for resources of format "dita" and "ditamap"
+       the resource will be a topic or map respectively.
+       All other formats are non-DITA resources.
+:)
+  <keyBinding 
+    keyName="{map:get($keyBinding, 'keyName')}"
+    resourceURI="{map:get($keyBinding, 'resourceURI')}"
+    format="{map:get($keyBinding, 'format')}"
+  >
+    <topicref>{map:get($keyBinding, 'topicref')}</topicref>
+  </keyBinding>
 };
 
 (:~
@@ -420,22 +437,24 @@ declare function df:constructKeySpacesForMap(
        for $keyScope in $keyScopes
            return 
            map { $keyScope : 
-                 map { $map : 
-                       map { 'key01' : 
-                              (map { 'keyName' : 'key01',
-                                     'topicref' : <topicref keys="key01"/>,
-                                     'resourceURI' : ''
-                                   },
-                               map { 'keyName' : 'key01',
-                                     'topicref' : <topicref keys="key01 keyxxx"/>,
-                                     'resourceURI' : 'foo/bar'
-                                   }
-                               ),
-                               'key02' :
-                               (map { 'keyName' : 'key02',
-                                 'topicref' : <topicref keys="key02"/>,
-                                 'resourceURI' : 'docs/topics/topic-01.dita'
-                               })}}}
+                 map { 'key01' : 
+                        (map { 'keyName' : 'key01',
+                               'topicref' : <topicref keys="key01"/>,
+                               'resourceURI' : '',
+                               'format' : '#undefined'
+                             },
+                         map { 'keyName' : 'key01',
+                               'topicref' : <topicref keys="key01 keyxxx"/>,
+                               'resourceURI' : 'foo/bar',
+                               'format' : 'jpg'
+                             }
+                         ),
+                         'key02' :
+                         (map { 'keyName' : 'key02',
+                               'topicref' : <topicref keys="key02"/>,
+                               'resourceURI' : 'docs/topics/topic-01.dita',
+                               'format' : 'dita'
+                         })}}
                            
               
    

@@ -48,8 +48,8 @@ declare
           <div class="result">
           <pre>
           { 
-          let $map := dftest:testGetMapTree($repo, $branch)            
-          return serialize($map)
+          let $mapTree := dftest:testGetMapTree($repo, $branch)            
+          return serialize($mapTree)
   
           }
           </pre>
@@ -64,7 +64,18 @@ declare
           return serialize($keyspace)
   
           }
-          </pre>
+          </pre>          
+          </div>
+          <div class="resultblock">
+            <h4>Raw Key Space Map</h4>
+          <pre>
+          { 
+             let $dbName := bxutil:getDbNameForRepoAndBranch($repo, $branch)
+             let $map := doc(concat($dbName, "/docs/tests/complex_map/complex_map.ditamap"))             
+             let $mapTree := df:getMapTree($map)
+             let $keySpaces := df:constructKeySpacesForMapTree($mapTree) 
+             return map:serialize($keySpaces)
+          }</pre>
           </div>
         </div>
       </div>
