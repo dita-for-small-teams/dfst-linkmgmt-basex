@@ -81,7 +81,7 @@ declare
             }</pre>
           </div>
           <div class="result">
-            <p><b>df:df:constructKeyDefinitionsForTopicref($topicRef as element())</b></p>
+            <p><b>df:constructKeyDefinitionsForTopicref($topicRef as element())</b></p>
             <pre>{
              let $dbName := bxutil:getDbNameForRepoAndBranch($repo, $branch)
              let $map := doc(concat($dbName, "/docs/tests/complex_map/complex_map.ditamap"))
@@ -89,10 +89,24 @@ declare
              return if ($topicRef)
                  then
                    let $keydefs := df:constructKeyDefinitionsForTopicref($topicRef)
-                   return for $keydef in $keydefs return map:serialize($keydef)
+                   return string-join(for $keydef in $keydefs return map:serialize($keydef), ',' ||out:nl())
                  else "No key-defining topicref found"
 
             }</pre>
+          </div>
+        </div>
+        <div class="resultblock">
+          <h4>df:constructKeySpacesForMap($mapDoc as document-node(), $keySpaces) </h4>
+          <div class="result">
+          <pre>
+          { 
+             let $dbName := bxutil:getDbNameForRepoAndBranch($repo, $branch)
+             let $map := doc(concat($dbName, "/docs/tests/complex_map/complex_map.ditamap"))
+             let $keySpaces := df:constructKeySpacesForMap($map, map { '#root' : map {}}) 
+             return map:serialize($keySpaces)
+  
+          }
+          </pre>          
           </div>
         </div>
         <div class="resultblock">

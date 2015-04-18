@@ -441,69 +441,35 @@ declare function df:constructKeySpacesForMapTree($mapTree as element(mapTree)) {
 (:~
  : Constructs the key spaces for a single map
  :
- : Returns a sequence of key spaces reflecting
- : the key spaces descending from this map and
- : updates to any ancestor key spaces.
+ : Returns the updated map of scope names to key spaces.
  :)
 declare function df:constructKeySpacesForMap(
                       $mapDoc as document-node(), (: Map document to get key scopes and definitions from :)
-                      $keySpaces (: Array of ancestor key spaces, where each member of the array is
-                                    a sequence of key space maps, one for each key space defined at
-                                    that level in the key space hierarchy. The array is ordered from
-                                    hightest (item 1 is always the root key spaces) to nearest. 
+                      $keySpaces (: A map of key scope names to key spaces.
+                       
+                                    Each key space in turn contains any descendant key spaces, reflecting
+                                    the scope hierarchy of the map tree.
+                                   
+                                    The initial key space map always includes key key scope "#root",
+                                    the root anonymous key space.
                                     :)
                     ) {
                     
-   
-       
+   (: The map element can specify key scope names, which create key scopes rooted at the map. :)
+   let $currentKeySpaces := $keySpaces 
+   let $temp := for $scopeName in tokenize($mapDoc/@keyscope, ' ')
+       return if (not(map:contains($keySpaces, $scopeName)))
+                 then map:put($currentKeySpaces, $scopeName, map { 'scopeName' : $scopeName })
+                 else ()
+
    (: Walk the map's element tree in depth-first order and
       process those topicrefs that define new key scopes or
       define key bindings, or both.
       
     :)
-      
-   (: If the map element specifies @keyscope then those key scope names are added to the
-      list of active key scopes. In particular a topicref to a map that specifies a key
-      scope and the map's key scopes are treated as though all the key scope names had
-      been specified on either the topicref alone.
-    :)
-    let $activeKeyScopes := ($keySpaces, 
-         for $scopeName in tokenize($mapDoc/*/@keyscope, ' ')
-             return map { $scopeName : 
-                          () (: FIXME: Fill this in :)
-                        })
-(:                        
-    let $resultKeySpaceSet := 
-        for $topicRef in $mapDoc/*/*[df:class(., 'map/topicref')] 
-            return df:constructKeySpacesForTopicref(
-                       $topicRef,
-                       $keySpaceSet,
-                       $activeKeyScopes)
-    return $resultKeySpaceSet
-    :)
-           (: Result map for a key space with no scopes other than the root scope:
-           :)
-      return      
-           map { '#root' : 
-                 map { 'key01' : 
-                        (map { 'keyName' : 'key01',
-                               'topicref' : <topicref keys="key01"/>,
-                               'resourceURI' : '',
-                               'format' : '#undefined'
-                             },
-                         map { 'keyName' : 'key01',
-                               'topicref' : <topicref keys="key01 keyxxx"/>,
-                               'resourceURI' : 'foo/bar',
-                               'format' : 'jpg'
-                             }
-                         ),
-                         'key02' :
-                         (map { 'keyName' : 'key02',
-                               'topicref' : <topicref keys="key02"/>,
-                               'resourceURI' : 'docs/topics/topic-01.dita',
-                               'format' : 'dita'
-                         })}}
-            (: :)
+    
+    return $currentKeySpaces
+    
 };
 
 (:~
