@@ -25,7 +25,7 @@ declare
   as element(Q{http://www.w3.org/1999/xhtml}html)
 {
    let $map := doc($docURI)
-   let $tree := df:getMapTree($map/*)
+   let $tree := df:getMapTree($map)
    return
    <html xmlns="http://www.w3.org/1999/xhtml">
     <head>

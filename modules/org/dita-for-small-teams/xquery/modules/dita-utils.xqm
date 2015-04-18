@@ -255,6 +255,7 @@ declare function df:getMapTree($map as document-node()) as element(mapTree)* {
   <mapTree 
      mapUri="{document-uri($map)}"
      timeStamp="{fn:current-dateTime()}"
+     database="{tokenize(document-uri($map), '/')[1]}"
   >
     { df:getMapTreeItem($map/*) }
   </mapTree>
@@ -274,7 +275,7 @@ declare function df:getMapTreeItem($mapElem as element()) as element(treeItem)* 
             <label>{$label}</label>
             <properties>
               <property name="maptype">{name($mapElem)}</property>
-              <property name="uri">{bxutil:getPathForDoc(root($mapElem))}</property>
+              <property name="uri">{document-uri(root($mapElem))}</property>
             </properties>
             <children>
               {df:getMapTreeItems($mapElem)}
@@ -312,8 +313,11 @@ declare function df:getMapTreeItems($map as element()) as element(treeItem)* {
 
 declare function df:getMapDocForTreeItem($treeItem as element(treeItem)) as document-node()? {
    let $mapUri := string($treeItem/properties/property[@name = 'uri'])
+   return document { <map/> }
+   (:
    let $map := doc($mapUri)
    return $map
+   :)
 };
 
 (:~
