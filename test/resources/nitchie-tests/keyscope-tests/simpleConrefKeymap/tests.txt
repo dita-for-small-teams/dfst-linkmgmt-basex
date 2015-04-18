@@ -1,0 +1,26 @@
+/**
+ * This one dosen't involve scopes but it does involve multiple levels of
+ * conrefs in maps and how they affect key definition construction. The
+ * keydef for the key 'two' is a conref to conref1.ditamap in a sub-folder,
+ * whose topicmeta is another conref to conref2.ditamap. This ensures that
+ * the resolved href for the conreffed key definition is relative to the
+ * conreffed map, not the root map with the conref, and that the topicmeta
+ * conref is resolved when building thekey space.
+ */
+@Test
+public void testSimpleConref() throws Exception {
+    KeySpace keyspace = loadKeySpace("simpleConrefKeymap/keyConrefTestMap.ditamap");
+
+    String hrefOne = keyspace.findEffectiveDefinition("one").atts()
+            .getValue("href");
+    String hrefTwo = keyspace.findEffectiveDefinition("two").atts()
+            .getValue("href");
+    URI f1 = new File(hrefOne).getParentFile().toURI();
+    URI f2 = new File(hrefTwo).toURI();
+    assertEquals("conrefs/two.dita", f1.relativize(f2).toString());
+
+    testKeyAttr(keyspace, "two", "audience", "expert");
+    testKeyAttr(keyspace, "two", "print", "no");
+    testKeyMetadata(keyspace, "two", "author", null);
+    testKeyMetadata(keyspace, "two", "audience", "Test Audience");
+}

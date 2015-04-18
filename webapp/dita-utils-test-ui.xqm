@@ -41,6 +41,14 @@ declare
       <div class="title-block">
         <h2>DITA Utils Test Using {$repo}/{$branch}</h2>
       </div>
+      <div>
+       <h3>Source Root Map</h3>
+       <pre>{
+             let $dbName := bxutil:getDbNameForRepoAndBranch($repo, $branch)
+             let $map := doc(concat($dbName, "/docs/tests/complex_map/complex_map.ditamap"))
+             return serialize($map)
+       }</pre>
+      </div>
       <div class="action-block">
         <h3>Tests</h3>
         <div class="resultblock">
@@ -86,29 +94,17 @@ declare
 
             }</pre>
           </div>
-          <div class="result">
-            <p><b>df:df:constructKeySpacesForTopicref($topicRef as element(), $keySpaces)</b></p>
-            <pre>{
-             let $dbName := bxutil:getDbNameForRepoAndBranch($repo, $branch)
-             let $map := doc(concat($dbName, "/docs/tests/complex_map/complex_map.ditamap"))
-             let $topicRef := ($map//*[@keys])[1]
-             return if ($topicRef)
-                 then
-                   let $keyName := tokenize($topicRef/@keys, ' ')[1]
-                   let $keyBinding := df:constructKeyBinding($topicRef, $keyName)
-                   return map:serialize($keyBinding)
-                 else "No key-defining topicref found"
-
-            }</pre>
-          </div>
         </div>
         <div class="resultblock">
-          <h4>testConstructKeySpaces():</h4>
+          <h4>df:constructKeySpacesForMapTree($mapTree) </h4>
           <div class="result">
           <pre>
           { 
-          let $keyspace := dftest:testConstructKeySpaces($repo, $branch)            
-          return serialize($keyspace)
+             let $dbName := bxutil:getDbNameForRepoAndBranch($repo, $branch)
+             let $map := doc(concat($dbName, "/docs/tests/complex_map/complex_map.ditamap"))
+             let $mapTree := df:getMapTree($map)
+             let $keySpaces := df:constructKeySpacesForMapTree($mapTree) 
+             return map:serialize($keySpaces)
   
           }
           </pre>          

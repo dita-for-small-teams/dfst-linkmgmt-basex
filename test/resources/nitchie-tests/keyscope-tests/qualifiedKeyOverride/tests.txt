@@ -1,0 +1,19 @@
+@Test
+public void testQualifiedOverride() throws Exception {
+    KeySpace keyspace = loadKeySpace("qualifiedKeyOverride/map.ditamap");
+    testKeyAttr(keyspace, "test1", "id", "one");
+    testKeyAttr(keyspace, "test2", "id", "four");
+    testKeyAttr(keyspace, "scope1.test1", "id", "one");
+    testKeyAttr(keyspace, "scope1.test2", "id", "three");
+    testKeyAttr(keyspace, "scope2.test1", "id", "two");
+    testKeyAttr(keyspace, "scope2.test2", "id", "three");
+
+    KeySpace scope1 = keyspace.findChildScope("scope1");
+    assertNotNull(scope1);
+    testKeyAttr(scope1, "test1", "id", "one");
+    testKeyAttr(scope1, "test2", "id", "four");
+    testKeyAttr(scope1, "scope1.test1", "id", "one");
+    testKeyAttr(scope1, "scope1.test2", "id", "three");
+    testKeyAttr(scope1, "scope2.test1", "id", "two");
+    testKeyAttr(scope1, "scope2.test2", "id", "three");
+}

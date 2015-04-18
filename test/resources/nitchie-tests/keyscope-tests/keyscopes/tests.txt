@@ -1,0 +1,16 @@
+@Test
+@PipelineParam(name = "mapUri",
+    classpath = "/keyscopes/map-with-keyscopes.ditamap")
+@XPathTests({
+        @XPathTest(value = "//concept[1]/title",
+            expectedStr = "Concept with Keyrefs (DITA Europe 2013)"),
+        @XPathTest(value = "//concept[2]/title",
+            expectedStr = "Concept with Keyrefs (Telematics Munich 2013)"),
+        @XPathTest(
+            value = "(//xref)[1]/@href",
+            expectedStr = "http://www.ihg.com/holidayinn/hotels/us/en/munich/muchb/hoteldetail"),
+        @XPathTest(value = "(//xref)[2]/@href",
+            expectedStr = "http://www.dolcemunich.com/")
+})
+public void testTopicgroupKeyScopes() throws Exception {
+}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE map PUBLIC "-//OASIS//DTD DITA 1.2 Map//EN" "../../doctypes/dita/dtd1.2/technicalContent/dtd/map.dtd">
+<map>
+	<title>Parent Map</title>
+  <topicref href="links.dita"/>
+	<keydef keys="test1" href="one.dita" id="one" />
+	<mapref href="child.ditamap" keyscope="scope1" />
+	<keydef keys="test2 scope1.test2" href="four.dita" id="four" />
+</map>

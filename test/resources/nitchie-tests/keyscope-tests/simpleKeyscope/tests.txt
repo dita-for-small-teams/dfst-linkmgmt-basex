@@ -1,0 +1,32 @@
+@Test
+public void testSimpleScopes() throws Exception {
+    KeySpace keyspace = loadKeySpace("simpleKeyscope/simpleKeyscope.ditamap");
+    testKeyAttr(keyspace, "test1", "id", "one");
+    testKeyAttr(keyspace, "test2", "id", "four");
+    testKeyAttr(keyspace, "test3", "id", null);
+    testKeyAttr(keyspace, "scope1.test2", "id", "two");
+    testKeyAttr(keyspace, "scope1.test3", "id", "three");
+    testKeyAttr(keyspace, "scope2.test2", "id", "two");
+    testKeyAttr(keyspace, "scope2.test3", "id", "three");
+
+    KeySpace scope1 = keyspace.findChildScope("scope1");
+    assertNotNull(scope1);
+    testKeyAttr(scope1, "test1", "id", "one");
+    testKeyAttr(scope1, "test2", "id", "four");
+    testKeyAttr(scope1, "test3", "id", "three");
+    testKeyAttr(scope1, "scope1.test2", "id", "two");
+    testKeyAttr(scope1, "scope1.test3", "id", "three");
+    testKeyAttr(scope1, "scope2.test2", "id", "two");
+    testKeyAttr(scope1, "scope2.test3", "id", "three");
+
+    KeySpace scope2 = keyspace.findChildScope("scope2");
+    assertNotNull(scope2);
+    testKeyAttr(scope2, "test1", "id", "one");
+    testKeyAttr(scope2, "test2", "id", "four");
+    testKeyAttr(scope2, "test3", "id", "three");
+    testKeyAttr(scope2, "scope1.test2", "id", "two");
+    testKeyAttr(scope2, "scope1.test3", "id", "three");
+    testKeyAttr(scope2, "scope2.test2", "id", "two");
+    testKeyAttr(scope2, "scope2.test3", "id", "three");
+}
+

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE concept PUBLIC "-//OASIS//DTD DITA Concept//EN" "concept.dtd">
+<concept id="concept_trx_ndy_vl">
+ <title>Concept with Keyrefs (<ph keyref="conferenceName"/>)</title>
+ <conbody>
+  <p>Conference name: <ph keyref="conferenceName"/></p>
+  <p>Hotel link: <xref keyref="hotel"/></p>
+ </conbody>
+</concept>

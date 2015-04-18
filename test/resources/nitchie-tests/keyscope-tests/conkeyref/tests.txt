@@ -1,0 +1,9 @@
+@Test
+@PipelineParam(name="mapUri", classpath="/conkeyref/conkeyref-test.ditamap")
+@XPathTests({
+    @XPathTest(value="//topic[2]/title", expectedStr="Welcome to Product Name"),
+    @XPathTest(value="//topic[1]//linktext[1]", expectedStr="Welcome to Product Name"),
+    @XPathTest(value="//topic[1]//xref[1]", expectedStr="Welcome to Product Name")
+})
+public void testConkeyrefStrings() throws Exception {
+}

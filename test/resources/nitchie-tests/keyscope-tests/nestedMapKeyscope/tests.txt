@@ -1,0 +1,66 @@
+@Test
+public void testSubmapScope() throws Exception {
+    KeySpace keyspace = loadKeySpace("nestedMapKeyscope/parent.ditamap");
+    KeySpace scope1 = keyspace.findChildScope("scope1");
+    assertNotNull(scope1);
+    assertEquals(1, scope1.getMapDepth());
+
+    KeySpace scope2 = keyspace.findChildScope("scope2");
+    assertEquals(scope1, scope2);
+
+    testKeyAttr(keyspace, "test1", "id", "one");
+    testKeyAttr(keyspace, "test2", "id", "four");
+    testKeyAttr(keyspace, "scope1.test1", "id", "two");
+    testKeyAttr(keyspace, "scope1.test2", "id", "four");
+    testKeyAttr(keyspace, "scope2.test2", "id", "three");
+
+    testKeyAttr(scope1, "test1", "id", "one");
+    testKeyAttr(scope1, "test2", "id", "four");
+    testKeyAttr(scope1, "scope1.test1", "id", "two");
+    testKeyAttr(scope1, "scope1.test2", "id", "four");
+    testKeyAttr(scope1, "scope2.test2", "id", "three");
+}
+
+@Test
+@PipelineParam(name = "mapUri",
+    file = "src/test/docs/nestedMapKeyscope/parent.ditamap")
+@XPathTests({
+        @XPathTest(
+            value = "ends-with((//xref[@keyref='test1'])[1]/@href, 'one.dita')"),
+        @XPathTest(
+            value = "ends-with((//xref[@keyref='test2'])[1]/@href, 'four.dita')"),
+        @XPathTest(value = "not((//xref[@keyref='test3'])[1]/@href)"),
+        @XPathTest(
+            value = "ends-with((//xref[@keyref='scope1.test1'])[1]/@href, 'two.dita')"),
+        @XPathTest(
+            value = "ends-with((//xref[@keyref='scope1.test2'])[1]/@href, 'four.dita')"),
+        @XPathTest(
+            value = "ends-with((//xref[@keyref='scope2.test1'])[1]/@href, 'two.dita')"),
+        @XPathTest(
+            value = "ends-with((//xref[@keyref='scope2.test2'])[1]/@href, 'three.dita')"),
+        @XPathTest(
+            value = "ends-with((//xref[@keyref='scope1.test3'])[1]/@href, 'three.dita')"),
+        @XPathTest(
+            value = "ends-with((//xref[@keyref='scope2.test3'])[1]/@href, 'three.dita')"),
+        @XPathTest(
+            value = "ends-with((//xref[@keyref='test1'])[2]/@href, 'one.dita')"),
+        @XPathTest(
+            value = "ends-with((//xref[@keyref='test2'])[2]/@href, 'four.dita')"),
+        @XPathTest(
+            value = "ends-with((//xref[@keyref='test3'])[2]/@href, 'three.dita')"),
+        @XPathTest(
+            value = "ends-with((//xref[@keyref='scope1.test1'])[2]/@href, 'two.dita')"),
+        @XPathTest(
+            value = "ends-with((//xref[@keyref='scope1.test2'])[2]/@href, 'four.dita')"),
+        @XPathTest(
+            value = "ends-with((//xref[@keyref='scope2.test1'])[2]/@href, 'two.dita')"),
+        @XPathTest(
+            value = "ends-with((//xref[@keyref='scope2.test2'])[2]/@href, 'three.dita')"),
+        @XPathTest(
+            value = "ends-with((//xref[@keyref='scope1.test3'])[1]/@href, 'three.dita')"),
+        @XPathTest(
+            value = "ends-with((//xref[@keyref='scope2.test3'])[1]/@href, 'three.dita')"),
+})
+public void testSubmapScope() throws Exception {
+}
+

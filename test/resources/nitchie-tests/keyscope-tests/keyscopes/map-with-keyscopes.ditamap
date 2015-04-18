@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE map PUBLIC "-//OASIS//DTD DITA Map//EN" "map.dtd">
+<map>
+ <title>Map with Key Scopes</title>
+ <topicgroup keyscope="dita-europe">
+  <keydef keys="conferenceName">
+   <topicmeta>
+    <keywords>
+     <keyword>DITA Europe 2013</keyword>
+    </keywords>
+   </topicmeta>
+  </keydef>
+  <keydef keys="hotel" href="http://www.ihg.com/holidayinn/hotels/us/en/munich/muchb/hoteldetail"
+   scope="external">
+   <topicmeta>
+    <linktext>Holiday Inn City Centre</linktext>
+   </topicmeta>
+  </keydef>
+  <keydef keys="hotelImage" href="images/holidayInn.jpg" format="jpg"/>
+  <topicref href="concept.dita"/>
+ </topicgroup>
+ <topicgroup keyscope="telematics">
+  <keydef keys="conferenceName">
+   <topicmeta>
+    <keywords>
+     <keyword>Telematics Munich 2013</keyword>
+    </keywords>
+   </topicmeta>
+  </keydef>
+  <keydef keys="hotel" href="http://www.dolcemunich.com/" scope="external">
+   <topicmeta>
+    <linktext>Dolce Munich</linktext>
+   </topicmeta>
+  </keydef>
+  <keydef keys="hotelImage" href="images/dolce.jpg" format="jpg"/>
+  <topicref href="concept.dita"/>
+ </topicgroup>
+</map>

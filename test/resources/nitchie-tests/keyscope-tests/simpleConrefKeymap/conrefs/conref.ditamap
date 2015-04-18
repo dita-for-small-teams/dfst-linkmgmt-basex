@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE map PUBLIC "-//OASIS//DTD DITA 1.2 Map//EN" "../../../doctypes/dita/dtd1.2/technicalContent/dtd/map.dtd">
+<map>
+    <title>Conref Target</title>
+    <keydef keys="two" href="two.dita" id="two" audience="normal" platform="testPlatform" print="no">
+        <topicmeta conref="conref2.ditamap#testMeta">
+            <author>Test Author (should not appear)</author>
+        </topicmeta>
+    </keydef>
+</map>

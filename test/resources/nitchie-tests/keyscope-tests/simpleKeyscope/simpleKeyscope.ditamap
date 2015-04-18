@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE map PUBLIC "-//OASIS//DTD DITA 1.2 Map//EN" "../../doctypes/dita/dtd1.2/technicalContent/dtd/map.dtd">
+<map>
+	<title>Map Structure Precedence Test</title>
+	<keydef keys="test1" href="one.dita" id="one" />
+	<topicgroup keyscope="scope1 scope2">
+	   <keydef keys="test2" href="two.dita" id="two" />
+	   <keydef keys="test3" href="three.dita" id="three" />
+	</topicgroup>
+	<keydef keys="test2" href="four.dita" id="four" />
+</map>

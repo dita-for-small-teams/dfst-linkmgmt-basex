@@ -94,13 +94,12 @@ declare
               <tr>
                 <th>Path</th>
                 <th>Title</th>
-                <th>Is Root?</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
             { if (false())
-                 then <tr><td colspan="4">No maps found</td></tr>
+                 then <tr><td colspan="3">No maps found</td></tr>
                  else page:listMapsInBranch($repo, $branch)
             }
             </tbody>
@@ -113,13 +112,12 @@ declare
               <tr>
                 <th>Path</th>
                 <th>Title</th>
-                <th>Is Root?</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
             { if (false())
-                 then <tr><td colspan="4">No maps found</td></tr>
+                 then <tr><td colspan="3">No maps found</td></tr>
                  else page:listTopicsInBranch($repo, $branch)
             }
             </tbody>
@@ -179,7 +177,6 @@ declare
       return <tr>
         <td>{bxutil:getPathForDoc($map)}</td>
         <td>{df:getTitleText($map/*)}</td>
-        <td>isRoot</td>
         <td>
         [{html:link('Map&#xa0;Tree', concat('/linkmgr/maptreeView/', document-uri($map)))}] 
         [{html:link('Dependencies', concat('/linkmgr/dependencyView/', document-uri($map)))}] 
@@ -201,7 +198,6 @@ declare
       return <tr>
         <td>{bxutil:getPathForDoc($topic)}</td>
         <td>{df:getTitleText($topic/*)}</td>
-        <td>isRoot</td>
         <td>[Action 1][Action 2]</td>
       </tr>
  };
