@@ -590,6 +590,7 @@ declare function df:constructKeyBinding($topicRef as element(), $keyName as xs:s
   
   let $format := df:getEffectiveAttributeValue($topicRef, 'format') 
   let $scope := df:getEffectiveAttributeValue($topicRef, 'scope')
+  let $resourceURI := string($topicRef/@href)
   let $targetResource := 
       if (not($topicRef/@keyref))
          then df:resolveTopicRef($topicRef)
@@ -602,7 +603,7 @@ declare function df:constructKeyBinding($topicRef as element(), $keyName as xs:s
                  else 'failed: URI not resolved'
    return map { 'keyName' : $keyName,
                  'topicref' : $topicRef,
-                 'resourceURI' : string(@href),
+                 'resourceURI' : $resourceURI,
                  'format' : $format,
                  'scope'  : $scope,
                  'targetResource' : $targetResource,

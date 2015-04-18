@@ -56,6 +56,24 @@ declare
           </div>
         </div>
         <div class="resultblock">
+          <h4>Key construction unit tests</h4>
+          <div class="result">
+            <p><b>df:constructKeyBinding($topicRef, $keyName)</b></p>
+            <pre>{
+             let $dbName := bxutil:getDbNameForRepoAndBranch($repo, $branch)
+             let $map := doc(concat($dbName, "/docs/tests/complex_map/complex_map.ditamap"))
+             let $topicRef := ($map//*[@keys])[1]
+             return if ($topicRef)
+                 then
+                   let $keyName := tokenize($topicRef/@keys, ' ')[1]
+                   let $keyBinding := df:constructKeyBinding($topicRef, $keyName)
+                   return map:serialize($keyBinding)
+                 else "No key-defining topicref found"
+
+            }</pre>
+          </div>
+        </div>
+        <div class="resultblock">
           <h4>testConstructKeySpaces():</h4>
           <div class="result">
           <pre>
