@@ -78,7 +78,7 @@ declare
 };
 
 (:~
- : Document source view
+ : Document dependency view
  :)
 declare
   %rest:path("/linkmgr/dependencyView/{$docURI=.+}")
@@ -111,6 +111,68 @@ declare
       <div class="listblock">
         <h4>Related Links</h4>
         <p>List of related links goes here</p>
+      </div>
+   </body>
+ </html>
+};
+
+(:~
+ : Document relationship table view
+ :)
+declare
+  %rest:path("/linkmgr/reltableView/{$docURI=.+}")
+  %output:method("xhtml")
+  %output:omit-xml-declaration("no")
+  %output:doctype-public("-//W3C//DTD XHTML 1.0 Transitional//EN")
+  %output:doctype-system("http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd")
+  function linkmgr:docViewReltables($docURI as xs:string)
+  as element(Q{http://www.w3.org/1999/xhtml}html)
+{
+   let $doc := doc($docURI)
+   let $title := df:getTitleText($doc/*)
+   return
+   <html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+      <title>Relationship Tables for Map {$title}</title>
+      <link rel="stylesheet" type="text/css" href="/static/style.css"/>
+    </head>
+    <body>
+      <h1>Relationship Tables for Map "{$title}"</h1>
+      {linkmgr:reportDocDetails($doc)}
+      <div class="listblock">
+        <h4>Reltables</h4>
+        <p>Relationship tables go here</p>
+      </div>
+   </body>
+ </html>
+};
+
+(:~
+ : Document relationship table view
+ :)
+declare
+  %rest:path("/linkmgr/keyspaceView/{$docURI=.+}")
+  %output:method("xhtml")
+  %output:omit-xml-declaration("no")
+  %output:doctype-public("-//W3C//DTD XHTML 1.0 Transitional//EN")
+  %output:doctype-system("http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd")
+  function linkmgr:docViewKeyspaces($docURI as xs:string)
+  as element(Q{http://www.w3.org/1999/xhtml}html)
+{
+   let $doc := doc($docURI)
+   let $title := df:getTitleText($doc/*)
+   return
+   <html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+      <title>Key Spaces for Map {$title}</title>
+      <link rel="stylesheet" type="text/css" href="/static/style.css"/>
+    </head>
+    <body>
+      <h1>Key Spaces for Map "{$title}"</h1>
+      {linkmgr:reportDocDetails($doc)}
+      <div class="listblock">
+        <h4>Key Spaces</h4>
+        <p>Key spaces go here</p>
       </div>
    </body>
  </html>
