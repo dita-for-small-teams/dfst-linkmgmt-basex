@@ -20,6 +20,13 @@ module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-utils";
 import module namespace relpath="http://dita-for-small-teams.org/xquery/modules/relpath-utils";
 import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-utils";
 
+declare namespace ditaarch="http://dita.oasis-open.org/architecture/2005/";
+
+(:~
+ : Regular expression that matches @class attribute values
+ :)
+declare variable $df:classAttPattern := '^[\-+]\s\w+/\w+\s.*';
+
 
 (: Returns true if the specified element is of the specified DITA class.
 
@@ -611,5 +618,54 @@ declare function df:constructKeyBinding($topicRef as element(), $keyName as xs:s
              
 };
     
+(:~
+ : Returns true of the document appears to be a DITA document.
+ :
+ : A DITA document has a @ditaarch:DITAArchVersion attribute,
+ : a @class attribute with what looks like a DITA class spec,
+ : and a @domains attribute.
+ :)
+declare function df:isDitaDoc($doc as document-node()) as xs:boolean {
+  let $ditaArchAtt := $doc/*/@ditaarch:DITAArchVersion
+  let $classAtt := $doc/*/@class
+  let $domainsAtt := $doc/*/@domains
+  return 
+    if (matches($ditaArchAtt, '[12]\.[0-9]') and
+        matches($classAtt, $df:classAttPattern) and
+        $domainsAtt) 
+       then true()
+       else false()
+  
+};
+
+(:~
+ : Evaluates the document and returns the degree of confidence that
+ : it is a DITA document:
+ :
+ : - certainty : 100% certainty that the document is a DITA document. Has
+ :               a DITA document type signature (@ditaarch:DITAArchVersion, @class, @domains)
+ : - propbably : 80% certainty that the document is a DITA document. Two of 3 DITA indicators
+ : - maybe     : 50% certainty: Could be a DITA document, could be something else. Some
+                 DITA indicators or seems to be a DITA map or topic.
+ : - notdita   : 95% certainty document is not a DITA document: no recognizable
+ :               DITA-indicating features.
+ :)
+declare function df:ditaDocConfidence($doc as document-node()) as xs:string {
+  let $ditaArchAtt := $doc/*/@ditaarch:DITAArchVersion
+  let $classAtt := $doc/*/@class
+  let $domainsAtt := $doc/*/@domains
+  return 
+     if ($ditaArchAtt and
+         $classAtt and
+         $domainsAtt) then 'certainty'
+     else if (($domainsAtt or $ditaArchAtt) or
+              (@class and matches(@class, $df:classAttPattern))) then 'probably'
+     else if (name($doc/*) = ('topic', 'concept', 'task', 'reference', 'glossentry',
+                              'learningConcept', 'troubleshooting', 'map', 'bookmap',
+                              'learningGroup', 'learningObject', 'learningObjectMap',
+                              'learningGroupMap', 'pubmap')) then 'probably'
+    else if ($doc/*/title) then 'maybe'
+    else 'notdita'
+};
 
 (: ============== End of Module =================== :)   

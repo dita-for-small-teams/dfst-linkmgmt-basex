@@ -34,6 +34,7 @@ declare
     </head>
     <body>
       <h1>Map Tree for "{df:getTitleText($map/*)}"</h1>
+      {linkmgr:reportDocDetails($map)}
       <div class="tree">
        { 
         linkmgr:treeToHtml($tree)        
@@ -66,7 +67,7 @@ declare
     </head>
     <body>
       <h1>Source for Document "{$title}"</h1>
-      <p>URI: {bxutil:getPathForDoc($doc)}</p>
+      {linkmgr:reportDocDetails($doc)}
       <div class="sourceblock">
         <pre>
         {serialize($doc)}
@@ -74,6 +75,62 @@ declare
       </div>
    </body>
  </html>
+};
+
+(:~
+ : Document source view
+ :)
+declare
+  %rest:path("/linkmgr/dependencyView/{$docURI=.+}")
+  %output:method("xhtml")
+  %output:omit-xml-declaration("no")
+  %output:doctype-public("-//W3C//DTD XHTML 1.0 Transitional//EN")
+  %output:doctype-system("http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd")
+  function linkmgr:docViewDependencies($docURI as xs:string)
+  as element(Q{http://www.w3.org/1999/xhtml}html)
+{
+   let $doc := doc($docURI)
+   let $title := df:getTitleText($doc/*)
+   return
+   <html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+      <title>Dependencies for Document {$title}</title>
+      <link rel="stylesheet" type="text/css" href="/static/style.css"/>
+    </head>
+    <body>
+      <h1>Dependencies for Document "{$title}"</h1>
+      {linkmgr:reportDocDetails($doc)}
+      <div class="listblock">
+        <h4>Content references</h4>
+        <p>List of content references goes here</p>
+      </div>
+      <div class="listblock">
+        <h4>Cross references</h4>
+        <p>List of cross references goes here</p>
+      </div>
+      <div class="listblock">
+        <h4>Related Links</h4>
+        <p>List of related links goes here</p>
+      </div>
+   </body>
+ </html>
+};
+
+(:~
+ : Constructs an HTML report of the details about a document
+ :)
+declare function linkmgr:reportDocDetails($doc as document-node()) as node()* {
+   let $docURI := bxutil:getPathForDoc($doc)
+   let $repo as xs:string := bxutil:getGitRepoForDoc($doc)
+   let $branch as xs:string := bxutil:getGitBranchForDoc($doc)
+   let $isDITA as xs:boolean := df:isDitaDoc($doc)
+   return
+    <div class="docdetails">
+      <div><span class="label">URI:</span> <span
+        class="value">{linkmgr:makeLinkToDocSource(document-uri($doc))}</span></div>
+      <div><span class="label">Branch:</span> <span class="value">{$repo}/{$branch}</span></div>
+      <div><span class="label">Is DITA:</span> <span class="value">{$isDITA}</span></div>
+    </div>
 };
 
 (:~
@@ -100,14 +157,18 @@ declare function linkmgr:treeToHtml($tree as element(mapTree)) as node()* {
     }</ul>
 };
 
+declare function linkmgr:makeLinkToDocSource($docURI as xs:string) as node()* {
+     <a 
+         target="sourceView" 
+         href="/linkmgr/docview/{$docURI}/src">{bxutil:getPathForDocURI($docURI)}</a>
+};
+
 declare function linkmgr:treeItemToHtml($treeItem as element()) as node()* {
     let $docURI := string($treeItem/properties/property[@name = 'uri'])
     return
     <li class="treeitem">
       <span class="label">{string($treeItem/label)}</span> 
-      <span class="uri">[<a 
-         target="sourceView" 
-         href="/linkmgr/docview/{$docURI}/src">{bxutil:getPathForDocURI($docURI)}</a>]</span>
+      <span class="uri">[linkmgr:makeLinkToDocSource($docURI)]</span>
       {if ($treeItem/children) 
           then
              <ul class="tree">{

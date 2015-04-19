@@ -172,3 +172,14 @@ p {
   padding-right: 10px;
   margin-bottom: 20px;
 }
+
+.docdetails {
+   font-size: 8pt;
+   color: grey;
+   
+}
+
+.label {
+  font-weight: bold;
+  color: lightblue;
+}

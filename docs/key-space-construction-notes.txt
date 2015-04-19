@@ -1,0 +1,22 @@
+Keyspace construction notes
+
+Each key space is identified by the map or topicref that names the key scope and the ancestor key scopes.
+
+Set of key spaces is logically hierarchical but really a set of spaces.
+
+Need a way to hash each key space's ID in order to capture the relationships of different key spaces to each other.
+
+On recursive descent from root map:
+
+1. construct 1 or more key spaces: #root, any named key spaces.
+
+   - Key space is a map of key names to key definitions.
+   - Key space key is (topicrefelem, (ancestor topicref elements))
+   - Key space set is an ordered sequence of key spaces, constructed in depth-first
+     document order and breadth-first map order
+     
+2. Maintain a stack of ancestor key spaces: any topicref or map that defines
+   names a key scope creates a new sequence of active key spaces and pushes it on the stack
+   
+3. For each new key definition, add it to the current key spaces unqualified, and to each ancestor key space qualified by the scopes from the ancestor to the key.     
+     

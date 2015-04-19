@@ -51,6 +51,51 @@ module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-ut
    return concat('dfst', $sep, $repo, $sep, $branch) 
  };
  
+ (: Gets the git repository for a document  :)
+ declare function bxutil:getGitRepoForDoc($doc as document-node()) {
+    let $uri := document-uri($doc)
+    return if (starts-with($uri, 'dfst^'))
+       then 
+         let $db := tokenize($uri, '/')[1]         
+         let $gitMetadata := bxutil:getGitMetadata($db)
+         return string($gitMetadata/gitstate/repo)
+       else 'No associated git repository'
+ };
+ 
+ (: Gets the git repository for a document  :)
+ declare function bxutil:getGitBranchForDoc($doc as document-node()) {
+    let $uri := document-uri($doc)
+    return if (starts-with($uri, 'dfst^'))
+       then 
+         let $db := tokenize($uri, '/')[1]         
+         let $gitMetadata := bxutil:getGitMetadata($db)
+         return string($gitMetadata/gitstate/branch)
+       else 'No associated git repository'
+ };
+ 
+ (: Gets the git repository for a document  :)
+ declare function bxutil:getGitCommitForDoc($doc as document-node()) {
+    let $uri := document-uri($doc)
+    return if (starts-with($uri, 'dfst^'))
+       then 
+         let $db := tokenize($uri, '/')[1]         
+         let $gitMetadata := bxutil:getGitMetadata($db)
+         return string($gitMetadata/gitstate/commit)
+       else 'No associated git repository'
+ };
+ 
+ (: Gets the git metadata document for the database :)
+ declare function bxutil:getGitMetadata($db as xs:string) as element(dfst_metadata)? {
+   let $uri as xs:string := concat($db, '/dfst/metadata.xml')
+   return 
+   try {
+     doc($uri)/*
+   } catch * { 
+     () 
+   }
+    
+ };
+ 
  (: Given a document, returns the path to the doc, omitting the database name :)
  declare function bxutil:getPathForDoc($doc as document-node()) as xs:string {
    bxutil:getPathForDocURI(document-uri($doc))
