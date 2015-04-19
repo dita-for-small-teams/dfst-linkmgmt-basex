@@ -247,7 +247,7 @@ declare function df:isTopicRef($topicref as element()) as xs:boolean {
  : Returns a single <mapTree> element containing tree items
  : for the complete map tree.
  :)
-declare function df:getMapTree($map as document-node()) as element(mapTree)* {
+declare function df:getMapTree($map as document-node()) as element(mapTree) {
   (: The map Uri is the object ID of the map tree, meaning every map tree
      is identified by the map from which it is constructed.
      
@@ -396,8 +396,17 @@ declare function df:serializeKeyBinding($keyBinding) as element()* {
 (:~
  : Constructs the key spaces for a map tree
  :
- : Returns a sequence of key spaces maps, one for the root (anonymous) key space,
- : one for each key scope defined in the map.
+ : The key spaces are an ordered sequence of key spaces.
+ :  
+ : The identity of a key space is the element that defines it and
+ : all of its ancestor key spaces. Because the same map could be
+ : used multiple times by a parent map, the space-defining element
+ : itself is insufficient to identify the key space. In addition,
+ : direct-URI conrefs could also result in the same scope-defining
+ : element being used multiple times in different parent scopes.
+ :
+ : Returns a sequence of key spaces, where each key space is a map
+ : of key names to an ordered sequence of key definitions
  :)
 declare function df:constructKeySpacesForMapTree($mapTree as element(mapTree)) {
   (: Walk the map tree, using a breadth-first traveral per the DITA key space construction
@@ -418,8 +427,25 @@ declare function df:constructKeySpacesForMapTree($mapTree as element(mapTree)) {
      map or topicref establishes the space independent of there
      being any keys defined within the scope.
      
-     Finally, the identify of a key space is the root map
-     and fully-qualified key scope name.
+     Within a given parent key scope, the identity of each subscope is
+     the element that declares the key scope name. Key scope names do
+     not need to be unique within a given parent key space. In that case,
+     normal key definition precedence rules apply when resolving keys
+     in the context of the parent key scope:                                    
+      
+      <topicgroup keyscope="one">
+        <keydef keys="a" id="s1a"/>
+        <topicref keyref="a"/> <!-- s1a -->
+        <topicref keyref="b"/> <!-- undefined -->
+      </topicgroup>
+      <topicgroup keyscope="one">
+        <keydef keys="a" id="s2a"/>
+        <keydef keys="b" id="s2b"/>
+        <topicref keyref="a"/> <!-- s2a -->
+        <topicref keyref="b"/> <!-- s2b -->
+      </topicgroup>
+      <topicref keyref="one.a"/> <!-- s1a -->
+      <topicref keyref="one.b"/> <!-- s2b -->
      
      Per the DITA spec, scope names are separated by "." (period)
      to construct qualified scope names.
@@ -427,15 +453,20 @@ declare function df:constructKeySpacesForMapTree($mapTree as element(mapTree)) {
      Note also that a key name may itself contain "." characters:
      there is no syntactic distinction between a scope-qualified
      key name and a key name that happens to include a ".". This
-     allows higher-level key spaces to override keys from descendant
-     key scopes.
+     allows higher-level key spaces to override scope-qualified 
+     keys from descendant key scopes.
      :)
      
   (: FIXME: actually walk the map tree :)   
   let $keySpaces := df:constructKeySpacesForMap(
                      $mapDoc, 
-                     (map { '#root' : map {} }))
+                     (map { df:getKeySpaceID(($mapDoc/*), ()) : map {} }))
   return $keySpaces
+};
+
+declare function df:getKeySpaceID($spaceDefiningElem as element(),
+                                  $ancestorKeySpaces) as xs:string {
+   map:serialize(map {$spaceDefiningElem : ()})
 };
 
 (:~
@@ -445,8 +476,8 @@ declare function df:constructKeySpacesForMapTree($mapTree as element(mapTree)) {
  :)
 declare function df:constructKeySpacesForMap(
                       $mapDoc as document-node(), (: Map document to get key scopes and definitions from :)
-                      $keySpaces (: A map of key scope names to key spaces.
-                       
+                      $keySpaces (: A map of scope-defining elements (map or topicref) to key spaces.
+                      
                                     Each key space in turn contains any descendant key spaces, reflecting
                                     the scope hierarchy of the map tree.
                                    
@@ -454,21 +485,14 @@ declare function df:constructKeySpacesForMap(
                                     the root anonymous key space.
                                     :)
                     ) {
-                    
-   (: The map element can specify key scope names, which create key scopes rooted at the map. :)
-   let $currentKeySpaces := $keySpaces 
-   let $temp := for $scopeName in tokenize($mapDoc/@keyscope, ' ')
-       return if (not(map:contains($keySpaces, $scopeName)))
-                 then map:put($currentKeySpaces, $scopeName, map { 'scopeName' : $scopeName })
-                 else ()
-
-   (: Walk the map's element tree in depth-first order and
-      process those topicrefs that define new key scopes or
-      define key bindings, or both.
-      
-    :)
+    let $currentKeySpaces := 
+        if (string($mapDoc/*/@keyscope) = '') 
+           then $keySpaces
+           else map:merge((map {},
+                           for $scopeName in tokenize($mapDoc/*/@keyscope, ' ')
+                              return map:entry($mapDoc/*, map {})))
     
-    return $currentKeySpaces
+    return $keySpaces
     
 };
 
@@ -479,10 +503,10 @@ declare function df:constructKeySpacesForMap(
  : topicref's resource or subelements (or both).
  :
  : topicRef    : A topicref
- : keySpaceSet : A map of key scope names to key spaces.
+ : keySpaces   : A map of key-defining elements to key spaces.
  : keyScopes   : List of names of the currently-active key scopes of which the topicrefs are members.
  :
- : Returns : An updated keySpaceSet reflecting the new key spaces and key definitions. 
+ : Returns : An updated keySpaces map reflecting the new key spaces and key definitions. 
  :)
 declare function df:constructKeySpacesForTopicref(
              $topicRef as element(),
@@ -491,8 +515,10 @@ declare function df:constructKeySpacesForTopicref(
    let $newScopeNames := tokenize($topicRef/@keyscope, ' ')
    let $keyNames := tokenize($topicRef/@keys, ' ')
    let $currentKeySpaces := 
-       if ($newScopeNames) 
-          then for $scopeName in $newScopeNames return map { $scopeName : () }
+       if ($newScopeNames)
+          then map:merge((map {}, 
+                         for $scopeName in $newScopeNames
+                             return map:entry($topicRef, map {})))
           else $keySpaces
    (: If there are any key names, construct the key bindings for them:
    
@@ -510,24 +536,29 @@ declare function df:constructKeySpacesForTopicref(
       A key definition is a map of a key name to a set of key bindings.
    :)
    let $keyDefinitions := df:constructKeyDefinitionsForTopicref($topicRef)
-   let $resultKeySpaces :=
-       for $keySpace in $currentKeySpaces
-           return df:addKeyDefinitionsToKeySpace(
-                      $keyDefinitions, 
-                      $keySpace)
-   return $resultKeySpaces
+   (: Add these key definitions to the current keyspaces: :)
+   let $updatedKeySpaces := 
+       map:merge(($currentKeySpaces,
+                  $keyDefinitions))
+                        
+   
+                 
+   return map { 'foo' : 'bar' }
   
 };
 
 (:~
  : Constructs the key definitions defined by the topicref, if any. 
  : 
- : Returns a sequence of key-name-to-key-binding maps.
+ : Returns a map of key names to key definition maps.
  :)
-declare function df:constructKeyDefinitionsForTopicref($topicRef as element()) {
-   let $keyNames := tokenize($topicRef/@keys, ' ')
-   for $keyName in $keyNames
-       return map { $keyName : df:constructKeyBinding($topicRef, $keyName)}
+declare function df:constructKeyDefinitionsForTopicref($topicRef as element()) as element(keyDef)* {
+   let $keyNames := tokenize($topicRef/@keys)
+   let $keyDefinitions :=
+         for $keyName in $keyNames
+             return  <keyDef keyname="{$keyName}">{df:constructKeyBinding($topicRef, $keyName)}</keyDef>
+       
+   return $keyDefinitions
 };
 
 (:~
@@ -556,7 +587,7 @@ declare function df:addKeyDefinitionsToKeySpace(
  :     }
  :
  :)
-declare function df:constructKeyBinding($topicRef as element(), $keyName as xs:string) {
+declare function df:constructKeyBinding($topicRef as element(), $keyName as xs:string) as element(keyBinding) {
   
   let $format := df:getEffectiveAttributeValue($topicRef, 'format') 
   let $scope := df:getEffectiveAttributeValue($topicRef, 'scope')
@@ -571,14 +602,13 @@ declare function df:constructKeyBinding($topicRef as element(), $keyName as xs:s
          else if ($targetResource)
                  then 'resolved'
                  else 'failed: URI not resolved'
-   return map { 'keyName' : $keyName,
-                 'topicref' : $topicRef,
-                 'resourceURI' : $resourceURI,
-                 'format' : $format,
-                 'scope'  : $scope,
-                 'targetResource' : $targetResource,
-                 'resolutionStatus' : $resolutionStatus
-              }
+   return <keyBinding keyName="{$keyName}"
+                 topicref="{$topicRef}"
+                 resourceURI="{$resourceURI}"
+                 format="{$format}"
+                 scope="{$scope}"
+                 resolutionStatus="{$resolutionStatus}"/>
+             
 };
     
 

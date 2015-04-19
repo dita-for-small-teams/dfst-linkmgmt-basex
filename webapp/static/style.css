@@ -120,6 +120,12 @@ p {
    overflow: scroll;
 }
 
+.sourceblock {
+   display: block;
+   width: 100%;
+   overflow: scroll;
+}
+
 .right {
   float: right;
   padding: 5px;

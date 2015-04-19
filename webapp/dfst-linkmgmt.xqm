@@ -178,10 +178,10 @@ declare
         <td>{bxutil:getPathForDoc($map)}</td>
         <td>{df:getTitleText($map/*)}</td>
         <td>
-        [{html:link('Map&#xa0;Tree', concat('/linkmgr/maptreeView/', document-uri($map)))}] 
-        [{html:link('Dependencies', concat('/linkmgr/dependencyView/', document-uri($map)))}] 
-        [{html:link('Reltables', concat('/linkmgr/reltableView/', document-uri($map)))}] 
-        [{html:link('Key&#xa0;Spaces', concat('/linkmgr/keyspaceView/', document-uri($map)))}] 
+        [{html:linkToTarget('Map&#xa0;Tree', concat('/linkmgr/maptreeView/', document-uri($map)), 'maptree')}] 
+        [{html:linkToTarget('Dependencies', concat('/linkmgr/dependencyView/', document-uri($map)), 'dependencies')}] 
+        [{html:linkToTarget('Reltables', concat('/linkmgr/reltableView/', document-uri($map)), 'reltables')}] 
+        [{html:linkToTarget('Key&#xa0;Spaces', concat('/linkmgr/keyspaceView/', document-uri($map)), 'keyspaces')}] 
         </td>
       </tr>
  };
@@ -195,10 +195,13 @@ declare
     let $dbName := bxutil:getDbNameForRepoAndBranch($repo, $branch)
     let $topics := df:getTopicDocs($dbName)
     for $topic in $topics
+      let $docURI := document-uri($topic)
       return <tr>
         <td>{bxutil:getPathForDoc($topic)}</td>
         <td>{df:getTitleText($topic/*)}</td>
-        <td>[Action 1][Action 2]</td>
+        <td>[{html:linkToTarget('Source', concat('/linkmgr/docview/', $docURI, '/src'), 'sourceView')}]
+            [{html:linkToTarget('Dependencies', concat('/linkmgr/dependencyView/', $docURI), 'dependencies')}] 
+            </td>
       </tr>
  };
 

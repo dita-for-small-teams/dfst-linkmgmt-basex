@@ -328,29 +328,61 @@ declare function html:focus(
 };
 
 (:~
- : Creates a link to the specified target.
+ : Creates a link to the specified URI.
  : @param  $text   link text
- : @param  $target target
+ : @param  $URI URI
  : @return link
  :)
 declare function html:link(
   $text   as xs:string,
-  $target as xs:string
+  $URI as xs:string
 ) as element(a) {
-  <a href="{ $target }">{ $text }</a>
+  <a href="{ $URI }">{ $text }</a>
 };
 
 (:~
- : Creates a link to the specified target.
+ : Creates a link to the specified URI.
  : @param  $text   link text
- : @param  $target target
+ : @param  $URI URI
+ : @param  $target frame or page target.
+ : @return link
+ :)
+declare function html:linkToTarget(
+  $text   as xs:string,
+  $URI as xs:string,
+  $target as xs:string (: @target value :)
+) as element(a) {
+  <a href="{ $URI }" target="{$target}">{ $text }</a>
+};
+
+(:~
+ : Creates a link to the specified URI.
+ : @param  $text   link text
+ : @param  $URI URI
  : @param  $params map with query parameters
  : @return link
  :)
 declare function html:link(
   $text   as xs:string,
+  $URI as xs:string,
+  $params as map(*)
+) as element(a) {
+  html:link($text, web:create-url($URI, $params))
+};
+
+
+(:~
+ : Creates a link to the specified URI.
+ : @param  $text   link text
+ : @param  $URI URI
+ : @param  $params map with query parameters
+ : @return link
+ :)
+declare function html:linkToTarget(
+  $text   as xs:string,
+  $URI as xs:string,
   $target as xs:string,
   $params as map(*)
 ) as element(a) {
-  html:link($text, web:create-url($target, $params))
+  html:linkToTarget($text, web:create-url($URI, $params), $target)
 };

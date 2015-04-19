@@ -75,7 +75,7 @@ declare
                  then
                    let $keyName := tokenize($topicRef/@keys, ' ')[1]
                    let $keyBinding := df:constructKeyBinding($topicRef, $keyName)
-                   return map:serialize($keyBinding)
+                   return serialize($keyBinding)
                  else "No key-defining topicref found"
 
             }</pre>
@@ -89,7 +89,7 @@ declare
              return if ($topicRef)
                  then
                    let $keydefs := df:constructKeyDefinitionsForTopicref($topicRef)
-                   return string-join(for $keydef in $keydefs return map:serialize($keydef), ',' ||out:nl())
+                   return serialize($keydefs)
                  else "No key-defining topicref found"
 
             }</pre>
