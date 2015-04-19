@@ -97,11 +97,11 @@ module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-ut
  };
  
  (: Given a document, returns the path to the doc, omitting the database name :)
- declare function bxutil:getPathForDoc($doc as document-node()) as xs:string {
+ declare function bxutil:getPathForDoc($doc as document-node()) as xs:string? {
    bxutil:getPathForDocURI(document-uri($doc))
  };
 
- declare function bxutil:getPathForDocURI($uri as xs:string) as xs:string {
+ declare function bxutil:getPathForDocURI($uri as xs:string) as xs:string? {
    string-join(tokenize($uri, '/')[position() gt 1], '/')
  };
 

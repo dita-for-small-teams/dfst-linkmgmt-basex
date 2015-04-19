@@ -178,6 +178,8 @@ declare
         <td>{bxutil:getPathForDoc($map)}</td>
         <td>{df:getTitleText($map/*)}</td>
         <td>
+        [{html:linkToTarget('Navigation&#xa0;Tree', concat('/linkmgr/navtreeView/', document-uri($map)),
+         'navtree')}] 
         [{html:linkToTarget('Map&#xa0;Tree', concat('/linkmgr/maptreeView/', document-uri($map)), 'maptree')}] 
         [{html:linkToTarget('Dependencies', concat('/linkmgr/dependencyView/', document-uri($map)), 'dependencies')}] 
         [{html:linkToTarget('Reltables', concat('/linkmgr/reltableView/', document-uri($map)), 'reltables')}] 
@@ -200,6 +202,7 @@ declare
         <td>{bxutil:getPathForDoc($topic)}</td>
         <td>{df:getTitleText($topic/*)}</td>
         <td>[{html:linkToTarget('Source', concat('/linkmgr/docview/', $docURI, '/src'), 'sourceView')}]
+            [{html:linkToTarget('Where&#xa0;Used?', concat('/linkmgr/whereUsedView/', $docURI), 'whereused')}] 
             [{html:linkToTarget('Dependencies', concat('/linkmgr/dependencyView/', $docURI), 'dependencies')}] 
             </td>
       </tr>

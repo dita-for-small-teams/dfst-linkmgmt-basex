@@ -44,6 +44,33 @@ declare
  </html>
 };
 
+declare
+  %rest:path("/linkmgr/navtreeView/{$docURI=.+}")
+  %output:method("xhtml")
+  %output:omit-xml-declaration("no")
+  %output:doctype-public("-//W3C//DTD XHTML 1.0 Transitional//EN")
+  %output:doctype-system("http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd")
+  function linkmgr:navtreeView($docURI as xs:string)
+  as element(Q{http://www.w3.org/1999/xhtml}html)
+{
+   let $map := doc($docURI)
+   let $tree := linkmgr:getMapNavTree($map)
+   return
+   <html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+      <title>Nav Tree for {df:getTitleText($map/*)}</title>
+      <link rel="stylesheet" type="text/css" href="/static/style.css"/>
+    </head>
+    <body>
+      <h1>Navigation Tree for "{df:getTitleText($map/*)}"</h1>
+      {linkmgr:reportDocDetails($map)}
+      <div class="tree">
+       { $tree }
+      </div>
+   </body>
+ </html>
+};
+
 
 (:~
  : Document source view
@@ -110,6 +137,85 @@ declare
       }
    </body>
  </html>
+};
+
+(:~
+ : Document where-used view
+ :)
+declare
+  %rest:path("/linkmgr/whereUsedView/{$docURI=.+}")
+  %output:method("xhtml")
+  %output:omit-xml-declaration("no")
+  %output:doctype-public("-//W3C//DTD XHTML 1.0 Transitional//EN")
+  %output:doctype-system("http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd")
+  function linkmgr:docViewWhereUsed($docURI as xs:string)
+  as element(Q{http://www.w3.org/1999/xhtml}html)
+{
+   let $doc := doc($docURI)
+   let $title := df:getTitleText($doc/*)
+   return
+   <html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+      <title>Where-Used Report for Document {$title}</title>
+      <link rel="stylesheet" type="text/css" href="/static/style.css"/>
+    </head>
+    <body>
+      <h1>Where-Used Report for Document "{$title}"</h1>
+      {linkmgr:reportDocDetails($doc)}
+      <div class="listblock">
+        <h4>Users of This Document</h4>
+        <p>List of documents that have some form of pointer to this document.</p>
+      </div>
+      { if (df:isMap($doc))
+           then linkmgr:listMapWhereUsed($doc)
+           else linkmgr:listTopicWhereUsed($doc)
+      }
+   </body>
+ </html>
+};
+
+declare function linkmgr:listMapWhereUsed($doc as document-node()) as node()* {
+  <div>
+      <div class="listblock">
+        <h4>Used As a Submap</h4>
+        <p>List of maps that use this map as a submap. Indicates
+        whether the use is direct or indirect.</p>
+      </div>
+      <div class="listblock">
+        <h4>Used as a Peer Map</h4>
+        <p>List of maps that make a peer map reference to this map</p>
+      </div>
+      <div class="listblock">
+        <h4>Used Via Peer Key Reference</h4>
+        <p>List of documents (maps and topics) that make a peer-map reference to this map.</p>
+      </div>
+      <div class="listblock">
+        <h4>External-Scope Resources</h4>
+        <p>List of external-scope resources goes here</p>
+      </div>
+    </div>
+};
+
+declare function linkmgr:listTopicWhereUsed($doc as document-node()) as node()* {
+  <div>
+      <div class="listblock">
+        <h4>Used As a Submap</h4>
+        <p>List of maps that use this map as a submap. Indicates
+        whether the use is direct or indirect.</p>
+      </div>
+      <div class="listblock">
+        <h4>Used as a Peer Map</h4>
+        <p>List of maps that make a peer map reference to this map</p>
+      </div>
+      <div class="listblock">
+        <h4>Used Via Peer Key Reference</h4>
+        <p>List of documents (maps and topics) that make a peer-map reference to this map.</p>
+      </div>
+      <div class="listblock">
+        <h4>External-Scope Resources</h4>
+        <p>List of external-scope resources goes here</p>
+      </div>
+    </div>
 };
 
 declare function linkmgr:listMapDependencies($doc as document-node()) as node()* {
@@ -254,9 +360,11 @@ declare function linkmgr:treeToHtml($tree as element(mapTree)) as node()* {
 };
 
 declare function linkmgr:makeLinkToDocSource($docURI as xs:string) as node()* {
-     <a 
+     if ($docURI != '')
+       then <a 
          target="sourceView" 
          href="/linkmgr/docview/{$docURI}/src">{bxutil:getPathForDocURI($docURI)}</a>
+       else $docURI
 };
 
 declare function linkmgr:treeItemToHtml($treeItem as element()) as node()* {
@@ -271,6 +379,97 @@ declare function linkmgr:treeItemToHtml($treeItem as element()) as node()* {
              for $child in $treeItem/children/treeItem 
                    return linkmgr:treeItemToHtml($child)
              }</ul>
+          else ()
+      }
+    </li>
+};
+
+(:~
+ : Constructs an HTML representation of the navigation tree of a DITA map.
+ :)
+declare function linkmgr:getMapNavTree($doc) as node()* {
+   <ul class="navtree tree">
+     {for $topicref in $doc/*/*[df:class(., 'map/topicref')][not(df:isResourceOnly(.))]
+          return if (df:isMapRef($topicref))
+                    then linkmgr:getNavTreeForSubmap($topicref)
+                    else if (df:isTopicGroup($topicref))
+                         then linkmgr:getNavTreeForTopicGroup($topicref)
+                    else linkmgr:getNavTreeForTopicref($topicref) 
+     }
+   </ul>
+};
+
+(: Constructs a navigation tree list item for a sub amp :)
+declare function linkmgr:getNavTreeForSubmap($topicref) as node()* {
+   
+   let $mapElem := df:resolveTopicRef($topicref)
+   return if ($mapElem)
+      then for $topicref in $mapElem/*[df:class(., 'map/topicref')][not(df:isResourceOnly(.))]
+               return linkmgr:getNavTreeForTopicref($topicref)
+      else ()
+};
+
+(: Constructs a navigation tree list item for a topicref :)
+declare function linkmgr:getNavTreeForTopicGroup($topicref) as node()* {
+  for $child in $topicref/*[df:class(., 'map/topicref')][not(df:isResourceOnly(.))]
+      return 
+        if (df:isTopicGroup($child))
+           then linkmgr:getNavTreeForTopicGroup($child)
+           else if (df:isMapRef($child))
+                then linkmgr:getNavTreeForSubmap($child)
+                else linkmgr:getNavTreeForTopicref($child)
+};
+
+(: Constructs a navigation tree list item for a topicref :)
+declare function linkmgr:getNavTreeForTopicref($topicref) as node()* {
+  let $navTitle := df:getNavtitleForTopicref($topicref)
+  let $format := df:getEffectiveAttributeValue($topicref, 'format')
+  let $targetResource :=
+      if ($format = 'dita')
+         then 
+            try {
+             df:resolveTopicRef($topicref)
+            } catch * {
+             ()
+            }
+         else () 
+  let $resourceRef := 
+      if ($topicref/@keyref != '')
+        then concat('Keyref [', $topicref/@keyref, ']')
+        else concat('URI ref "', $topicref/@href, '"')
+  let $childTopicrefs := $topicref/*[df:isTopicRef(.) or df:isMapRef(.)][not(df:isResourceOnly(.))]
+  return
+    <li class="treeitem navtreeitem">
+      <span class="elemtype">[{name($topicref)}]</span>
+      <span class="navtitle">{
+        if ($navTitle != '')
+           then $navTitle
+           else if ($format = 'dita') 
+                   then '{Resource not resolved}'
+                   else concat($format, ' resource')
+      }</span>      
+      {
+      (: FIXME: Is the resource can't be resolved, need to resolve the topicref
+                to the URI of the ultimate target, if there is one.
+       :)
+      
+      if (not(df:isTopicHead($topicref)))
+           then 
+            <span class="resource">{
+            if ($targetResource)
+                then linkmgr:makeLinkToDocSource(document-uri(root($targetResource)))
+                else $resourceRef               
+            }]</span>
+           else ''}
+      {if ($childTopicrefs)
+          then
+            <ul class="navtree tree {$topicref/@collection-type}">{
+              for $child in $childTopicrefs 
+                 return 
+                   if (df:isMapRef($child))
+                      then linkmgr:getNavTreeForSubmap($child)
+                      else linkmgr:getNavTreeForTopicref($child)
+            }</ul>
           else ()
       }
     </li>

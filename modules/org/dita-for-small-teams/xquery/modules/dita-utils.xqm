@@ -72,6 +72,69 @@ declare function df:getNavtitleForTopic($topic as element()) as node()* {
    return $navtitle
 };
 
+declare function df:getDirectNavtitleForTopicref($topicref as element()) as xs:string {
+  (: FIXME: This needs to go through some sort of transform, XSLT or XQuery,
+            that handles element-to-string formatting. 
+   :)
+  let $text := string(($topicref/*[df:class(., 'map/topicmeta')]/*[df:class(., 'topic/navtitle')],
+                $topicref/@navtitle)[1])
+  return normalize-space($text)
+};
+
+declare function df:getNavtitleForTopicref($topicref as element()) as node()* {
+  let $isLockTitle as xs:boolean := $topicref/@locktitle = ('yes')
+  let $directNavtitle as xs:string := df:getDirectNavtitleForTopicref($topicref)
+  let $text :=
+    if (($topicref/@format = 'ditamap' and not($topicref/@scope = ('peer', 'external'))) or 
+                        df:isTopicGroup($topicref))
+       then '' (: No navigation titles for submaps or topicgroups :)
+       else if ((df:isTopicHead($topicref)) or
+                ($isLockTitle and not($directNavtitle = '')) or
+                ($topicref/@format and not($topicref/@format = 'dita')))
+            then $directNavtitle 
+            else (: There must be a topic resource and @locktitle is "no" :)
+              let $targetTopic := df:resolveTopicRef($topicref)
+              return if ($targetTopic)
+                 then df:getNavtitleForTopic($targetTopic)
+                 else ''
+    return text { $text }
+    
+};
+
+declare function df:isTopicGroup($context as element()) as xs:boolean {
+  let $classIsTopicgroup as xs:boolean := df:class($context, 'mapgroup-d/topicgroup')
+  let $classIsTopicrefOrTopichead as xs:boolean := 
+              (df:class($context, 'map/topicref') or
+               df:class($context, 'mapgroup-d/topichead'))
+  let $noHrefOrKeyref as xs:boolean := 
+             ((not($context/@href) or
+                  ($context/@href = '')) and
+                  (not($context/@keyref) or
+                   ($context/@keyref = '')))
+  let $noNavtitleAtt as xs:boolean := 
+             (($context/@navtitle = '') or 
+              not($context/@navtitle))
+  let $noNavtitleElem as xs:boolean := 
+             not($context/*[contains(@class, ' map/topicmeta ')]/*[contains(@class, ' topic/navtitle ')])
+  return 
+     ($classIsTopicgroup or
+      ($classIsTopicrefOrTopichead and
+       $noHrefOrKeyref and
+       $noNavtitleAtt and
+       $noNavtitleElem))
+
+};
+
+declare function df:isTopicHead($context as element()) as xs:boolean {
+    let $result as xs:boolean :=
+      (df:class($context, 'map/topicref') and
+        (not($context/@href) or $context/@href = '') and
+        (not($context/@keyref) or $context/@keyref = '') and
+        ($context/@navtitle != '' or
+         $context/*[df:class(., 'map/topicmeta')]/*[df:class(., 'topic/navtitle')]))
+    return $result         
+};
+
 (: Get all the DITA maps in the specified collection :)
 declare function df:getMaps($collectionSpec as xs:string) as document-node()* {
   for $doc in collection($collectionSpec) where $doc[contains(/*/@class, ' map/map ')] 
@@ -115,6 +178,7 @@ declare function df:getEffectiveAttributeValue($elem as element(), $attName as x
          switch ($attName) 
           case 'scope' return 'local'
           case 'format' return 'dita'
+          case 'processing-role' return 'normal'
           default return ''
          
 };
@@ -176,7 +240,12 @@ declare function df:resolveTopicOrMapUri($topicref as element(), $targetUri as x
                      let $parentUri := relpath:getParent($baseUri)
                      return relpath:newFile($parentUri, $targetResourcePart)
                   else resolve-uri($targetResourcePart, $baseUri)           
-           return doc($resolvedUri)
+           return 
+             try {
+               doc($resolvedUri)
+             } catch * {
+               ()
+             }
          else root($topicref)
    return 
      if ($targetDoc/*[df:class(., 'topic/topic') or df:class(., 'topic/topic')] )
@@ -189,7 +258,7 @@ declare function df:resolveTopicOrMapUri($topicref as element(), $targetUri as x
 (: Give a topicref, return the effective URI of the ultimate target
  : of the topicref.
  :)
-declare function df:getEffectiveTargetUri($refElem as element()) as xs:string {
+declare function df:getEffectiveTargetUri($refElem as element()) as xs:string? {
   df:getEffectiveTargetUri(root($refElem)/*, $refElem)
 };
 
@@ -238,13 +307,21 @@ declare function df:getEffectiveUriForKeyref($rootMap, $refElem) as xs:string? {
  :
  :)
 declare function df:isMapRef($topicref as element()) as xs:boolean {
-  df:isTopicRef($topicref) and $topicref/@format = 'ditamap' 
+  (df:class($topicref, 'map/topciref') and ($topicref/@format = 'ditamap')) 
 };
 
 declare function df:isTopicRef($topicref as element()) as xs:boolean {
   df:class($topicref, 'map/topicref') and
       (($topicref/@href and $topicref/@href != '') or
        ($topicref/@keyref and $topicref/@keyref != ''))
+};
+
+(:~
+ : Returns true if the topicref is a resource-only topicref (is normal role).
+ :)
+declare function df:isResourceOnly($topicref as element()) as xs:boolean {
+    let $processing-role := df:getEffectiveAttributeValue($topicref, 'processing-role')
+    return $processing-role = 'resource-only'
 };
 
 (:~
