@@ -104,6 +104,41 @@ declare
         <h4>Content references</h4>
         <p>List of content references goes here</p>
       </div>
+      { if (df:isMap($doc))
+           then linkmgr:listMapDependencies($doc)
+           else linkmgr:listTopicDependencies($doc)
+      }
+   </body>
+ </html>
+};
+
+declare function linkmgr:listMapDependencies($doc as document-node()) as node()* {
+  <div>
+      <div class="listblock">
+        <h4>DITA Topics</h4>
+        <p>List of dita topics used from this map</p>
+      </div>
+      <div class="listblock">
+        <h4>DITA Maps</h4>
+        <p>List of dita topics used from this map</p>
+      </div>
+      <div class="listblock">
+        <h4>Local-Scope Non-DITA Resources</h4>
+        <p>List of local-scope non-DITA resources goes here</p>
+      </div>
+      <div class="listblock">
+        <h4>External-Scope Resources</h4>
+        <p>List of external-scope resources goes here</p>
+      </div>
+    </div>
+};
+
+declare function linkmgr:listTopicDependencies($doc as document-node()) as node()* {
+   <div>
+      <div class="listblock">
+        <h4>Image References</h4>
+        <p>List of referenced images goes here</p>
+      </div>
       <div class="listblock">
         <h4>Cross references</h4>
         <p>List of cross references goes here</p>
@@ -112,8 +147,7 @@ declare
         <h4>Related Links</h4>
         <p>List of related links goes here</p>
       </div>
-   </body>
- </html>
+    </div>
 };
 
 (:~
