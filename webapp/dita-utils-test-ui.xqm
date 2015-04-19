@@ -51,6 +51,21 @@ declare
       </div>
       <div class="action-block">
         <h3>Tests</h3>
+        <div class="resultblodk">
+          <h4>test isMapRef(.)</h4>
+          <div class="result">
+          <pre>{
+             let $dbName := bxutil:getDbNameForRepoAndBranch($repo, $branch)
+             let $map := doc(concat($dbName, "/docs/tests/complex_map/complex_map.ditamap"))
+             let $notMapRef := ($map//*[df:class(., 'map/topicref')][@href][not(@format)])[1]
+             let $mapRef := ($map//*[df:class(., 'map/topicref')][@format = 'ditamap'])[1]
+             return
+              (<p>df:class($mapRef, 'map/topciref')={df:class($mapRef, 'map/topciref')}</p>,
+              <p>($topicref/@format = 'ditamap'))={($mapRef/@format = 'ditamap')}</p>, 
+              <p>isMapRef($mapRef)={df:isMapRef($mapRef)}</p>)
+          }</pre>
+          </div>
+        </div>
         <div class="resultblock">
           <h4>testGetMapTree():</h4>
           <div class="result">

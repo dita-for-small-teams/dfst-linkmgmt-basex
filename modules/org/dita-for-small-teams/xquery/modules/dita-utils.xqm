@@ -307,7 +307,7 @@ declare function df:getEffectiveUriForKeyref($rootMap, $refElem) as xs:string? {
  :
  :)
 declare function df:isMapRef($topicref as element()) as xs:boolean {
-  (df:class($topicref, 'map/topciref') and ($topicref/@format = 'ditamap')) 
+  (df:class($topicref, 'map/topicref') and ($topicref/@format = 'ditamap')) 
 };
 
 declare function df:isTopicRef($topicref as element()) as xs:boolean {

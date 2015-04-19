@@ -389,13 +389,7 @@ declare function linkmgr:treeItemToHtml($treeItem as element()) as node()* {
  :)
 declare function linkmgr:getMapNavTree($doc) as node()* {
    <ul class="navtree tree">
-     {for $topicref in $doc/*/*[df:class(., 'map/topicref')][not(df:isResourceOnly(.))]
-          return if (df:isMapRef($topicref))
-                    then linkmgr:getNavTreeForSubmap($topicref)
-                    else if (df:isTopicGroup($topicref))
-                         then linkmgr:getNavTreeForTopicGroup($topicref)
-                    else linkmgr:getNavTreeForTopicref($topicref) 
-     }
+     {linkmgr:getNavTreeForTopicrefChildren($doc/*)}
    </ul>
 };
 
@@ -404,14 +398,17 @@ declare function linkmgr:getNavTreeForSubmap($topicref) as node()* {
    
    let $mapElem := df:resolveTopicRef($topicref)
    return if ($mapElem)
-      then for $topicref in $mapElem/*[df:class(., 'map/topicref')][not(df:isResourceOnly(.))]
-               return linkmgr:getNavTreeForTopicref($topicref)
+      then linkmgr:getNavTreeForTopicrefChildren($mapElem)
       else ()
 };
 
 (: Constructs a navigation tree list item for a topicref :)
 declare function linkmgr:getNavTreeForTopicGroup($topicref) as node()* {
-  for $child in $topicref/*[df:class(., 'map/topicref')][not(df:isResourceOnly(.))]
+  linkmgr:getNavTreeForTopicrefChildren($topicref)
+};
+
+declare function linkmgr:getNavTreeForTopicrefChildren($context as element()) as node()* { 
+  for $child in $context/*[df:class(., 'map/topicref')][not(df:isResourceOnly(.))]
       return 
         if (df:isTopicGroup($child))
            then linkmgr:getNavTreeForTopicGroup($child)
@@ -437,7 +434,7 @@ declare function linkmgr:getNavTreeForTopicref($topicref) as node()* {
       if ($topicref/@keyref != '')
         then concat('Keyref [', $topicref/@keyref, ']')
         else concat('URI ref "', $topicref/@href, '"')
-  let $childTopicrefs := $topicref/*[df:isTopicRef(.) or df:isMapRef(.)][not(df:isResourceOnly(.))]
+  let $childNavTree := linkmgr:getNavTreeForTopicrefChildren($topicref)
   return
     <li class="treeitem navtreeitem">
       <span class="elemtype">[{name($topicref)}]</span>
@@ -461,14 +458,10 @@ declare function linkmgr:getNavTreeForTopicref($topicref) as node()* {
                 else $resourceRef               
             }]</span>
            else ''}
-      {if ($childTopicrefs)
+      {if ($childNavTree)
           then
             <ul class="navtree tree {$topicref/@collection-type}">{
-              for $child in $childTopicrefs 
-                 return 
-                   if (df:isMapRef($child))
-                      then linkmgr:getNavTreeForSubmap($child)
-                      else linkmgr:getNavTreeForTopicref($child)
+              $childNavTree
             }</ul>
           else ()
       }
