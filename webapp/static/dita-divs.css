@@ -114,10 +114,12 @@ body {
 
 *[class~="d4p-ruby-d/rt"] {
   display: ruby-text !important;
+  font-size: 50%;
 }
 
 *[class~="d4p-ruby-d/rb"] {
   display: ruby-base !important;
+  font-size: 50%;
 }
 *[class~="d4p-ruby-d/rp"] {
   display: none !important;
