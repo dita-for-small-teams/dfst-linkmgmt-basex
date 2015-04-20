@@ -25,6 +25,11 @@ body {
   font-style: italic;
 }
 
+*[class~="topic/keyword"] {
+  display: inline;
+  font-weight: bold;
+}
+
 span[data-attname="keyref"],
 span[data-attname="conkeyref"] 
 {
@@ -77,6 +82,37 @@ span[data-attname="conkeyref"]
   
 }
 
+*[class~="topic/dl"] {
+  display: block;
+}
+
+*[class~="topic/dlentry"] {
+  display: block;
+  margin-top: 12pt;
+  text-indent: 0pt;
+}
+
+*[class~="topic/dt"] {
+    display: block;
+    margin-left: 12pt;
+    float: left;
+    clear: left;
+    width: 10em;
+    text-align: left;
+    font-weight: bold;
+    color: green;  
+}
+
+*[class~="topic/dd"]{
+    display: block;
+    margin: 0 0 0 15em;
+    padding: 0 0 0.5em 0;
+ }
+
+*[class~="topic/dd"] *[class~="topic/p"]:first-child {
+  display: inline;
+}
+
 /*
  * Titles
  */
@@ -84,6 +120,8 @@ span[data-attname="conkeyref"]
 *[class~="topic/title"] {
   display: block;
   font-weight: bold;
+  margin-top: 12pt;
+  margin-bottom: 12pt;
 }
 
 
@@ -172,7 +210,7 @@ span[data-attname="conkeyref"]
 
    
 /* ===================
-   Highlight elements
+   Highlight domain
    =================== */
 
 *[class~="hi-d/i"] {
@@ -190,7 +228,69 @@ span[data-attname="conkeyref"]
 *[class~="hi-d/tt"] {
   font-family: courier, monospace;
 }
+
+/* ===================
+   software domain
+   =================== */
+
+*[class~="sw-d/filepath"] {
+  display: inline;
+  font-family: courier, monospace;
+}
+
+*[class~="sw-d/varname"] {
+  display: inline;
+  font-style: italic;
+}
+
+
+*[class~="sw-d/cmdname"] {
+  display: inline;
+  font-family: courier, fixed, monospace;
+}
+
+*[class~="sw-d/userinput"] {
+  display: inline;
+  font-family: courier, fixed, monospace;
+  color: green;
+}
+
+/* ===================
+   programming domain
+   =================== */
+
+*[class~="pr-d/synph"] {
+  display: block;
+  margin-top: 12pt; 
+  text-indent: 12pt;
+  font-family: courier, fixed, monospace;
+}
+
+*[class~="pr-d/kwd"] {
+  display: inline;  
+  font-weight: bold;
+}
+
+*[class~="pr-d/kwd"] {
+  display: inline;  
+  font-weight: bold;
+}
+
+*[class~="pr-d/var"] {
+  display: inline;  
+  font-style: italic;
+}
+
+/* ===================
+   user interface domain
+   =================== */
    
+*[class~="ui-d/uicontrol"] {
+  display: inline;
+  font-weight: bold;
+}
+
+
 /* ========
    Lists
    ======== */
@@ -199,18 +299,24 @@ span[data-attname="conkeyref"]
   list-style: decimal outside none;
 }
 
-*[class~="topic/li"] > *[class~="topic/p"]{
+*[class~="topic/li"] > *[class~="topic/p"]:first-child {
   display: inline;
+  text-indent: 0pt;
 }
 
 *[class~="topic/ol"] > *[class~="topic/li"]{
   display: list-item;
   margin-top: 12pt;
+  text-indent: 0pt;
+  list-style-position: outside;
+  list-style-type: decimal;
   color: blue;
 }
 
 *[class~="topic/ul"] > *[class~="topic/li"]{
   display: list-item;
+  text-indent: 0pt;
+  list-style-position: outside;
   color: green;
 }
 
@@ -219,5 +325,25 @@ span[data-attname="conkeyref"]
   color: black !important;
 }
 
+/* ========
+   Tables
+   ======== */
+
+*[class~="topic/table"] {
+  display: table;
+}
+
+*[class~="topic/tbody"],
+*[class~="topic/thead"] {
+  display: table-row-group;
+}
+
+*[class~="topic/row"] {
+  display: table-row;
+}
+
+*[class~="topic/entry"] {
+  display: table-cell;
+}
 
 

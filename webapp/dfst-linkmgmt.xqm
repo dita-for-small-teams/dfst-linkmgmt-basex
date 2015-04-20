@@ -92,8 +92,8 @@ declare
           <table class="listtable">
             <thead>
               <tr>
-                <th>Path</th>
                 <th>Title</th>
+                <th>Path</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -110,8 +110,8 @@ declare
           <table class="listtable">
             <thead>
               <tr>
-                <th>Path</th>
                 <th>Title</th>
+                <th>Path</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -175,8 +175,8 @@ declare
     let $maps := df:getMaps($dbName)
     for $map in $maps
       return <tr>
-        <td>{bxutil:getPathForDoc($map)}</td>
         <td>{df:getTitleText($map/*)}</td>
+        <td>{linkmgr:makeLinkToDocSource(document-uri(root($map)))}</td>
         <td>
         [{html:linkToTarget('Navigation&#xa0;Tree', concat('/linkmgr/navtreeView/', document-uri($map)),
          'navtree')}] 
@@ -200,10 +200,9 @@ declare
     for $topic in $topics
       let $docURI := document-uri($topic)
       return <tr>
-        <td>{bxutil:getPathForDoc($topic)}</td>
         <td>{df:getTitleText($topic/*)}</td>
-        <td>[{html:linkToTarget('Source', concat('/linkmgr/docview/', $docURI, '/src'), 'sourceView')}]
-            [{html:linkToTarget('Where&#xa0;Used?', concat('/linkmgr/whereUsedView/', $docURI), 'whereused')}] 
+        <td>{linkmgr:makeLinkToDocSource(document-uri(root($topic)))}</td>
+        <td>[{html:linkToTarget('Where&#xa0;Used?', concat('/linkmgr/whereUsedView/', $docURI), 'whereused')}] 
             [{html:linkToTarget('Dependencies', concat('/linkmgr/dependencyView/', $docURI), 'dependencies')}] 
         [{html:linkToTarget('Preview', concat('/linkmgr/docview/', $docURI, '/preview'), 'preview')}] 
             </td>
