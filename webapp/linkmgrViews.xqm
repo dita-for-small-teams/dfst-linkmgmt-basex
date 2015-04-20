@@ -372,7 +372,7 @@ declare function linkmgr:treeItemToHtml($treeItem as element()) as node()* {
     return
     <li class="treeitem">
       <span class="label">{string($treeItem/label)}</span> 
-      <span class="uri">[linkmgr:makeLinkToDocSource($docURI)]</span>
+      <span class="uri">[{linkmgr:makeLinkToDocSource($docURI)}]</span>
       {if ($treeItem/children) 
           then
              <ul class="tree">{
