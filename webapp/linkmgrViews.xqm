@@ -149,7 +149,7 @@ declare
         <h4>Content references</h4>
         <p>List of content references goes here</p>
       </div>
-      { if (df:isMap($doc))
+      { if (df:isMap($doc/*))
            then linkmgr:listMapDependencies($doc)
            else linkmgr:listTopicDependencies($doc)
       }
@@ -184,7 +184,7 @@ declare
         <h4>Users of This Document</h4>
         <p>List of documents that have some form of pointer to this document.</p>
       </div>
-      { if (df:isMap($doc))
+      { if (df:isMap($doc/*))
            then linkmgr:listMapWhereUsed($doc)
            else linkmgr:listTopicWhereUsed($doc)
       }

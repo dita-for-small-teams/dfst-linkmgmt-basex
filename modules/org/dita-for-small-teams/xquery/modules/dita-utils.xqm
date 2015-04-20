@@ -328,8 +328,8 @@ declare function df:isResourceOnly($topicref as element()) as xs:boolean {
  : Returns true if the specified document appears to be a 
  : DITA map document.
  :)
-declare function df:isMap($doc as document-node()) as xs:boolean {
-  df:class($doc/*, 'map/map')
+declare function df:isMap($elem as element()) as xs:boolean {
+  df:class($elem, 'map/map')
 };
 
 (:~
