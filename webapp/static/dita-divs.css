@@ -8,8 +8,53 @@ body {
  * Default styling
  */
  
- *[class~="topic/data"] {
+*[class~="topic/data"] {
   display: none;
+}
+
+.attribute {
+  display: none;
+}
+
+*[class~="topic/indexterm"] {
+  display: none;
+}
+
+*[class~="topic/term"] {
+  display: inline;
+  font-style: italic;
+}
+
+span[data-attname="keyref"],
+span[data-attname="conkeyref"] 
+{
+  display: inline !important;
+  font-style: italic;
+  color: green;
+}
+
+*[class~="topic/term"]  span[data-attname="keyref"]::before {
+  display: inline;
+  font-style: italic;
+  content: '[keyref: '
+}
+
+*[class~="topic/term"]  span[data-attname="keyref"]::after {
+  display: inline;
+  font-style: italic;
+  content: ']'
+}
+
+*[class~="topic/term"] span[data-attname="conkeyref"]:before {
+  display: inline;
+  font-style: italic;
+  content: '[conkeyref: '
+}
+
+*[class~="topic/term"] span[data-attname="conkeyref"]:after {
+  display: inline;
+  font-style: italic;
+  content: ']'
 }
 
 *[class~="topic/xref"] {
@@ -126,9 +171,9 @@ body {
 }
 
    
-/* ========
+/* ===================
    Highlight elements
-   ======== */
+   =================== */
 
 *[class~="hi-d/i"] {
   font-style: italic;

@@ -92,8 +92,16 @@ declare function preview:nodeToHTML($node as node()) as node()* {
 declare function preview:htmlFromElement($elem as element()) as node()* {
   
   <div class="{$elem/@class}">
+    {for $att in $elem/@* except ($elem/@class)
+         return preview:attributeToHTML($att)
+    }
     {for $node in $elem/node()
          return preview:nodeToHTML($node)
     }
   </div>
+};
+
+declare function preview:attributeToHTML($att as attribute()) as node()* {
+   <span class="attribute" data-attname="{name($att)}"
+     ><span class="attvalue">{string($att)}</span></span>
 };
