@@ -1,0 +1,32 @@
+/* CSS to style HTML divs using DITA @class value in the HTML @class attribute*/
+
+body {
+  font-family: Verdana,sans-serif;
+}
+
+*[class~="topic/title"] {
+  display: block;
+  margin-bottom: 12pt;
+  font-weight: bold;
+  font-size: 14pt;
+}
+
+*[class~="topic/p"] {
+  display: block;
+  margin-top: 6pt;
+  text-indent: 12pt;
+}
+
+*[class~="topic/note"]:before {
+   content: 'Note: ';
+   font-weight: bold;
+   display: inline;
+}
+
+*[class~="topic/note"] {
+  display: block;
+  margin-top: 6pt;
+  text-indent: 12pt;
+  border: solid 1pt blue
+  
+}

@@ -14,6 +14,7 @@ module namespace linkmgr='http://basex.org/modules/linkmgr';
 import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-utils";
 import module namespace linkutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
 import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-utils";
+import module namespace preview='http://basex.org/modules/htmlpreview' at "htmlPreview.xqm";
 
 declare
   %rest:path("/linkmgr/maptreeView/{$docURI=.+}")
@@ -102,6 +103,23 @@ declare
       </div>
    </body>
  </html>
+};
+
+(:~
+ : Document preview view
+ :)
+declare
+  %rest:path("/linkmgr/docview/{$docURI=.+}/preview")
+  %output:method("xhtml")
+  %output:omit-xml-declaration("no")
+  %output:doctype-public("-//W3C//DTD XHTML 1.0 Transitional//EN")
+  %output:doctype-system("http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd")
+  function linkmgr:docViewPreview($docURI as xs:string)
+  as element(Q{http://www.w3.org/1999/xhtml}html)
+{
+   let $doc := doc($docURI)
+   (: Apply preview XSLT to generate HTML from source doc :)
+   return preview:elementToHTML($doc/*)
 };
 
 (:~

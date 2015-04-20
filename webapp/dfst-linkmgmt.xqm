@@ -184,6 +184,7 @@ declare
         [{html:linkToTarget('Dependencies', concat('/linkmgr/dependencyView/', document-uri($map)), 'dependencies')}] 
         [{html:linkToTarget('Reltables', concat('/linkmgr/reltableView/', document-uri($map)), 'reltables')}] 
         [{html:linkToTarget('Key&#xa0;Spaces', concat('/linkmgr/keyspaceView/', document-uri($map)), 'keyspaces')}] 
+        [{html:linkToTarget('Preview', concat('/linkmgr/docview/', document-uri($map), '/preview'), 'preview')}] 
         </td>
       </tr>
  };
@@ -204,6 +205,7 @@ declare
         <td>[{html:linkToTarget('Source', concat('/linkmgr/docview/', $docURI, '/src'), 'sourceView')}]
             [{html:linkToTarget('Where&#xa0;Used?', concat('/linkmgr/whereUsedView/', $docURI), 'whereused')}] 
             [{html:linkToTarget('Dependencies', concat('/linkmgr/dependencyView/', $docURI), 'dependencies')}] 
+        [{html:linkToTarget('Preview', concat('/linkmgr/docview/', $docURI, '/preview'), 'preview')}] 
             </td>
       </tr>
  };

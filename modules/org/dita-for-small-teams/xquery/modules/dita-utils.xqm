@@ -333,6 +333,14 @@ declare function df:isMap($doc as document-node()) as xs:boolean {
 };
 
 (:~
+ : Returns true if the specified document appears to be a 
+ : DITA topic element
+ :)
+declare function df:isTopic($elem as element() ) as xs:boolean {
+  df:class($elem, 'topic/topic')
+};
+
+(:~
  : Gets the map tree rooted at the input map. The result tree
  : always includes the specified map.
  : 
