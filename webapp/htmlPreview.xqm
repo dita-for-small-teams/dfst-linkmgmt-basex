@@ -55,7 +55,7 @@ declare function preview:topicToHTML($topicElem as element()) as node()* {
 };
 
 declare function preview:topicToHTMLMarkup($topicElem as element()) as node()* {
-  <div class="topic {name($topicElem)}">
+  <div class="{$topicElem/@class}">
    {for $node in $topicElem/node()
         return preview:nodeToHTML($node)
     }

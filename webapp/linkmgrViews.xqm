@@ -347,7 +347,8 @@ declare function linkmgr:reportDocDetails($doc as document-node()) as node()* {
    return
     <div class="docdetails">
       <div><span class="label">URI:</span> <span
-        class="value">{linkmgr:makeLinkToDocSource(document-uri($doc))}</span></div>
+        class="value">{linkmgr:makeLinkToDocSource(document-uri($doc))}</span>
+        <span>[<a href="/linkmgr/docview/{document-uri($doc)}/preview" target="preview">Preview</a>]</span></div>
       <div><span class="label">Branch:</span> <span class="value">{$repo}/{$branch}</span></div>
       <div><span class="label">Is DITA:</span> <span class="value">{$isDITA}</span></div>
     </div>

@@ -4,17 +4,91 @@ body {
   font-family: Verdana,sans-serif;
 }
 
-*[class~="topic/title"] {
-  display: block;
-  margin-bottom: 12pt;
-  font-weight: bold;
-  font-size: 14pt;
+/*
+ * Default styling
+ */
+ 
+ *[class~="topic/data"] {
+  display: none;
 }
 
-*[class~="topic/p"] {
+*[class~="topic/xref"] {
+  display: inline;
+  color: blue;
+  /* How to make this a link via CSS? Is that possible?*/
+  
+}
+
+*[class~="topic/relatedlinks"] {
+  display: inline;
+}
+
+
+*[class~="topic/link"] {
+  display: inline;
+  color: blue;
+  content: '[link]';
+  /* How to make this a link via CSS? Is that possible?*/
+  
+}
+
+/*
+ * Titles
+ */
+
+*[class~="topic/title"] {
+  display: block;
+  font-weight: bold;
+}
+
+
+*[class~="topic/topic"] > *[class~="topic/title"] {
+  display: block;
+  margin-top: 12pt;
+  margin-bottom: 24pt;
+  font-weight: bold;
+  font-size: 18pt;
+  color: blue;
+  text-align: center;
+}
+
+*[class~="topic/topic"] > 
+  *[class~="topic/topic"] > 
+    *[class~="topic/title"] {
+  display: block;
+  margin-top: 12pt;
+  margin-bottom: 24pt;
+  font-weight: bold;
+  font-size: 14pt;
+  color: blue;
+  border-top: 1pt blue solid;
+  text-align: left;
+}
+
+*[class~="topic/topic"] > 
+  *[class~="topic/topic"] > 
+    *[class~="topic/topic"] > 
+      *[class~="topic/title"] {
+  display: block;
+  margin-top: 12pt;
+  margin-bottom: 24pt;
+  font-weight: bold;
+  font-size: 12pt;
+  color: green;
+}
+
+*[class~="d4p_simplenum-d/d4pSimpleEnumerator"]{
+  display: inline !important;
+}
+
+*[class~="topic/p"], *[class~="topic/shortdesc"] {
   display: block;
   margin-top: 6pt;
   text-indent: 12pt;
+}
+
+*[class~="topic/author"]:before {
+   content: 'Author: ';
 }
 
 *[class~="topic/note"]:before {
@@ -30,3 +104,73 @@ body {
   border: solid 1pt blue
   
 }
+
+/* ====
+   Ruby
+   ==== */
+*[class~="d4p-ruby-d/ruby"] {
+  display: ruby !important;
+}
+
+*[class~="d4p-ruby-d/rt"] {
+  display: ruby-text !important;
+}
+
+*[class~="d4p-ruby-d/rb"] {
+  display: ruby-base !important;
+}
+*[class~="d4p-ruby-d/rp"] {
+  display: none !important;
+}
+
+   
+/* ========
+   Highlight elements
+   ======== */
+
+*[class~="hi-d/i"] {
+  font-style: italic;
+}
+   
+*[class~="hi-d/b"] {
+  font-weight: bold;
+}
+   
+*[class~="hi-d/u"] {
+  text-decoration: underline;
+}
+   
+*[class~="hi-d/tt"] {
+  font-family: courier, monospace;
+}
+   
+/* ========
+   Lists
+   ======== */
+   
+*[class~="topic/ol"] {
+  list-style: decimal outside none;
+}
+
+*[class~="topic/li"] > *[class~="topic/p"]{
+  display: inline;
+}
+
+*[class~="topic/ol"] > *[class~="topic/li"]{
+  display: list-item;
+  margin-top: 12pt;
+  color: blue;
+}
+
+*[class~="topic/ul"] > *[class~="topic/li"]{
+  display: list-item;
+  color: green;
+}
+
+*[class~="task/stepsection"] {
+  display: block;
+  color: black !important;
+}
+
+
+
