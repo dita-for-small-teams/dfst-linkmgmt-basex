@@ -167,7 +167,7 @@ span[data-attname="conkeyref"]
 *[class~="topic/p"], *[class~="topic/shortdesc"] {
   display: block;
   margin-top: 6pt;
-  text-indent: 12pt;
+  margin-left: 12pt;
 }
 
 *[class~="topic/author"]:before {
