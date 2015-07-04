@@ -19,13 +19,14 @@ import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-
 
 declare function lmutil:findAllLinks($dbName) as element()* {
   let $db := db:open($dbName)
-  let $links := collection($dbName)//*[df:isTopicRef(.)] |
+  (: First do direct URI references, which don't require any 
+     context knowledge:
+   :)
+  let $links := collection($dbName)//*[df:isTopicRef(.) and not(@keyref)] |
                 collection($dbName)//*[contains(@class, ' topic/xref ')] |
                 collection($dbName)//*[contains(@class, ' topic/data-about ')] |
                 collection($dbName)//*[contains(@class, ' topic/longdescref ')] |
-                collection($dbName)//*[@conref] |
-                collection($dbName)//*[@conkeyref] |
-                collection($dbName)//*[@keyref]
+                collection($dbName)//*[@conref]
    return $links
 };
 
@@ -42,8 +43,22 @@ declare function lmutil:findAllLinks($dbName) as element()* {
 declare function lmutil:resolveLink($dbName, $link) as map(*) {
 
    let $target := (<p id="p1">Bogus target element </p>)
-   let $log := (<error>Link resolution not yet implemented</error>)
+   let $log := (<info>Link: {
+   concat('<', 
+          name($link), ' ',
+          lmutil:reportAtts($link, ('href', 'keyref', 'keys')), 
+          '>')} [class: "{string($link/@class)}"], doc: "{document-uri(root($link))}"</info>,
+   <error>Link resolution not yet implemented</error>)
    return map{'target' : $target, 'log' : $log}
+};
+
+(: Construct a string report of the listed attributes :)
+declare function lmutil:reportAtts($elem as element(), $attNames) as xs:string {
+   let $result := for $att in $elem/@*
+                      return if (name($att) = $attNames)
+                                then concat(name($att), '="', string($att), '"')
+                                else ()
+   return string-join($result, ' ')
 };
 
 (: End of Module :)

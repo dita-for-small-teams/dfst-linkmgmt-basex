@@ -259,6 +259,9 @@ declare
     <title>Update Link Management Indexes: {$status}</title></head>
     <body>
       <h1 style="color: {$headColor}">Update Link Management Indexes: {$status}</h1>
+      <div>
+        <p>Repository: {$repo}/{$branch}</p>
+      </div>
       <div class="log">
       {page:formatLogAsHtml($result/log)}
       </div>

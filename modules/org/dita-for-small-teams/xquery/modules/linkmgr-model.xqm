@@ -61,6 +61,7 @@ declare function lmm:updateLinkManagementIndexes($dbName as xs:string) as elemen
     
     let $links := lmutil:findAllLinks($dbName)
     let $log :=   <log>{
+                     <info>Found {count($links)} links</info>,
                      for $link in $links
                          return lmm:createOrUpdateResourceUseRecord($dbName, $link)
                   }</log>
