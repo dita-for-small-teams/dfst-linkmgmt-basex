@@ -13,6 +13,7 @@ module namespace linkmgr='http://basex.org/modules/linkmgr';
 
 import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-utils";
 import module namespace linkutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
+import module namespace lmc="http://dita-for-small-teams.org/xquery/modules/linkmgr-controller";
 import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-utils";
 import module namespace preview='http://basex.org/modules/htmlpreview' at "htmlPreview.xqm";
 
@@ -180,14 +181,12 @@ declare
     <body>
       <h1>Where-Used Report for Document "{$title}"</h1>
       {linkmgr:reportDocDetails($doc)}
-      <div class="listblock">
+      <div>
         <h4>Users of This Document</h4>
-        <p>List of documents that have some form of pointer to this document.</p>
+        {if (df:isMap($doc/*))
+            then linkmgr:listMapWhereUsed($doc)
+            else linkmgr:listTopicWhereUsed($doc)}
       </div>
-      { if (df:isMap($doc/*))
-           then linkmgr:listMapWhereUsed($doc)
-           else linkmgr:listTopicWhereUsed($doc)
-      }
    </body>
  </html>
 };
@@ -196,8 +195,18 @@ declare function linkmgr:listMapWhereUsed($doc as document-node()) as node()* {
   <div>
       <div class="listblock">
         <h4>Used As a Submap</h4>
+        <!--
         <p>List of maps that use this map as a submap. Indicates
-        whether the use is direct or indirect.</p>
+        whether the use is direct or indirect.</p> -->
+        {
+          (: Get local references by topicref links of format 'ditamap' and local scope :)
+          let $useParams := map{'linktype' : ('topicref'),
+                                'format' : ('ditamap'),
+                                'scope' : ('local')
+                               }
+          let $uses := lmc:getUses($doc, $useParams)
+          return linkmgr:useRecordsToHtml($uses)          
+        }
       </div>
       <div class="listblock">
         <h4>Used as a Peer Map</h4>
@@ -217,21 +226,24 @@ declare function linkmgr:listMapWhereUsed($doc as document-node()) as node()* {
 declare function linkmgr:listTopicWhereUsed($doc as document-node()) as node()* {
   <div>
       <div class="listblock">
-        <h4>Used As a Submap</h4>
-        <p>List of maps that use this map as a submap. Indicates
-        whether the use is direct or indirect.</p>
+        <h4>Used from Maps</h4>
+        {
+          (: Get local references by topicref links of format 'ditamap' and local scope :)
+          let $useParams := map{'linktype' : ('topicref'),
+                                'format' : ('dita'),
+                                'scope' : ('local')
+                               }
+          let $uses := lmc:getUses($doc, $useParams)
+          return linkmgr:useRecordsToHtml($uses)          
+        }
       </div>
       <div class="listblock">
-        <h4>Used as a Peer Map</h4>
-        <p>List of maps that make a peer map reference to this map</p>
+        <h4>Used by Cross References</h4>
+        <p>List of cross references to this topic</p>
       </div>
       <div class="listblock">
-        <h4>Used Via Peer Key Reference</h4>
-        <p>List of documents (maps and topics) that make a peer-map reference to this map.</p>
-      </div>
-      <div class="listblock">
-        <h4>External-Scope Resources</h4>
-        <p>List of external-scope resources goes here</p>
+        <h4>Used by Content Reference</h4>
+        <p>List of content references to elements in this topic.</p>
       </div>
     </div>
 };
@@ -537,3 +549,25 @@ declare function linkmgr:getNavTreeForTopicref($topicref) as node()* {
     </li>
 };
 
+(: Format a set of use records as HTML. List may be empty :)
+declare function linkmgr:useRecordsToHtml($uses as element()*) {
+
+  if (count($uses) gt 0)
+     then <ul class="use-records">
+       {for $use in $uses return linkmgr:useRecordToHtml($use)}
+     </ul>
+     else <p>Map is not used as a submap</p>
+
+};
+
+(: Format a use record as HTML.:)
+declare function linkmgr:useRecordToHtml($use as element()) {
+   <li class="use-record"><span class='title'>{string($use/title)}</span>
+   <dl>
+   {for $att in $use/@*
+        return (<dt>{name($att)}</dt>,
+                <dd>{string($att)}</dd>)               
+   }
+   </dl>
+   </li>
+};

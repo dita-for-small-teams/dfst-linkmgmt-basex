@@ -22,9 +22,9 @@ The project contains the following directories:
   as the module repository directory (e.g., the "repo/" directory within the BaseX installation directory), or
   use the BaseX "REPO INSTALL" command to install them, e.g.:
   
-  ~~~~
+  ````
   for f in modules/*; do basexclient -c "repo install ${PWD}/${f}"; done
-  ~~~~ 
+  ```` 
   
 * webapp/
 
