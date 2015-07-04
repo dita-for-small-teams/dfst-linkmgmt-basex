@@ -93,7 +93,7 @@ declare function df:getNavtitleForTopicref($topicref as element()) as node()* {
                 ($topicref/@format and not($topicref/@format = 'dita')))
             then $directNavtitle 
             else (: There must be a topic resource and @locktitle is "no" :)
-              let $targetTopic := df:resolveTopicRef($topicref)
+              let $targetTopic := df:resolveTopicRef($topicref)('target')
               return if ($targetTopic)
                  then df:getNavtitleForTopic($targetTopic)
                  else ''
@@ -189,13 +189,13 @@ declare function df:getEffectiveAttributeValue($elem as element(), $attName as x
  : Topicref must be a peer or local-scope topicref to a topic
  : or map. 
  :
- : Returns the reference element or a <df:error> element if there
- : was some error. 
+ : Returns a map with the target resource ('target') (if any) and any 
+ : log entries ('log') resulting from the resolution attempt.
  :
- : Returns empty sequence if the @scope is not
+ : Returns empty target sequence if the @scope is not
  : peer or local or @format is not dita or ditamap.
  :)
-declare function df:resolveTopicRef($topicref as element()) as element()? {
+declare function df:resolveTopicRef($topicref as element()) as map(*) {
    let $map as document-node() := root($topicref)
    let $format  as xs:string?  := df:getEffectiveAttributeValue($topicref, 'format')
    let $href  as xs:string?    := string($topicref/@href)
@@ -203,20 +203,20 @@ declare function df:resolveTopicRef($topicref as element()) as element()? {
    let $scope as xs:string?    := df:getEffectiveAttributeValue($topicref, 'scope') 
    
    return if (not(df:class($topicref, 'map/topicref')))
-      then <df:error type="not-topicref" xmlns:df="http://dita-for-small-teams.org/xquery/modules/dita-utils">resolveTopicRef(): Element {name($topicref)} is not of class 'map/topicref', class is "{string($topicref/@class)}"</df:error>
+      then map{ 'log' : <error type="not-topicref" xmlns:df="http://dita-for-small-teams.org/xquery/modules/dita-utils">resolveTopicRef(): Element {name($topicref)} is not of class 'map/topicref', class is "{string($topicref/@class)}"</error>,
+        'target' : ()}
       else (: It's a topicref, check the @format value:)
         if (not($format = ('dita', 'ditamap')) or 
             ($scope != '' and (not($scope = ('local', 'peer')))))
-           then <df:warn>Not format of 'dita' or 'ditamap' or not local or peer scope </df:warn>
+           then map{ 'log' : <warn>Not format of 'dita' or 'ditamap' or not local or peer scope </warn>,
+                     'target' : () }
            else 
              let $targetUri as xs:string := df:getEffectiveTargetUri($topicref)
-             let $targetFragId as xs:string := 
-                 if (contains($topicref/@href, '#')) 
-                    then substring-after($topicref/@href, '#') 
-                    else ''
+             let $targetFragId as xs:string := relpath:getFragmentId($targetUri)
              return if ($targetUri = '' and $targetFragId = '')
-                then ()
-                else df:resolveTopicOrMapUri($topicref, $targetUri)
+                then map{'target' : (), 'log' : <info>No target URI or fragment ID</info>}
+                else map{'target' : df:resolveTopicOrMapUri($topicref, $targetUri), 
+                         'log' : ()}
                   
 };
 
@@ -392,7 +392,7 @@ declare function df:getMapTreeItem($mapElem as element()) as element(treeItem)* 
 declare function df:getMapTreeItems($map as element()) as element(treeItem)* {
    let $maprefs := $map//*[df:isMapRef(.)]
    for $mapref in $maprefs
-       let $mapElem := df:resolveTopicRef($mapref)
+       let $mapElem := df:resolveTopicRef($mapref)('target')
        return df:getMapTreeItem($mapElem)
 };
 
@@ -694,7 +694,7 @@ declare function df:constructKeyBinding($topicRef as element(), $keyName as xs:s
   let $resourceURI := string($topicRef/@href)
   let $targetResource := 
       if (not($topicRef/@keyref))
-         then df:resolveTopicRef($topicRef)
+         then df:resolveTopicRef($topicRef)('target')
          else ()
   let $resolutionStatus := 
       if ($topicRef/@keyref)

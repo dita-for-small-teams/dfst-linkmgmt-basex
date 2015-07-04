@@ -366,7 +366,7 @@ declare
             let $keydefs := $doc//*[df:class(., 'map/topicref')][@keys]
             for $key in distinct-values(for $keydef in $keydefs return tokenize($keydef/@keys, ' '))
                 let $keydef := ($keydefs[contains-token(@keys, $key)])[1]
-                let $directResource := df:resolveTopicRef($keydef)
+                let $directResource := df:resolveTopicRef($keydef)('target')
                 return 
                   <tr>
                     <td>{$key}</td>
@@ -487,7 +487,7 @@ declare function linkmgr:getMapNavTree($doc) as node()* {
 (: Constructs a navigation tree list item for a sub amp :)
 declare function linkmgr:getNavTreeForSubmap($topicref) as node()* {
    
-   let $mapElem := df:resolveTopicRef($topicref)
+   let $mapElem := df:resolveTopicRef($topicref)('target')
    return if ($mapElem)
       then linkmgr:getNavTreeForTopicrefChildren($mapElem)
       else ()
@@ -516,7 +516,7 @@ declare function linkmgr:getNavTreeForTopicref($topicref) as node()* {
       if ($format = 'dita')
          then 
             try {
-             df:resolveTopicRef($topicref)
+             df:resolveTopicRef($topicref)('target')
             } catch * {
              ()
             }

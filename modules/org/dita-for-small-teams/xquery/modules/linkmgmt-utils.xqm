@@ -45,18 +45,22 @@ declare function lmutil:findAllDirectLinks($dbName) as element()* {
  :)
 declare function lmutil:resolveLink($dbName, $link) as map(*) {
 
-   let $targets := if (df:class($link, 'map/topicref'))
+   let $resultMap := if (df:class($link, 'map/topicref'))
                       then df:resolveTopicRef($link)
                       else (
-                      (: This is a cheap way to avoid resolving non-local HTTP references :)
-                           if ($link/@href and not(matches($link/@href, '^[a-zA-Z]+:.*')))
-                              then df:resolveUriReferenceToElement($link/@href)('target')
-                              else (),
+                      let $resultMaps := 
+                           (if ($link/@href and not(matches($link/@href, '^[a-zA-Z]+:.*')))
+                              then df:resolveUriReferenceToElement($link/@href)
+                              else map{},
                            if ($link/@conref)
-                              then df:resolveUriReferenceToElement($link/@conref)('target')
-                              else ()
+                              then df:resolveUriReferenceToElement($link/@conref)
+                              else map{})
+                       return map{ 'target' : for $map in $resultMaps return $map('target'),
+                                   'log' : for $map in $resultMaps return $map('log')
+                                 }
                       )
                      
+   let $targets := $resultMap('target')
    let $log := (<info>Link: {
                concat('<', 
                       name($link), ' ',
