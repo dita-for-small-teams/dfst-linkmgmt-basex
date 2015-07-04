@@ -16,6 +16,7 @@ import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/b
 import module namespace linkutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
 import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-utils";
 import module namespace linkmgr='http://basex.org/modules/linkmgr' at "linkmgrViews.xqm";
+import module namespace lmm="http://dita-for-small-teams.org/xquery/modules/linkmgr-model";
 
 
 (:~
@@ -85,6 +86,11 @@ declare
       </div>
       <div class="title-block">
         <h2>Git repo {$repo}/{$branch}</h2>
+      </div>
+      <div class="management-actions">
+      [<a href="/repo/{$repo}/{$branch}/updateLinkManagementIndexes" 
+            target="_updateLinkManagementIndexes"
+            >Update Link Management Indexes"</a>]
       </div>
       <div class="action-block">
         <h3>DITA Maps</h3>
@@ -227,5 +233,45 @@ declare
     <title>Linkmgr</title>
     <time>Link manager response: The current time is: { current-time() }</time>
   </response>
+};
+
+(: REST API to trigger creation or update of link management indexes. :)
+declare
+  %rest:path("/repo/{$repo}/{$branch}/updateLinkManagementIndexes")
+  %rest:GET
+  %output:method("xhtml")
+  %output:omit-xml-declaration("no")
+  %output:doctype-public("-//W3C//DTD XHTML 1.0 Transitional//EN")
+  %output:doctype-system("http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd")
+  function page:updateLinkManagementIndexes($repo as xs:string, $branch as xs:string) {
+  
+  let $dbName := bxutil:getDbNameForRepoAndBranch($repo, $branch)
+  
+  let $result := lmm:updateLinkManagementIndexes($dbName)
+  let $status := string($result/@status)
+  let $headColor := if ($status = ('error')) 
+                       then 'red'
+                       else if ($status = ('warn')) then 'yellow'
+                       else 'blue'
+                            
+  return <html>
+    <head>
+    <title>Update Link Management Indexes: {$status}</title></head>
+    <body>
+      <h1 style="color: {$headColor}">Update Link Management Indexes: {$status}</h1>
+      <div class="log">
+      {page:formatLogAsHtml($result/log)}
+      </div>
+    </body>
+  </html>
+};
+
+declare function page:formatLogAsHtml($log) as element() {
+  <pre>
+  {for $entry in $log/*
+       return concat('[', upper-case(name($entry)), ']', ' ', string($entry), '&#x0a;')
+  }
+  </pre>
+
 };
 

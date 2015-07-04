@@ -19,6 +19,8 @@ module namespace lmc="http://dita-for-small-teams.org/xquery/modules/linkmgr-con
 import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-utils";
 import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-utils";
 import module namespace linkutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
+import module namespace lmm="http://dita-for-small-teams.org/xquery/modules/linkmgr-model";
+
 
 (: Give a document, finds all references to that document that match the 
    type of uses as configured in the $useParams.
@@ -67,7 +69,7 @@ declare function lmc:getUses($doc as document-node(), $useParams) as element()* 
       to the root elements of those documents (i.e., a map
       or topic element).
     :)
-   let $resKey := lmc:constructResourceKeyForElement($doc/*)
+   let $resKey := lmm:constructResourceKeyForElement($doc/*)
    
    (: Now find all use records for the resource key that match the filter
       specification. 
@@ -91,23 +93,6 @@ declare function lmc:getUses($doc as document-node(), $useParams) as element()* 
           :)
     return ()
 
-};
-
-(: Given an element with an @id value, construct the unique resource key for it. 
-   For a given element the resource ID is guaranteed to be unique within
-   a snapshot (git commit).
-
-   @param elem Element to get resource ID for. Must specify @id attribute.
-   @returns Resource key string. 
-
-   The resource key is a combination of the absolute URI of the containing
-   document, the element's @id attribute value, and other details TBD.
-   
-   Note that because DITA can only address elements with IDs this function
-   only works for elements with @id attribute values.
- :)
-declare function lmc:constructResourceKeyForElement($elem as element()) as xs:string {
-  'bogusresourcekey'
 };
 
 (: End of Module :)
