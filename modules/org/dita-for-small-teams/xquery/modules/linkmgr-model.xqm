@@ -59,20 +59,37 @@ declare function lmm:updateLinkManagementIndexes($dbName as xs:string) as elemen
       
     :)
     
-    let $links := lmutil:findAllLinks($dbName)
-    let $log :=   <log>{
-                     <info>Found {count($links)} links</info>,
-                     for $link in $links
-                         return lmm:createOrUpdateResourceUseRecord($dbName, $link)
-                  }</log>
-    let $status := if ($log/error) then 'error'
-                      else if ($log/warn) then 'warn'
+    (: Need to handle both context-free links (direct URI references) and
+       context-specific links (key references).
+       
+       For context-specific links have to process all the maps and construct
+       resolved maps to serve as the resolution context. This could also
+       be modeled as updating the key spaces but I think it makes more
+       sense to have the maps be the focus, from which key spaces are derived,
+       rather than making the key spaces the primary focus.
+       
+     :)
+    
+    let $directLinks := lmutil:findAllDirectLinks($dbName)
+    let $logEntries := (
+                         <info>Found {count($directLinks)} links</info>,
+                         for $link in $directLinks
+                             return lmm:createOrUpdateResourceUseRecord($dbName, $link)
+                       )
+    let $status := if ($logEntries/error) then 'error'
+                      else if ($logEntries/warn) then 'warn'
                       else 'success'
+    let $log :=   <log>{
+         $logEntries
+    }</log>
     return <result status="{$status}">{$log}</result>
 };
 
 (: Attempts to resolve the link and, if successful, creates use
    record for the resource addressed.
+   
+   This form of the method is for context-free (direct URI-reference)
+   links.
    
    Returns log entries with details of the attempt.
    

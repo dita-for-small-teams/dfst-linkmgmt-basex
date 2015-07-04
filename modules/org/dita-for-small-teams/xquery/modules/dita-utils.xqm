@@ -255,7 +255,7 @@ declare function df:resolveTopicOrMapUri($topicref as element(), $targetUri as x
           else $targetDoc/*
  };
 
-(: Give a topicref, return the effective URI of the ultimate target
+(: Given a topicref, return the effective URI of the ultimate target
  : of the topicref.
  :)
 declare function df:getEffectiveTargetUri($refElem as element()) as xs:string? {
@@ -709,6 +709,71 @@ declare function df:constructKeyBinding($topicRef as element(), $keyName as xs:s
                  scope="{$scope}"
                  resolutionStatus="{$resolutionStatus}"/>
              
+};
+
+(:
+ : Given an attribute that is a direct URI reference, attempts to resolve
+ : it to an element. Encapsulates all the DITA-specific addressing
+ : details.
+ :
+ : Returns a map with the target element ('target') and resolution
+ : log ('log')
+ :)
+declare function df:resolveUriReferenceToElement($refAtt as attribute()) as map(*) {
+   let $uri := string($refAtt)
+   let $context := $refAtt/parent::*
+   let $fragID := relpath:getFragmentId($uri)
+   let $resourcePart := relpath:getResourcePartOfUri($uri)
+   let $baseUri := base-uri($context)
+   let $resolvedURI := if ($resourcePart) 
+                          then relpath:newFile(relpath:getParent(base-uri($context)), $resourcePart)
+                          else base-uri($context) (: Target is in same document :)
+   let $targetDoc := doc($resolvedURI)
+   let $targetElem := 
+       if ($targetDoc)
+           then if (df:isMap($targetDoc/*))
+                   then df:resolveUriReferenceToMapElement($targetDoc, $fragID)
+                   else if (df:isTopic($targetDoc/*))
+                        then df:resolveUriReferenceToTopicElement($targetDoc, $fragID)
+                        else (: Not a map or a topic, assume fragment ID is an ID reference :)
+                             $targetDoc//*[@id = $fragID]
+          else ()
+   return map{'target' : $targetElem, 
+               'log' : (<info>Found target for URI reference "{$uri}"</info>)}
+
+};
+
+(:
+ : Resolve a reference to an element within a map document.
+ :
+ : Returns the element, if found, or an empty sequence.
+ :)
+declare function df:resolveUriReferenceToMapElement($targetDoc, $fragID) as element()? {
+  let $target := ($targetDoc//*[@id = $fragID])[1]
+  return $target
+};
+    
+(:
+ : Resolve a reference to an element within a topic.
+ :
+ : Returns the element, if found, or an empty sequence.
+ :)
+declare function df:resolveUriReferenceToTopicElement($targetDoc, $fragID) as element()? {
+  let $topicID := if (contains($fragID, '/')) 
+                     then tokenize($fragID, '/')[1] 
+                     else $fragID
+                     
+  let $elemID := if (contains($fragID, '/')) 
+                     then tokenize($fragID, '/')[2] 
+                     else ()
+  let $topic := ($targetDoc//*[@id = $topicID and df:class(., 'topic/topic')])[1]
+  let $target := 
+    if ($elemID)
+       then ($topic/*[df:class(., 'topic/abstract') or 
+                     df:class(., 'topic/shortdesc') or 
+                     df:class(., 'topic/body')]//*[@id = $elemID])[1]
+       else $topic
+  return $target
 };
     
 (:~

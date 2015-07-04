@@ -17,7 +17,10 @@ module namespace lmutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt
 
 import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-utils";
 
-declare function lmutil:findAllLinks($dbName) as element()* {
+(:
+ : Find all links that use direct URI references to their target resources.
+ :)
+declare function lmutil:findAllDirectLinks($dbName) as element()* {
   let $db := db:open($dbName)
   (: First do direct URI references, which don't require any 
      context knowledge:
@@ -42,14 +45,28 @@ declare function lmutil:findAllLinks($dbName) as element()* {
  :)
 declare function lmutil:resolveLink($dbName, $link) as map(*) {
 
-   let $target := (<p id="p1">Bogus target element </p>)
+   let $targets := if (df:class($link, 'map/topicref'))
+                      then df:resolveTopicRef($link)
+                      else (
+                      (: This is a cheap way to avoid resolving non-local HTTP references :)
+                           if ($link/@href and not(matches($link/@href, '^[a-zA-Z]+:.*')))
+                              then df:resolveUriReferenceToElement($link/@href)('target')
+                              else (),
+                           if ($link/@conref)
+                              then df:resolveUriReferenceToElement($link/@conref)('target')
+                              else ()
+                      )
+                     
    let $log := (<info>Link: {
-   concat('<', 
-          name($link), ' ',
-          lmutil:reportAtts($link, ('href', 'keyref', 'keys')), 
-          '>')} [class: "{string($link/@class)}"], doc: "{document-uri(root($link))}"</info>,
-   <error>Link resolution not yet implemented</error>)
-   return map{'target' : $target, 'log' : $log}
+               concat('<', 
+                      name($link), ' ',
+                      lmutil:reportAtts($link, ('href', 'keyref', 'keys')), 
+                      '>')} [class: "{string($link/@class)}"], doc: "{document-uri(root($link))}"</info>,
+              if ($targets)
+                 then <info>   Link resolved</info>
+                 else <warn>   Failed to resolve link</warn>
+              )
+   return map{'target' : $targets, 'log' : $log}
 };
 
 (: Construct a string report of the listed attributes :)
