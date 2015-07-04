@@ -49,7 +49,7 @@ reflects the latest commit on a given branch.
 
 It would be possible to store each commit as a separate BaseX database,
 but this would start to use a lot of storage. As a future refinement it might make sense to keep tagged
-commits as separate BaseX databases inorder to be able to search against older versions (this might be required
+commits as separate BaseX databases in order to be able to search against older versions (this might be required
 for some linking use cases where documents need to be able to link to older versions of specific resources).   
 It could also be possible to only create commit-specific databases when links to those older versions are
 created.

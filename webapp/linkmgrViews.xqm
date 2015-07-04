@@ -182,7 +182,6 @@ declare
       <h1>Where-Used Report for Document "{$title}"</h1>
       {linkmgr:reportDocDetails($doc)}
       <div>
-        <h4>Users of This Document</h4>
         {if (df:isMap($doc/*))
             then linkmgr:listMapWhereUsed($doc)
             else linkmgr:listTopicWhereUsed($doc)}
@@ -210,15 +209,15 @@ declare function linkmgr:listMapWhereUsed($doc as document-node()) as node()* {
       </div>
       <div class="listblock">
         <h4>Used as a Peer Map</h4>
-        <p>List of maps that make a peer map reference to this map</p>
-      </div>
-      <div class="listblock">
-        <h4>Used Via Peer Key Reference</h4>
-        <p>List of documents (maps and topics) that make a peer-map reference to this map.</p>
-      </div>
-      <div class="listblock">
-        <h4>External-Scope Resources</h4>
-        <p>List of external-scope resources goes here</p>
+        {
+          (: Get local references by topicref links of format 'ditamap' and peer scope :)
+          let $useParams := map{'linktype' : ('topicref'),
+                                'format' : ('ditamap'),
+                                'scope' : ('peer')
+                               }
+          let $uses := lmc:getUses($doc, $useParams)
+          return linkmgr:useRecordsToHtml($uses)          
+        }
       </div>
     </div>
 };
@@ -228,7 +227,6 @@ declare function linkmgr:listTopicWhereUsed($doc as document-node()) as node()* 
       <div class="listblock">
         <h4>Used from Maps</h4>
         {
-          (: Get local references by topicref links of format 'ditamap' and local scope :)
           let $useParams := map{'linktype' : ('topicref'),
                                 'format' : ('dita'),
                                 'scope' : ('local')
@@ -239,11 +237,23 @@ declare function linkmgr:listTopicWhereUsed($doc as document-node()) as node()* 
       </div>
       <div class="listblock">
         <h4>Used by Cross References</h4>
-        <p>List of cross references to this topic</p>
+        {
+          let $useParams := map{'linktype' : ('xref'),
+                                'format' : ('dita'),
+                                'scope' : ('local')
+                               }
+          let $uses := lmc:getUses($doc, $useParams)
+          return linkmgr:useRecordsToHtml($uses)          
+        }
       </div>
       <div class="listblock">
         <h4>Used by Content Reference</h4>
-        <p>List of content references to elements in this topic.</p>
+        {
+          let $useParams := map{'linktype' : ('#conref')
+                               }
+          let $uses := lmc:getUses($doc, $useParams)
+          return linkmgr:useRecordsToHtml($uses)          
+        }
       </div>
     </div>
 };
@@ -553,21 +563,32 @@ declare function linkmgr:getNavTreeForTopicref($topicref) as node()* {
 declare function linkmgr:useRecordsToHtml($uses as element()*) {
 
   if (count($uses) gt 0)
-     then <ul class="use-records">
+     then <table class="use-records">
+     <thead>
+      <th>Resource</th>
+      <th>Link Type</th>
+      <th>@format</th>
+      <th>Scope</th>
+      <th>Actions</th>
+     </thead>
+     <tbody>
        {for $use in $uses return linkmgr:useRecordToHtml($use)}
-     </ul>
-     else <p>Map is not used as a submap</p>
+     </tbody>
+     </table>
+     else <p>Not used.</p>
 
 };
 
 (: Format a use record as HTML.:)
 declare function linkmgr:useRecordToHtml($use as element()) {
-   <li class="use-record"><span class='title'>{string($use/title)}</span>
-   <dl>
-   {for $att in $use/@*
-        return (<dt>{name($att)}</dt>,
-                <dd>{string($att)}</dd>)               
-   }
-   </dl>
-   </li>
+   <tr class="use-record">
+    <td><span class='title'>{string($use/title)}</span><br/>
+    <span class="using-doc">{string($use/@usingDoc)}</span><br/>
+    <span class="use-locator">{string($use/@useLocator)}</span>
+    </td>
+    <td>{string($use/@linktype)}</td>
+    <td>{string($use/@format)}</td>
+    <td>{string($use/@scope)}</td>
+    <td>[Action] [Action] [Action]</td>
+  </tr>
 };

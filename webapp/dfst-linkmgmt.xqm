@@ -174,6 +174,7 @@ declare
     let $dbName := bxutil:getDbNameForRepoAndBranch($repo, $branch)
     let $maps := df:getMaps($dbName)
     for $map in $maps
+      let $docURI := document-uri($map)
       return <tr>
         <td>{df:getTitleText($map/*)}</td>
         <td>{linkmgr:makeLinkToDocSource(document-uri(root($map)))}</td>
@@ -184,7 +185,8 @@ declare
         [{html:linkToTarget('Dependencies', concat('/linkmgr/dependencyView/', document-uri($map)), 'dependencies')}] 
         [{html:linkToTarget('Reltables', concat('/linkmgr/reltableView/', document-uri($map)), 'reltables')}] 
         [{html:linkToTarget('Key&#xa0;Spaces', concat('/linkmgr/keyspaceView/', document-uri($map)), 'keyspaces')}] 
-        [{html:linkToTarget('Preview', concat('/linkmgr/docview/', document-uri($map), '/preview'), 'preview')}] 
+        [{html:linkToTarget('Preview', concat('/linkmgr/docview/', document-uri($map), '/preview'), 'preview')}]
+        [{html:linkToTarget('Where&#xa0;Used?', concat('/linkmgr/whereUsedView/', $docURI), 'whereused')}]
         </td>
       </tr>
  };

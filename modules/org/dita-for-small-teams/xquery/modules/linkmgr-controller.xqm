@@ -78,6 +78,7 @@ declare function lmc:getUses($doc as document-node(), $useParams) as element()* 
    
    (: Stub use record for initial testing :)
    
+   (:
    return <useRecord usekey="uniqueIDofTheUseInstance"
                      reskey="resourceKeyOfReferencedResource"
                      linktype="- map/topicref bookmap/chapter "
@@ -87,6 +88,8 @@ declare function lmc:getUses($doc as document-node(), $useParams) as element()* 
                      useLocator="XPath location of the using element within the using doc">
             <title>Title of using document (or relative path if no title)</title>
           </useRecord>
+          :)
+    return ()
 
 };
 
