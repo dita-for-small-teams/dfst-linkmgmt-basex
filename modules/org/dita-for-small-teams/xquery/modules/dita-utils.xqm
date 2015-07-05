@@ -208,7 +208,13 @@ declare function df:resolveTopicRef($topicref as element()) as map(*) {
       else (: It's a topicref, check the @format value:)
         if (not($format = ('dita', 'ditamap')) or 
             ($scope != '' and (not($scope = ('local', 'peer')))))
-           then map{ 'log' : <warn>  Not format of 'dita' or 'ditamap' or not local or peer scope </warn>,
+           then map{ 'log' : <warn>  Link not resolved: {
+                    if (not($format = ('dita', 'ditamap'))) 
+                       then concat('@format is "', $format, '", target is not a topic ("dita") or map ("ditamap").') 
+                       else '', 
+                    if ($scope != '' and (not($scope = ('local', 'peer'))))
+                       then concat('@scope is "', $scope, '", skipping non-local or peer resource.')
+                       else ''}</warn>,
                      'target' : () }
            else 
              let $targetUri as xs:string := df:getEffectiveTargetUri($topicref)

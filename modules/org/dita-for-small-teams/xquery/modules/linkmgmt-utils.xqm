@@ -26,9 +26,9 @@ declare function lmutil:findAllDirectLinks($dbName) as element()* {
      context knowledge:
    :)
   let $links := collection($dbName)//*[df:isTopicRef(.) and not(@keyref)] |
-                collection($dbName)//*[contains(@class, ' topic/xref ')] |
-                collection($dbName)//*[contains(@class, ' topic/data-about ')] |
-                collection($dbName)//*[contains(@class, ' topic/longdescref ')] |
+                collection($dbName)//*[contains(@class, ' topic/xref ') and (@href and not(@keyref))] |
+                collection($dbName)//*[contains(@class, ' topic/data-about ') and (@href and not(@keyref))] |
+                collection($dbName)//*[contains(@class, ' topic/longdescref ') and (@href and not(@keyref))] |
                 collection($dbName)//*[@conref]
    return $links
 };
@@ -45,7 +45,7 @@ declare function lmutil:findAllDirectLinks($dbName) as element()* {
  :)
 declare function lmutil:resolveDirectLink($dbName, $link) as map(*) {
 
-   let $resultMap := if (df:class($link, 'map/topicref'))
+   let $resultMap := if (df:class($link, 'map/topicref') and ($link/@href))
                       then df:resolveTopicRef($link)
                       else (df:resolveNonTopicRefDirectLink($link)
                       )
@@ -54,7 +54,7 @@ declare function lmutil:resolveDirectLink($dbName, $link) as map(*) {
    let $log := (<info>Link: {
                concat('<', 
                       name($link), ' ',
-                      lmutil:reportAtts($link, ('href', 'keyref', 'keys')), 
+                      lmutil:reportAtts($link, ('href', 'keyref', 'keys', 'conref', 'scope')), 
                       '>')} [class: "{string($link/@class)}"], doc: "{document-uri(root($link))}"</info>,
               if ($targets)
                  then <info>  Link resolved</info>
