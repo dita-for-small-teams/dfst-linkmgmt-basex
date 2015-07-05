@@ -208,16 +208,50 @@ declare function df:resolveTopicRef($topicref as element()) as map(*) {
       else (: It's a topicref, check the @format value:)
         if (not($format = ('dita', 'ditamap')) or 
             ($scope != '' and (not($scope = ('local', 'peer')))))
-           then map{ 'log' : <warn>Not format of 'dita' or 'ditamap' or not local or peer scope </warn>,
+           then map{ 'log' : <warn>  Not format of 'dita' or 'ditamap' or not local or peer scope </warn>,
                      'target' : () }
            else 
              let $targetUri as xs:string := df:getEffectiveTargetUri($topicref)
              let $targetFragId as xs:string := relpath:getFragmentId($targetUri)
              return if ($targetUri = '' and $targetFragId = '')
-                then map{'target' : (), 'log' : <info>No target URI or fragment ID</info>}
+                then map{'target' : (), 'log' : <info>  No target URI or fragment ID</info>}
                 else map{'target' : df:resolveTopicOrMapUri($topicref, $targetUri), 
                          'log' : ()}
                   
+};
+
+(:~
+ : Resolve a link that is not a topicref to its directly-addressed targets. 
+ : Resolves
+ : both 
+ :
+ : Topicref must be a peer or local-scope topicref to a topic
+ : or map. 
+ :
+ : Returns a map with the target resource ('target') (if any) and any 
+ : log entries ('log') resulting from the resolution attempt.
+ :
+ : Returns empty target sequence if the @scope is not
+ : peer or local or @format is not dita or ditamap.
+ :)
+declare function df:resolveNonTopicRefDirectLink($link) as map(*) {
+  let $resultMaps := 
+     (if ($link/@href and not(matches($link/@href, '^[a-zA-Z]+:.*')))
+        then df:resolveUriReferenceToElement($link/@href)
+        else map{'log' : 
+                 (if (matches($link/@href, '^[a-zA-Z]+:.*'))
+                     then <warn>  URI appears to be of external scope: "{string($link/@href)}".</warn>
+                  else if (not($link/@href))
+                      then <warn>  No @href attribute on expected direct link.</warn>
+                  else if (string($link/@href ) = '')
+                      then <warn>  @href attribute value is empty string.</warn>
+                      else <warn>  Unknown reason</warn>)},
+     if ($link/@conref)
+        then df:resolveUriReferenceToElement($link/@conref)
+        else map{})
+  return map{ 'target' : for $map in $resultMaps return $map('target'),
+              'log' : for $map in $resultMaps return $map('log')
+            }
 };
 
 declare function df:resolveTopicOrMapUri($topicref as element(), $targetUri as xs:string) 

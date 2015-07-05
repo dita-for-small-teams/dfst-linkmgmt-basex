@@ -95,7 +95,7 @@ declare function lmm:updateLinkManagementIndexes($dbName as xs:string) as elemen
    
  :)
 declare function lmm:createOrUpdateResourceUseRecord($dbName, $link) as element()* {
-   let $resolveResult as map(*) := lmutil:resolveLink($dbName, $link)
+   let $resolveResult as map(*) := lmutil:resolveDirectLink($dbName, $link)
    let $targets := $resolveResult('target')
    let $updateLogEntries :=
        for $target in $targets
