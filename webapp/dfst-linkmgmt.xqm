@@ -237,6 +237,7 @@ declare
 
 (: REST API to trigger creation or update of link management indexes. :)
 declare
+  %updating
   %rest:path("/repo/{$repo}/{$branch}/updateLinkManagementIndexes")
   %rest:GET
   %output:method("xhtml")
@@ -246,9 +247,16 @@ declare
   function page:updateLinkManagementIndexes($repo as xs:string, $branch as xs:string) {
   
   let $dbName := bxutil:getDbNameForRepoAndBranch($repo, $branch)
+
+  (:
+   : XQuery update doesn't allow for returning results from updating functions.
+   : So we'll need to find another way of capturing the log details and success
+   : or failure.
+   :)
   
-  let $result := lmm:updateLinkManagementIndexes($dbName)
-  let $status := string($result/@status)
+  return lmm:updateLinkManagementIndexes($dbName)
+  
+(:  let $status := string($result/@status)
   let $headColor := if ($status = ('error')) 
                        then 'red'
                        else if ($status = ('warn')) then 'yellow'
@@ -267,6 +275,7 @@ declare
       </div>
     </body>
   </html>
+:)
 };
 
 declare function page:formatLogAsHtml($log) as element() {

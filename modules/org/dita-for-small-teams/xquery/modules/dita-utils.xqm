@@ -815,6 +815,19 @@ declare function df:resolveUriReferenceToTopicElement($targetDoc, $fragID) as el
        else $topic
   return $target
 };
+  
+(:~
+ : Return unqualified base type of the specified linking element.
+ :
+ : This is usually, but not necessarily, the base tagname of the element.
+ : There may be cases where we need to distinguish different configurations
+ : of the same element as different link types.
+ :)
+declare function df:getLinkBaseType($link as element()) as xs:string {
+  let $type := tokenize($link/@class, ' ')[2]
+  let $result := if ($type) then $type else 'unknown'
+  return $result
+};
     
 (:~
  : Returns true of the document appears to be a DITA document.
