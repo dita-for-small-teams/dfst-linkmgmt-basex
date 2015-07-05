@@ -90,7 +90,7 @@ declare
       <div class="management-actions">
       [<a href="/repo/{$repo}/{$branch}/updateLinkManagementIndexes" 
             target="_updateLinkManagementIndexes"
-            >Update Link Management Indexes"</a>]
+            >Update Link Management Indexes</a>]
       </div>
       <div class="action-block">
         <h3>DITA Maps</h3>
