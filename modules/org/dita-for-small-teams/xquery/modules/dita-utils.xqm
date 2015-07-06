@@ -823,8 +823,8 @@ declare function df:resolveUriReferenceToTopicElement($targetDoc, $fragID) as el
  : There may be cases where we need to distinguish different configurations
  : of the same element as different link types.
  :)
-declare function df:getLinkBaseType($link as element()) as xs:string {
-  let $type := tokenize($link/@class, ' ')[2]
+declare function df:getBaseLinkType($link as element()) as xs:string {
+  let $type := tokenize(tokenize($link/@class, ' ')[2], '/')[2] (: '- map/topicref ' :)
   let $result := if ($type) then $type else 'unknown'
   return $result
 };

@@ -76,15 +76,33 @@ declare function lmc:getUses($doc as document-node(), $useParams) as element()* 
    (: Now find all use records for the resource key that match the filter
       specification. 
         
-      Implementation question: How to know if the use records for the 
-      resource are up to date?
       :)
     let $dbName := db:name($doc)
     let $collection := db:name($doc) || '.dfst/linkmgmt/where-used'
     let $records := collection($dbName)/dfst:useRecord[@resourceKey = $resKey]
-   
+                                       [lmc:useRecordMatcher(., $linktypes, $formats, $scopes)]   
     return $records
 
+};
+
+(:~
+ : Determines if a given where-used record matches the filter
+ : specified parameters. 
+ :)
+declare function lmc:useRecordMatcher($record as element(),
+                                              $linktypes as xs:string*,
+                                              $formats as xs:string*,
+                                              $scopes as xs:string*) as xs:boolean {
+   let $result := ((if ($linktypes = '#any')
+                       then true()
+                       else string($record/@linkType) = $linktypes) and
+                   (if ($formats = '#any')
+                       then true()
+                       else string($record/@format) = $formats) and
+                   (if ($scopes = '#any')
+                       then true()
+                       else string($record/@scope) = $scopes))
+  return $result                       
 };
 
 (: End of Module :)

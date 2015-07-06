@@ -145,12 +145,20 @@ declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget($dbN
    let $containingDir := concat($dfstcnst:where-used-dir, '/', $targetDocHash, '/')
    let $reskey := lmm:constructResourceKeyForElement($target)
    let $recordFilename := concat('use-record_', $reskey, '.xml')
+   let $format := if ($link/@format)
+                     then string($link/@format)
+                     else 'dita'
+   let $scope := if ($link/@scope)
+                     then string($link/@scope)
+                     else 'local'
    let $useRecord := 
      <dfst:useRecord resourceKey="{$reskey}"
                      targetDoc="{document-uri($targetDoc)}"
                      usingDoc="{document-uri(root($link))}"
-                     linkType="{df:getLinkBaseType($link)}"
+                     linkType="{df:getBaseLinkType($link)}"
                      linkClass="{string($link/@class)}"
+                     format="{$format}"
+                     scope="{$scope}"
      />
     let $useRecordUri := relpath:newFile($containingDir, $recordFilename)
     return try {
