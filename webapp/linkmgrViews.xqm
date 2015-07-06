@@ -583,10 +583,10 @@ declare function linkmgr:useRecordsToHtml($uses as element()*) {
 declare function linkmgr:useRecordToHtml($use as element()) {
    <tr class="use-record">
     <td><span class='title'>{string($use/title)}</span><br/>
-    <span class="using-doc">{string($use/@usingDoc)}</span><br/>
+    <span class="using-doc">{bxutil:getPathForDoc(doc(string($use/@usingDoc)))}</span><br/>
     <span class="use-locator">{string($use/@useLocator)}</span>
     </td>
-    <td>{string($use/@linktype)}</td>
+    <td>{string($use/@linkType)}</td>
     <td>{string($use/@format)}</td>
     <td>{string($use/@scope)}</td>
     <td>[Action] [Action] [Action]</td>

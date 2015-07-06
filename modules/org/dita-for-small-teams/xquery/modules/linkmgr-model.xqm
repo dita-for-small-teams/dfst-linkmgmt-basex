@@ -139,7 +139,10 @@ declare %updating function lmm:createOrUpdateResourceUseRecord($dbName, $link, $
  : a given DITA link-establishing element but the current implementation doesn't 
  : provide that abstraction. It could through a refactor. Keeping it simple for now.
  :)
-declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget($dbName, $link, $target) {
+declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget(
+           $dbName as xs:string, 
+           $link as element(), 
+           $target as element()) {
    let $targetDoc := root($target)
    let $targetDocHash := hash:md5(document-uri($targetDoc))
    let $containingDir := concat($dfstcnst:where-used-dir, '/', $targetDocHash, '/')
@@ -151,6 +154,7 @@ declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget($dbN
    let $scope := if ($link/@scope)
                      then string($link/@scope)
                      else 'local'
+   (: df:getTitleForLinkElementContainer($link) :)                     
    let $useRecord := 
      <dfst:useRecord resourceKey="{$reskey}"
                      targetDoc="{document-uri($targetDoc)}"
@@ -159,7 +163,10 @@ declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget($dbN
                      linkClass="{string($link/@class)}"
                      format="{$format}"
                      scope="{$scope}"
-     />
+     >
+       <title>{if (df:class($link, 'map/topicref')) then string(root($link)/*) 
+                  else string($link/ancestor::*[df:class(., 'topic/topic')][1]/*[df:class(., 'topic/title')])}</title>
+     </dfst:useRecord>
     let $useRecordUri := relpath:newFile($containingDir, $recordFilename)
     return try {
        db:replace($dbName, 

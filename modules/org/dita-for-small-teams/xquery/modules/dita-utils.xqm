@@ -165,6 +165,26 @@ declare function df:getTitleElement($elem as element()) as element()? {
 };
 
 (:~
+ : Given a link element, return the title of its nearest containing map or topic.
+ :)
+declare function df:getTitleForLinkElementContainer($link as element()) {
+   
+   let $titleContainer as element() :=
+       if (df:class($link, 'map/topicref'))
+          then root($link)/*
+          else ($link/ancestor::*[df:class(., 'topic/topic')])[last()]
+   let $title as element()? := $titleContainer/*[contains(@class, '/title ')]
+   (: let $result := df:getTitleText($titleContainer) :)
+   (: let $result := string($titleContainer/*[df:class(., 'topic/title') or df:class(., 'map/title')]) :)
+   
+   let $result := string($title)
+   return $result
+
+};
+
+
+
+(:~
  : Gets the effective value of the attribute, applying DITA-defined default
  : value rules when the attribute does not have a value.
  :
