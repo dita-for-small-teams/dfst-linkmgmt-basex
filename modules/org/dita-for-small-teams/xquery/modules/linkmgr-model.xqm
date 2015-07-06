@@ -44,7 +44,12 @@ import module namespace relpath="http://dita-for-small-teams.org/xquery/modules/
    only works for elements with @id attribute values.
  :)
 declare function lmm:constructResourceKeyForElement($elem as element()) as xs:string {
-  'bogusresourcekey'
+  let $targetDocHash := hash:md5(document-uri(root($elem)))
+  let $treepos := for $anc in ($elem/ancestor-or-self::*)
+                      return string(count($anc | $anc/preceding-sibling::*))
+  let $key := string-join($treepos, '.')
+  return $targetDocHash || '^' || $key
+
 };
 
 (: Create or update the link management indexes for the specified repository
@@ -138,9 +143,11 @@ declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget($dbN
    let $targetDoc := root($target)
    let $targetDocHash := hash:md5(document-uri($targetDoc))
    let $containingDir := concat($dfstcnst:where-used-dir, '/', $targetDocHash, '/')
-   let $recordFilename := concat('use-record_', hash:md5(document-uri(root($link))), '.xml')
+   let $reskey := lmm:constructResourceKeyForElement($target)
+   let $recordFilename := concat('use-record_', $reskey, '.xml')
    let $useRecord := 
-     <dfst:useRecord targetDoc="{document-uri($targetDoc)}"
+     <dfst:useRecord resourceKey="{$reskey}"
+                     targetDoc="{document-uri($targetDoc)}"
                      usingDoc="{document-uri(root($link))}"
                      linkType="{df:getLinkBaseType($link)}"
                      linkClass="{string($link/@class)}"

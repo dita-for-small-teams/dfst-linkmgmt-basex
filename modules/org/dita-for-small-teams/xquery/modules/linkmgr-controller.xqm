@@ -21,6 +21,8 @@ import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/b
 import module namespace linkutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
 import module namespace lmm="http://dita-for-small-teams.org/xquery/modules/linkmgr-model";
 
+declare namespace dfst="http://dita-for-small-teams.org";
+
 
 (: Give a document, finds all references to that document that match the 
    type of uses as configured in the $useParams.
@@ -77,21 +79,11 @@ declare function lmc:getUses($doc as document-node(), $useParams) as element()* 
       Implementation question: How to know if the use records for the 
       resource are up to date?
       :)
+    let $dbName := db:name($doc)
+    let $collection := db:name($doc) || '.dfst/linkmgmt/where-used'
+    let $records := collection($dbName)/dfst:useRecord[@resourceKey = $resKey]
    
-   (: Stub use record for initial testing :)
-   
-   (:
-   return <useRecord usekey="uniqueIDofTheUseInstance"
-                     reskey="resourceKeyOfReferencedResource"
-                     linktype="- map/topicref bookmap/chapter "
-                     format="ditamap"
-                     scope="local"
-                     usingDoc="URI of the doc that contains the reference"
-                     useLocator="XPath location of the using element within the using doc">
-            <title>Title of using document (or relative path if no title)</title>
-          </useRecord>
-          :)
-    return ()
+    return $records
 
 };
 

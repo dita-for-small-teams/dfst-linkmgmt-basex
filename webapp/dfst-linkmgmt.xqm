@@ -253,7 +253,9 @@ declare
    : So we'll need to find another way of capturing the log details and success
    : or failure.
    :)
-  
+   
+   
+  (: FIXME: This is a quick hack in advance of setting up proper logging infrastructure :)
   return lmm:updateLinkManagementIndexes($dbName)
   
 (:  let $status := string($result/@status)
