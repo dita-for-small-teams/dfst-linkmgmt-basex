@@ -52,11 +52,10 @@ declare function lmm:constructResourceKeyForElement($elem as element()) as xs:st
 
 };
 
-(: Create or update the link management indexes for the specified repository
-
-   Returns a report of the update process.
-
-:)
+(:~
+ : Create or update the link management indexes for the specified repository
+ :  
+ :)
 declare %updating function lmm:updateLinkManagementIndexes($dbName as xs:string) {
    (: Query the database to find all links and for each link, record a resource use
       record in the database.
@@ -87,39 +86,78 @@ declare %updating function lmm:updateLinkManagementIndexes($dbName as xs:string)
        
      :)
      
+    let $logID := 'linkMgmtIndex' (: ID of the log to log messages to :)
+     
     let $directLinks := lmutil:findAllDirectLinks($dbName)
-    (: Updating functions can't return a result, so we can't
-       capture the log records as we go.
-     :)
        
-     return (try {
-        (db:delete($dbName, $dfstcnst:where-used-dir),
-         db:output(<info>Where-used Index updated</info>))        
-     } catch * {
+    return (try {
+        db:delete($dbName, $dfstcnst:where-used-dir)        
+    } catch * {
+        (: FIXME: Log to log doc :)
         db:output(<error>Exception deleting where-used directory "{$dfstcnst:where-used-dir}": {$err:description}</error>)
-     },
+    },
+     
+    (: Now create new resource use records for direct links :)
     
-    (: Now create new resource use records :)
+    lmm:createDirectLinkResourceRecords($dbName, $directLinks, $logID),
     
-    for $link in $directLinks
-       let $resolveResult as map(*) := lmutil:resolveDirectLink($dbName, $link)
-       return lmm:createOrUpdateResourceUseRecord($dbName, $link, $resolveResult)
+    (: Now create resolved maps and key space documents for each of the root maps.
+     :)
+    lmm:constructKeySpaces($dbName, $logID),
+    
+    (: Now create resource use records for all the indirect links: :)
+    lmm:createIndirectLinkResourceRecords(
+                $dbName, 
+                lmutil:findAllIndirectLinks($dbName), 
+                $logID)
     )
+        
 };
 
-(: Attempts to resolve the link and, if successful, creates use
-   record for the resource addressed.
-   
-   This form of the method is for context-free (direct URI-reference)
-   links.
-   
-   Returns log entries with details of the attempt.
+declare %updating function lmm:createDirectLinkResourceRecords(
+        $dbName as xs:string, 
+        $directLinks as map(*)*,
+        $logID as xs:string) {
+    for $linkItem in $directLinks   
+       let $resolveResult := lmutil:resolveDirectLink($linkItem)    
+       return lmm:createOrUpdateResourceUseRecord(
+                   $dbName, 
+                   $linkItem,
+                   $resolveResult,
+                   $logID)
+    
+};
+
+declare %updating function lmm:createIndirectLinkResourceRecords(
+                               $dbName as xs:string,
+                               $indirectLinks,
+                               $logID as xs:string) {
+    for $linkItem in $indirectLinks
+        let $resolveResult as map(*) := lmutil:resolveIndirectLink($linkItem)
+        return lmm:createOrUpdateResourceUseRecord(
+                   $dbName,
+                   $linkItem,
+                   $resolveResult,
+                   $logID)
+};
+
+(: Given a link and the resolved result, creates a resource use record for each
+   target the link resolved to.
    
  :)
-declare %updating function lmm:createOrUpdateResourceUseRecord($dbName, $link, $resolveResult as map(*)) {
+declare %updating function lmm:createOrUpdateResourceUseRecord(
+                              $dbName, 
+                              $linkItem as map(*), 
+                              $resolveResult as map(*),
+                              $logID as xs:string) {                              
+   let $resolveResult as map(*) := lmutil:resolveDirectLink($linkItem)                              
    let $targets := $resolveResult('target')
    for $target in $targets
-       return lmm:createOrUpdateResourceUseRecordForLinkTarget($dbName, $link, $target)
+       return lmm:createOrUpdateResourceUseRecordForLinkTarget(
+                    $dbName, 
+                    $linkItem, 
+                    $target,
+                    $logID)
 };
 
 (:
@@ -141,13 +179,15 @@ declare %updating function lmm:createOrUpdateResourceUseRecord($dbName, $link, $
  :)
 declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget(
            $dbName as xs:string, 
-           $link as element(), 
-           $target as element()) {
+           $linkItem as map(*), 
+           $target as element(),
+           $logID as xs:string) {
    let $targetDoc := root($target)
    let $targetDocHash := hash:md5(document-uri($targetDoc))
    let $containingDir := concat($dfstcnst:where-used-dir, '/', $targetDocHash, '/')
    let $reskey := lmm:constructResourceKeyForElement($target)
    let $recordFilename := concat('use-record_', $reskey, '.xml')
+   let $link := $linkItem('link')
    let $format := if ($link/@format)
                      then string($link/@format)
                      else 'dita'
@@ -172,10 +212,25 @@ declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget(
        db:replace($dbName, 
                   $useRecordUri,
                   $useRecord),
+       (: FIXME: Write record to log doc :)
        db:output(<info>Stored use record "{$useRecordUri}"</info>)
     } catch * {
+       (: FIXME: Write record to log doc :)
        db:output(<error>Error storing use record to "{$useRecordUri}": {$err:description}</error>)
     }
 };
 
+(:~
+ : Construct key spaces from root maps. 
+ :
+ : Finds all the root maps (requires that all direct-link use records are up to date).
+ :  
+ : For each root map, constructs and stored the resolved map and then constructs 
+ : and stores the keyspace document for that root map.
+ :  
+ :)
+declare %updating function lmm:constructKeySpaces($dbName, $logID) {
+  (: FIXME: Implement this :)
+  db:output("lmm:constructKeySpaces() not implemented")
+};
 (: End of Module :)
