@@ -20,6 +20,7 @@ import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-
 import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-utils";
 import module namespace linkutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
 import module namespace lmm="http://dita-for-small-teams.org/xquery/modules/linkmgr-model";
+import module namespace dfstcnst="http://dita-for-small-teams.org/xquery/modules/dfst-constants";
 
 declare namespace dfst="http://dita-for-small-teams.org";
 
@@ -70,6 +71,10 @@ declare function lmc:getUses($doc as document-node(), $useParams) as element()* 
       documents with no fragment identifier are implicitly
       to the root elements of those documents (i.e., a map
       or topic element).
+      
+      The resource key here is used as the name of the 
+      directory that contains the where-used records for
+      this element.
     :)
    let $resKey := lmm:constructResourceKeyForElement($doc/*)
    
@@ -78,8 +83,9 @@ declare function lmc:getUses($doc as document-node(), $useParams) as element()* 
         
       :)
     let $dbName := bxutil:getMetadataDbNameForDoc($doc)
-    let $records := collection($dbName)/dfst:useRecord[@resourceKey = $resKey]
-                                       [lmc:useRecordMatcher(., $linktypes, $formats, $scopes)]   
+    let $collection := $dbName || $dfstcnst:where-used-dir || '/' || $resKey
+    let $records := collection($collection)
+                       /dfst:useRecord[lmc:useRecordMatcher(., $linktypes, $formats, $scopes)]
     return $records
 
 };

@@ -68,7 +68,7 @@ module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-ut
    let $sep := '^'
    let $repo := bxutil:getGitRepoForDoc($doc)
    let $branch := bxutil:getGitBranchForDoc($doc)
-   return bxutil:getDbNameForRepoAndBranch($repo, $branch) 
+   return bxutil:getMetadataDbNameForRepoAndBranch($repo, $branch) 
  };
  
  (: Gets the git repository for a document  :)

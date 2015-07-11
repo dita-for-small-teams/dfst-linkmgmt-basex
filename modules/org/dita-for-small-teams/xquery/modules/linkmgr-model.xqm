@@ -190,8 +190,9 @@ declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget(
            $logID as xs:string) {
    let $targetDoc := root($target)
    let $link := $linkItem('link')
-   let $targetDocHash := hash:md5(document-uri($targetDoc))
-   let $containingDir := concat($dfstcnst:where-used-dir, '/', $targetDocHash, '/')
+   let $containingDir := concat($dfstcnst:where-used-dir, '/', 
+                                lmm:constructResourceKeyForElement($target), 
+                                '/')
    let $reskey := lmm:constructResourceKeyForElement($link)
    let $recordFilename := concat('use-record_', $reskey, '.xml')
    let $format := if ($link/@format)
