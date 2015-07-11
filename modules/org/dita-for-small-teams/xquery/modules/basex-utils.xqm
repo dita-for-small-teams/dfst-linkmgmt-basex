@@ -51,6 +51,26 @@ module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-ut
    return concat('dfst', $sep, $repo, $sep, $branch) 
  };
  
+ (: Constructs the BaseX metadata database name for git repository and branch pair 
+  : For each content database, reflecting a specific repository/branch pair,
+  : there is a corresonding metadata database that holds any metadata for that 
+  : database (i.e., all the link management metadata).
+  :)
+ declare function bxutil:getMetadataDbNameForRepoAndBranch($repo, $branch) {
+   let $sep := '^'
+   return concat('_dfst', $sep, 'metadata', $sep, $repo, $sep, $branch) 
+ };
+ 
+ (: Gets the metadata database name for given document.
+  : 
+  :)
+ declare function bxutil:getMetadataDbNameForDoc($doc as document-node()) {
+   let $sep := '^'
+   let $repo := bxutil:getGitRepoForDoc($doc)
+   let $branch := bxutil:getGitBranchForDoc($doc)
+   return bxutil:getDbNameForRepoAndBranch($repo, $branch) 
+ };
+ 
  (: Gets the git repository for a document  :)
  declare function bxutil:getGitRepoForDoc($doc as document-node()) {
     let $uri := document-uri($doc)

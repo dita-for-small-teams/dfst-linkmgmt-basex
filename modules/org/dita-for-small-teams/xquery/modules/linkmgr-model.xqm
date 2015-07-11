@@ -56,7 +56,9 @@ declare function lmm:constructResourceKeyForElement($elem as element()) as xs:st
  : Create or update the link management indexes for the specified repository
  :  
  :)
-declare %updating function lmm:updateLinkManagementIndexes($dbName as xs:string) {
+declare %updating function lmm:updateLinkManagementIndexes(
+                               $contentDbName as xs:string,
+                               $metadataDbName as xs:string) {
    (: Query the database to find all links and for each link, record a resource use
       record in the database.
       
@@ -88,40 +90,44 @@ declare %updating function lmm:updateLinkManagementIndexes($dbName as xs:string)
      
     let $logID := 'linkMgmtIndex' (: ID of the log to log messages to :)
      
-    let $directLinks := lmutil:findAllDirectLinks($dbName)
+    let $directLinks := lmutil:findAllDirectLinks($contentDbName)
        
-    return (try {
-        db:delete($dbName, $dfstcnst:where-used-dir)        
-    } catch * {
-        (: FIXME: Log to log doc :)
-        db:output(<error>Exception deleting where-used directory "{$dfstcnst:where-used-dir}": {$err:description}</error>)
-    },
-     
-    (: Now create new resource use records for direct links :)
-    
-    lmm:createDirectLinkResourceRecords($dbName, $directLinks, $logID),
-    
-    (: Now create resolved maps and key space documents for each of the root maps.
-     :)
-    lmm:constructKeySpaces($dbName, $logID),
-    
-    (: Now create resource use records for all the indirect links: :)
-    lmm:createIndirectLinkResourceRecords(
-                $dbName, 
-                lmutil:findAllIndirectLinks($dbName), 
-                $logID)
+    return (
+      try {
+          db:delete($metadataDbName, $dfstcnst:where-used-dir)        
+      } catch * {
+          (: FIXME: Log to log doc :)
+          db:output(<error>Exception deleting where-used directory "{$dfstcnst:where-used-dir}": {$err:description}</error>)
+      },
+       
+      (: Now create new resource use records for direct links :)
+      
+      lmm:createDirectLinkResourceRecords($metadataDbName, $directLinks, $logID),
+      
+      (: Now create resolved maps and key space documents for each of the root maps.
+       :)
+      lmm:constructKeySpaces(
+         $contentDbName,
+         $metadataDbName,
+         $logID),
+      
+      (: Now create resource use records for all the indirect links: :)
+      lmm:createIndirectLinkResourceRecords(
+                  $metadataDbName, 
+                  lmutil:findAllIndirectLinks($contentDbName), 
+                  $logID)
     )
         
 };
 
 declare %updating function lmm:createDirectLinkResourceRecords(
-        $dbName as xs:string, 
+        $metadataDbName as xs:string, 
         $directLinks as map(*)*,
         $logID as xs:string) {
     for $linkItem in $directLinks   
        let $resolveResult := lmutil:resolveDirectLink($linkItem)    
        return lmm:createOrUpdateResourceUseRecord(
-                   $dbName, 
+                   $metadataDbName, 
                    $linkItem,
                    $resolveResult,
                    $logID)
@@ -129,13 +135,13 @@ declare %updating function lmm:createDirectLinkResourceRecords(
 };
 
 declare %updating function lmm:createIndirectLinkResourceRecords(
-                               $dbName as xs:string,
+                               $metadataDbName as xs:string,
                                $indirectLinks,
                                $logID as xs:string) {
     for $linkItem in $indirectLinks
         let $resolveResult as map(*) := lmutil:resolveIndirectLink($linkItem)
         return lmm:createOrUpdateResourceUseRecord(
-                   $dbName,
+                   $metadataDbName,
                    $linkItem,
                    $resolveResult,
                    $logID)
@@ -146,7 +152,7 @@ declare %updating function lmm:createIndirectLinkResourceRecords(
    
  :)
 declare %updating function lmm:createOrUpdateResourceUseRecord(
-                              $dbName, 
+                              $metadataDbName, 
                               $linkItem as map(*), 
                               $resolveResult as map(*),
                               $logID as xs:string) {                              
@@ -154,7 +160,7 @@ declare %updating function lmm:createOrUpdateResourceUseRecord(
    let $targets := $resolveResult('target')
    for $target in $targets
        return lmm:createOrUpdateResourceUseRecordForLinkTarget(
-                    $dbName, 
+                    $metadataDbName, 
                     $linkItem, 
                     $target,
                     $logID)
@@ -178,16 +184,16 @@ declare %updating function lmm:createOrUpdateResourceUseRecord(
  : provide that abstraction. It could through a refactor. Keeping it simple for now.
  :)
 declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget(
-           $dbName as xs:string, 
+           $metadataDbName as xs:string, 
            $linkItem as map(*), 
            $target as element(),
            $logID as xs:string) {
    let $targetDoc := root($target)
+   let $link := $linkItem('link')
    let $targetDocHash := hash:md5(document-uri($targetDoc))
    let $containingDir := concat($dfstcnst:where-used-dir, '/', $targetDocHash, '/')
-   let $reskey := lmm:constructResourceKeyForElement($target)
+   let $reskey := lmm:constructResourceKeyForElement($link)
    let $recordFilename := concat('use-record_', $reskey, '.xml')
-   let $link := $linkItem('link')
    let $format := if ($link/@format)
                      then string($link/@format)
                      else 'dita'
@@ -211,11 +217,16 @@ declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget(
      </dfst:useRecord>
     let $useRecordUri := relpath:newFile($containingDir, $recordFilename)
     return try {
-       db:replace($dbName, 
+       (
+       if (db:exists($metadataDbName, $useRecordUri)) 
+          then db:delete($metadataDbName, $useRecordUri)
+          else(),
+       db:replace($metadataDbName, 
                   $useRecordUri,
                   $useRecord),
        (: FIXME: Write record to log doc :)
        db:output(<info>Stored use record "{$useRecordUri}"</info>)
+       )
     } catch * {
        (: FIXME: Write record to log doc :)
        db:output(<error>Error storing use record to "{$useRecordUri}": {$err:description}</error>)
@@ -224,6 +235,9 @@ declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget(
 
 (:~
  : Construct key spaces from root maps. 
+ : 
+ : @param contentDbName Name of datbase that contains the content to construct key spaces from
+ : @param metadataDbName Name of metadata database to store construct key spaces in.
  :
  : Finds all the root maps (requires that all direct-link use records are up to date).
  :  
@@ -231,7 +245,10 @@ declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget(
  : and stores the keyspace document for that root map.
  :  
  :)
-declare %updating function lmm:constructKeySpaces($dbName, $logID) {
+declare %updating function lmm:constructKeySpaces(
+        $contentDbName as xs:string,
+        $metadataDbName as xs:string,
+        $logID) {
   (: FIXME: Implement this :)
   db:output("lmm:constructKeySpaces() not implemented")
 };

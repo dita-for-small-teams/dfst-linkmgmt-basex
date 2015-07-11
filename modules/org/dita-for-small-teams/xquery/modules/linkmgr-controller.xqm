@@ -77,8 +77,7 @@ declare function lmc:getUses($doc as document-node(), $useParams) as element()* 
       specification. 
         
       :)
-    let $dbName := db:name($doc)
-    let $collection := db:name($doc) || '.dfst/linkmgmt/where-used'
+    let $dbName := bxutil:getMetadataDbNameForDoc($doc)
     let $records := collection($dbName)/dfst:useRecord[@resourceKey = $resKey]
                                        [lmc:useRecordMatcher(., $linktypes, $formats, $scopes)]   
     return $records

@@ -246,7 +246,8 @@ declare
   %output:doctype-system("http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd")
   function page:updateLinkManagementIndexes($repo as xs:string, $branch as xs:string) {
   
-  let $dbName := bxutil:getDbNameForRepoAndBranch($repo, $branch)
+  let $contentDbName := bxutil:getDbNameForRepoAndBranch($repo, $branch)
+  let $metadataDbName := bxutil:getMetadataDbNameForRepoAndBranch($repo, $branch)
 
   (:
    : XQuery update doesn't allow for returning results from updating functions.
@@ -256,7 +257,7 @@ declare
    
    
   (: FIXME: This is a quick hack in advance of setting up proper logging infrastructure :)
-  return lmm:updateLinkManagementIndexes($dbName)
+  return lmm:updateLinkManagementIndexes($contentDbName, $metadataDbName)
   
 (:  let $status := string($result/@status)
   let $headColor := if ($status = ('error')) 
