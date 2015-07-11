@@ -204,7 +204,9 @@ declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget(
                      format="{$format}"
                      scope="{$scope}"
      >
-       <title>{if (df:class($link, 'map/topicref')) then string(root($link)/*) 
+       <title>{if (df:class($link, 'map/topicref')) 
+                  then string((root($link)/*/*[df:class(., 'topic/title')] |
+                        root($link)/*/@title)[1])
                   else string($link/ancestor::*[df:class(., 'topic/topic')][1]/*[df:class(., 'topic/title')])}</title>
      </dfst:useRecord>
     let $useRecordUri := relpath:newFile($containingDir, $recordFilename)
