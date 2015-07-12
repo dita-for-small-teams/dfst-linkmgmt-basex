@@ -323,6 +323,17 @@ declare %updating function lmm:constructResolvedMap(
 };
 
 
+(:~
+ : Takes a root map and returns the resolved version of the map.
+ : 
+ : The resolution process preserves the original structure and 
+ : adds <topicgroup> elements to record submap boundaries.
+ :
+ : The resulting resolved map reflects all directly-referenced submaps.
+ : Because the resolved map is used for constructing key spaces it is 
+ : not useful or necessary to resolve key-based map references as those
+ : maps cannot contribute to the final set of effective key spaces.
+ :)
 declare function lmm:resolveMap(
                      $map as element(),
                      $logID as xs:string) as element() {
@@ -331,10 +342,78 @@ declare function lmm:resolveMap(
           element {name($map)} 
             {
               attribute origMapURI { document-uri(root($map)) },
-              attribute origMapDB { db:name($map) }
+              attribute origMapDB { db:name($map) },
+              $map/@*,
+              for $node in $map/node() 
+                  return lmm:resolveMapHandleNode($node, $logID)
             }
     return $resolvedMap
 };
+
+(:~
+ : Simple identity transform dispatch handler for nodes of any type.
+ :)
+declare function lmm:resolveMapHandleNode($node as node(), $logID as xs:string) as node()* {
+  typeswitch ($node) 
+    case element() return lmm:resolveMapHandleElement($node, $logID)
+    default return $node
+};
+
+(:~
+ : Apply identity transform to elements of any type. 
+ :)
+declare function lmm:resolveMapHandleElement($elem as element(), $logID as xs:string) as element()* {
+   if (df:class($elem, 'map/topicref'))
+      then lmm:resolveMapHandleTopicref($elem, $logID)
+      else lmm:resolveMapCopy($elem, $logID)
+};
+
+(:~
+ : Copy an element as for xsl:copy instruction.
+ :)
+declare function lmm:resolveMapCopy($elem as element(), $logID as xs:string) as element()* {
+   let $result :=
+     element {name($elem)} {
+        for $node in ($elem/@*, $elem/node())
+            return lmm:resolveMapHandleNode($node, $logID)           
+     }
+   return $result
+};
+
+(:~
+ : Handle topicrefs. If the topicref is to local-scope map, then resolve the topicref
+ : to the map and include the map in the resolved result, otherwise apply normal
+ : copy processing.
+ :)
+declare function lmm:resolveMapHandleTopicref($elem as element(), $logID as xs:string) as element()* {
+   if ($elem/@format = ('ditamap') and $elem/@scope = ('local'))
+      then lmm:resolveMapHandleMapRef($elem, $logID)
+      else lmm:resolveMapCopy($elem, $logID)
+};
+
+(:~
+ : Handle local-scope map references.
+ :
+ : Constructs a <topicgroup> element that captures the details about the original
+ : submap and then applies the identity tranform to the topicref and reltable
+ : children of the submap.
+ :)
+declare function lmm:resolveMapHandleMapRef($elem as element(), $logID as xs:string) as element()* {
+  let $resolutionMap as map(*) := df:resolveTopicRef($elem)
+  let $submap := $resolutionMap('target')
+  (: FIXME: add resolution messages to log once we get logging infrastructure in place :)
+  return 
+    <topicgroup origMapURI="{document-uri(root($submap))}"
+      origMapClass="{string($submap/@class)}"
+    >
+      <topicmeta>{comment {'submap metadata goes here '}}</topicmeta>,
+      {for $e in $submap/*[df:class(., 'map/topicref') or df:class(., 'map/reltable')]
+          return lmm:resolveMapHandleElement($e, $logID)
+      }
+    </topicgroup>
+};
+
+
 
 declare function lmm:getResolvedMapURIForMap(
                         $map as element()) {
