@@ -30,33 +30,6 @@ import module namespace dfstcnst="http://dita-for-small-teams.org/xquery/modules
 import module namespace relpath="http://dita-for-small-teams.org/xquery/modules/relpath-utils";
 
 
-(: Given an element with an @id value, construct the unique resource key for it. 
-   For a given element the resource ID is guaranteed to be unique within
-   a snapshot (git commit).
-
-   @param elem Element to get resource ID for.
-   @returns Resource key string. 
-
-   The resource key is a combination of the absolute URI of the containing
-   document and the element's tree position within the document, producing
-   a unique key for any element in any document on a given snapshot (version
-   in time). Resource keys are not reliably unique across snapshots as the position of
-   the element within its containing document could change from version to 
-   version. 
-   
-   The resource key is used to look up the element in where-used records, either
-   as the element used or the element doing the use (links).
-   
- :)
-declare function lmm:constructResourceKeyForElement($elem as element()) as xs:string {
-  let $targetDocHash := hash:md5(document-uri(root($elem)))
-  let $treepos := for $anc in ($elem/ancestor-or-self::*)
-                      return string(count($anc | $anc/preceding-sibling::*))
-  let $key := string-join($treepos, '.')
-  return $targetDocHash || '^' || $key
-
-};
-
 (:~
  : Create or update the link management indexes for the specified repository
  :  
@@ -100,6 +73,7 @@ declare %updating function lmm:updateLinkManagementIndexes(
     let $logID := 'linkMgmtIndex' (: ID of the log to log messages to :)
      
     let $directLinks := lmutil:findAllDirectLinks($contentDbName)
+    let $indirectLinks := lmutil:findAllIndirectLinks($contentDbName)
        
     return (
       try {
@@ -123,7 +97,7 @@ declare %updating function lmm:updateLinkManagementIndexes(
       (: Now create resource use records for all the indirect links: :)
       lmm:createIndirectLinkResourceRecords(
                   $metadataDbName, 
-                  lmutil:findAllIndirectLinks($contentDbName), 
+                  $indirectLinks, 
                   $logID)
     )
         
@@ -200,9 +174,9 @@ declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget(
    let $targetDoc := root($target)
    let $link := $linkItem('link')
    let $containingDir := concat($dfstcnst:where-used-dir, '/', 
-                                lmm:constructResourceKeyForElement($target), 
+                                lmutil:constructResourceKeyForElement($target), 
                                 '/')
-   let $reskey := lmm:constructResourceKeyForElement($link)
+   let $reskey := lmutil:constructResourceKeyForElement($link)
    let $recordFilename := concat('use-record_', $reskey, '.xml')
    let $format := if ($link/@format)
                      then string($link/@format)
@@ -456,14 +430,12 @@ declare function lmm:resolveMapHandleMapRef(
       xml:base="{document-uri(root($submap))}"
       origMapURI="{document-uri(root($submap))}"
       origMapClass="{string($submap/@class)}"
-      class="+ map/topicref dfst-d/submap "
+      class="+ map/topicref map-d/topicgroup dfst-d/submap "
     >      
-      {lmm:constructMergedKeyscopeAtt($elem, $submap)},
-      <topicmeta>
-        <submap-meta>{
-          comment {'submap metadata goes here '}
-        }</submap-meta>
-      </topicmeta>,
+      {lmm:constructMergedKeyscopeAtt($elem, $submap)}
+     <topicmeta class="- map/topicmeta ">
+       <navtitle class="- map/navtitle ">{($submap/*[df:class(., 'topic/title')], string($submap/@title))[1]}</navtitle>
+     </topicmeta>
       {for $e in $submap/*[df:class(., 'map/topicref') or df:class(., 'map/reltable')]
           return lmm:resolveMapHandleElement($e, $keyScopes, $logID)
       }
