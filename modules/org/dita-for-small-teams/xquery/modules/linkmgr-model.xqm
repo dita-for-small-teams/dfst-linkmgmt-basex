@@ -339,6 +339,24 @@ declare function lmm:resolveMap(
                      $map as element(),
                      $logID as xs:string) as element() {
                      
+    
+    (: Array of sequences of key scope names, ordered from
+       highest to lowest.
+       Each sequence is the set of key scope names defined
+       on a given map or topicref, establishing a new set
+       of key scopes.
+       
+       There is always the '#root' (anonymous) key scope
+       bound to the root map. The root map can also
+       establish additional scope names.
+    :)
+    let $keyScopes as array(xs:string+) := 
+       [ ('#root',
+          if ($map/@keyscope)
+             then tokenize(string($map/@keyscope), ' ')
+             else ()
+         )
+       ]  
     let $resolvedMap := 
           element {name($map)} 
             {
@@ -347,7 +365,7 @@ declare function lmm:resolveMap(
               attribute xml:base { document-uri(root($map)) },
               $map/@*,
               for $node in $map/node() 
-                  return lmm:resolveMapHandleNode($node, $logID)
+                  return lmm:resolveMapHandleNode($node, $keyScopes, $logID)
             }
     return $resolvedMap
 };
@@ -355,31 +373,43 @@ declare function lmm:resolveMap(
 (:~
  : Simple identity transform dispatch handler for nodes of any type.
  :)
-declare function lmm:resolveMapHandleNode($node as node(), $logID as xs:string) as node()* {
+declare function lmm:resolveMapHandleNode(
+                     $node as node(),
+                     $keyScopes as array(xs:string+),
+                     $logID as xs:string) as node()* {
   typeswitch ($node) 
-    case element() return lmm:resolveMapHandleElement($node, $logID)
+    case element() return lmm:resolveMapHandleElement(
+                              $node,
+                              $keyScopes,
+                              $logID)
     default return $node
 };
 
 (:~
  : Apply identity transform to elements of any type. 
  :)
-declare function lmm:resolveMapHandleElement($elem as element(), $logID as xs:string) as element()* {
+declare function lmm:resolveMapHandleElement(
+                       $elem as element(),
+                       $keyScopes as array(xs:string+), 
+                       $logID as xs:string) as element()* {
    let $result :=
      if (df:class($elem, 'map/topicref'))
-        then lmm:resolveMapHandleTopicref($elem, $logID)
-        else lmm:resolveMapCopy($elem, $logID)
+        then lmm:resolveMapHandleTopicref($elem, $keyScopes, $logID)
+        else lmm:resolveMapCopy($elem, $keyScopes, $logID)
    return $result
 };
 
 (:~
  : Copy an element as for xsl:copy instruction.
  :)
-declare function lmm:resolveMapCopy($elem as element(), $logID as xs:string) as element()* {
+declare function lmm:resolveMapCopy(
+                    $elem as element(),
+                    $keyScopes as array(xs:string+), 
+                    $logID as xs:string) as element()* {
    let $result :=
      element {name($elem)} {
         for $node in ($elem/@*, $elem/node())
-            return lmm:resolveMapHandleNode($node, $logID)           
+            return lmm:resolveMapHandleNode($node, $keyScopes, $logID)           
      }
    return $result
 };
@@ -389,11 +419,14 @@ declare function lmm:resolveMapCopy($elem as element(), $logID as xs:string) as 
  : to the map and include the map in the resolved result, otherwise apply normal
  : copy processing.
  :)
-declare function lmm:resolveMapHandleTopicref($elem as element(), $logID as xs:string) as element()* {
+declare function lmm:resolveMapHandleTopicref(
+                      $elem as element(),
+                      $keyScopes as array(xs:string+), 
+                      $logID as xs:string) as element()* {
    let $result :=
      if ($elem/@format = ('ditamap') and df:getEffectiveScope($elem) = ('local'))
-        then lmm:resolveMapHandleMapRef($elem, $logID)
-        else lmm:resolveMapCopy($elem, $logID)
+        then lmm:resolveMapHandleMapRef($elem, $keyScopes, $logID)
+        else lmm:resolveMapCopy($elem, $keyScopes, $logID)
    return $result
 };
 
@@ -408,7 +441,10 @@ declare function lmm:resolveMapHandleTopicref($elem as element(), $logID as xs:s
  : so that URI references copied from the included map will be correct.
  :
  :)
-declare function lmm:resolveMapHandleMapRef($elem as element(), $logID as xs:string) as element()* {
+declare function lmm:resolveMapHandleMapRef(
+                        $elem as element(),
+                        $keyScopes as array(xs:string+), 
+                        $logID as xs:string) as element()* {
   let $resolutionMap as map(*) := df:resolveTopicRef($elem)
   let $submap := $resolutionMap('target')
   (: FIXME: add resolution messages to log once we get logging infrastructure in place :)
@@ -426,7 +462,7 @@ declare function lmm:resolveMapHandleMapRef($elem as element(), $logID as xs:str
         }</submap-meta>
       </topicmeta>,
       {for $e in $submap/*[df:class(., 'map/topicref') or df:class(., 'map/reltable')]
-          return lmm:resolveMapHandleElement($e, $logID)
+          return lmm:resolveMapHandleElement($e, $keyScopes, $logID)
       }
     </dfst:submap>
 };
