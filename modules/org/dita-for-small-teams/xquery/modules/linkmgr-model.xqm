@@ -254,8 +254,7 @@ declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget(
  :
  : Finds all the root maps (requires that all direct-link use records are up to date).
  :  
- : For each root map, constructs and stored the resolved map and then constructs 
- : and stores the keyspace document for that root map.
+ : For each root map, constructs and stores the resolved map.
  :  
  :)
 declare %updating function lmm:constructKeySpaces(
@@ -345,6 +344,7 @@ declare function lmm:resolveMap(
             {
               attribute origMapURI { document-uri(root($map)) },
               attribute origMapDB { db:name($map) },
+              attribute xml:base { document-uri(root($map)) },
               $map/@*,
               for $node in $map/node() 
                   return lmm:resolveMapHandleNode($node, $logID)
@@ -400,16 +400,22 @@ declare function lmm:resolveMapHandleTopicref($elem as element(), $logID as xs:s
 (:~
  : Handle local-scope map references.
  :
- : Constructs a <topicgroup> element that captures the details about the original
+ : Constructs a <dfst:submap> element that captures the details about the original
  : submap and then applies the identity tranform to the topicref and reltable
  : children of the submap.
+ :
+ : The dfst:submap element sets the xml:base attribute to the URI of the submap document
+ : so that URI references copied from the included map will be correct.
+ :
  :)
 declare function lmm:resolveMapHandleMapRef($elem as element(), $logID as xs:string) as element()* {
   let $resolutionMap as map(*) := df:resolveTopicRef($elem)
   let $submap := $resolutionMap('target')
   (: FIXME: add resolution messages to log once we get logging infrastructure in place :)
   return 
-    <submap origMapURI="{document-uri(root($submap))}"
+    <dfst:submap 
+      xml:base="{document-uri(root($submap))}"
+      origMapURI="{document-uri(root($submap))}"
       origMapClass="{string($submap/@class)}"
       class="+ map/topicref dfst-d/submap "
     >      
@@ -422,7 +428,7 @@ declare function lmm:resolveMapHandleMapRef($elem as element(), $logID as xs:str
       {for $e in $submap/*[df:class(., 'map/topicref') or df:class(., 'map/reltable')]
           return lmm:resolveMapHandleElement($e, $logID)
       }
-    </submap>
+    </dfst:submap>
 };
 
 (:~
