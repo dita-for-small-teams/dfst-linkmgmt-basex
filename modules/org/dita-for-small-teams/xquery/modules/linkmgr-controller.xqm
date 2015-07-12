@@ -93,6 +93,9 @@ declare function lmc:getUses($doc as document-node(), $useParams) as element()* 
 (:~
  : Determines if a given where-used record matches the filter
  : specified parameters. 
+ :
+ : FIXME: Use a map to pass the filter parameters rather than
+ : individual arguments.
  :)
 declare function lmc:useRecordMatcher($record as element(),
                                               $linktypes as xs:string*,

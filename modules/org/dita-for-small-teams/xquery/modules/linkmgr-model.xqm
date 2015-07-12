@@ -34,14 +34,19 @@ import module namespace relpath="http://dita-for-small-teams.org/xquery/modules/
    For a given element the resource ID is guaranteed to be unique within
    a snapshot (git commit).
 
-   @param elem Element to get resource ID for. Must specify @id attribute.
+   @param elem Element to get resource ID for.
    @returns Resource key string. 
 
    The resource key is a combination of the absolute URI of the containing
-   document, the element's @id attribute value, and other details TBD.
+   document and the element's tree position within the document, producing
+   a unique key for any element in any document on a given snapshot (version
+   in time). Resource keys are not reliably unique across snapshots as the position of
+   the element within its containing document could change from version to 
+   version. 
    
-   Note that because DITA can only address elements with IDs this function
-   only works for elements with @id attribute values.
+   The resource key is used to look up the element in where-used records, either
+   as the element used or the element doing the use (links).
+   
  :)
 declare function lmm:constructResourceKeyForElement($elem as element()) as xs:string {
   let $targetDocHash := hash:md5(document-uri(root($elem)))
@@ -66,14 +71,18 @@ declare %updating function lmm:updateLinkManagementIndexes(
       the containing document and the element's @id value (only elements with
       @id attributes are addressible.
       
-      The link management indexes are stored under the .dfst directory:
-      
-      .dfst/linkmgmt/where-used/
+      The link management indexes are stored in a separate database from
+      the content database: every branch-specific database has a corresponding
+      metadata database that contains the where-used records, resolved maps,
+      key space information, and any other metadata you might want to store.
       
       For each document used there is a directory whose name is the hash
-      of the document's URI (which will be unique within a branch.
-      
-      
+      of the document's URI (which will be unique within a branch). Within
+      that directory are the use records for elements within that document.
+      This arrangement has the effect of providing a reference count for
+      for each document, making it quick to determine if a given document
+      is used by any links. It also allows for narrowing the scope of
+      where-used queries to just the entries for the document.      
       
     :)
     
@@ -252,8 +261,86 @@ declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget(
 declare %updating function lmm:constructKeySpaces(
         $contentDbName as xs:string,
         $metadataDbName as xs:string,
-        $logID) {
-  (: FIXME: Implement this :)
-  db:output("lmm:constructKeySpaces() not implemented")
+        $logID as xs:string) {
+        
+  (: General process:
+  
+     1. Find all DITA maps
+     
+     2. For each map, construct a resolved map that preserves submap
+        boundaries and original source map details.
+        
+     The resolved maps can then be used to determine the effective 
+     binding for any key without the need to separately construct
+     key spaces. This technique was pioneered and suggested by 
+     Chris Nitchie, designer of the DITA 1.3 scoped keys mechanism.
+     
+     Note that there's no point in trying to determine if a given
+     map is a "root map" as any map can, in theory, be used as a root
+     map. Likewise, a map that happens to have no local-scope 
+     topicrefs to it may not be intended to be the root of a publication.
+     
+     One alternative to this approach is to only consider maps that have
+     peer-scope topicrefs to them to be root maps (per the DITA 1.3 
+     meaning for peer-scope topicrefs to dita maps). In this case, there needs
+     to be a "master map" that serves to simply identify the "top level 
+     root maps", that is, the maps that are considered by the document
+     authors to be The root maps, that is, the maps they consider to
+     be the roots of publications. Given this master map the system can 
+     then consider only peer-scope map references in order to determine
+     the root maps and thus the maps for which key space construction
+     is relevant.
+     
+   :)
+   
+   let $maps := collection($contentDbName)/*[df:class(., 'map/map')]
+   return for $map in $maps
+              return lmm:constructResolvedMap(
+                                              $map, 
+                                              $metadataDbName,
+                                              $logID)
+        
 };
+
+(:~
+ : Construct a resolved map suiteable for doing key resolution. The map
+ : is stored in the metadata database.
+ :
+ : @param map DITA map that is the root of the resolved map.
+ : @param metadataDbName Name of the metadata database to store the
+ :        resolved map in
+ :)
+declare %updating function lmm:constructResolvedMap(
+                                    $map as element(), 
+                                    $metadataDbName as xs:string,
+                                    $logID as xs:string) {
+  let $contentDbName := db:name($map)
+  let $resolvedMap := lmm:resolveMap($map, $logID)
+  let $resolvedMapURI := lmm:getResolvedMapURIForMap($map)
+  return (db:replace($metadataDbName, $resolvedMapURI, $resolvedMap),
+          db:output(<info>Stored resolved map "{$resolvedMapURI}"</info>))
+                         
+};
+
+
+declare function lmm:resolveMap(
+                     $map as element(),
+                     $logID as xs:string) as element() {
+                     
+    let $resolvedMap := 
+          element {name($map)} 
+            {
+              attribute origMapURI { document-uri(root($map)) },
+              attribute origMapDB { db:name($map) }
+            }
+    return $resolvedMap
+};
+
+declare function lmm:getResolvedMapURIForMap(
+                        $map as element()) {
+  let $mapDocHash := hash:md5(document-uri(root($map)))
+  return $dfstcnst:resolved-map-dir ||
+         "/" || $mapDocHash || ".ditamap"
+};
+
 (: End of Module :)

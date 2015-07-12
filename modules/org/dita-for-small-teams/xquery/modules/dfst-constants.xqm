@@ -15,3 +15,4 @@
    module namespace dfstcnst="http://dita-for-small-teams.org/xquery/modules/dfst-constants";
    
    declare variable $dfstcnst:where-used-dir := '/linkmgmt/where-used';
+   declare variable $dfstcnst:resolved-map-dir := '/linkmgmt/resolved-maps';
