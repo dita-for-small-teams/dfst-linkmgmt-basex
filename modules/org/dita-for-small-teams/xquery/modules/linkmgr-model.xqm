@@ -295,10 +295,12 @@ declare %updating function lmm:constructKeySpaces(
    
    let $maps := collection($contentDbName)/*[df:class(., 'map/map')]
    return for $map in $maps
-              return lmm:constructResolvedMap(
+              return (db:output(<info>Resolving map {document-uri(root($map))}...</info>),
+                      lmm:constructResolvedMap(
                                               $map, 
                                               $metadataDbName,
                                               $logID)
+                     )
         
 };
 
@@ -410,15 +412,45 @@ declare function lmm:resolveMapHandleMapRef($elem as element(), $logID as xs:str
     <submap origMapURI="{document-uri(root($submap))}"
       origMapClass="{string($submap/@class)}"
       class="+ map/topicref dfst-d/submap "
-    >
-      <topicmeta>{comment {'submap metadata goes here '}}</topicmeta>,
+    >      
+      {lmm:constructMergedKeyscopeAtt($elem, $submap)},
+      <topicmeta>
+        <submap-meta>{
+          comment {'submap metadata goes here '}
+        }</submap-meta>
+      </topicmeta>,
       {for $e in $submap/*[df:class(., 'map/topicref') or df:class(., 'map/reltable')]
           return lmm:resolveMapHandleElement($e, $logID)
       }
     </submap>
 };
 
+(:~
+ : Merge the key scope names from two elements that may both specify @keyscope
+ :)
+declare function lmm:constructMergedKeyscopeAtt(
+                        $elem1 as element(), 
+                        $elem2 as element()) as attribute()? {
+   let $scopeNames as xs:string? := lmm:mergeKeyScopeNames($elem1, $elem2)
+   let $result :=
+       if ($scopeNames)
+          then attribute keyscope {$scopeNames}
+          else ()
+   return $result
+};
 
+(:~
+ : Merge the key scope names from two elements that may both specify @keyscope
+ :)
+declare function lmm:mergeKeyScopeNames($elem1 as element(), $elem2 as element()) as xs:string? {
+  
+  let $scopeNames := (tokenize($elem1/@keyscope), tokenize($elem2/@keyscope))
+  let $result :=
+      if (count($scopeNames) > 0)
+         then string-join(distinct-values($scopeNames), " ")
+         else ()
+  return $result
+};
 
 declare function lmm:getResolvedMapURIForMap(
                         $map as element()) {
