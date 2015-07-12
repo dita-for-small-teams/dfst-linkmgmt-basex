@@ -101,6 +101,19 @@ declare function df:getNavtitleForTopicref($topicref as element()) as node()* {
     
 };
 
+(:
+ : Given a linking element that may exhibit a @scope attribute, returns
+ : the effective scope value (one of 'local', 'peer', or 'external').
+ :)
+declare function df:getEffectiveScope($link as element()) as xs:string {
+  let $baseScope := string($link/@scope)
+  let $result :=
+    if ($baseScope)
+       then $baseScope
+       else 'local'
+  return $result
+};
+
 declare function df:isTopicGroup($context as element()) as xs:boolean {
   let $classIsTopicgroup as xs:boolean := df:class($context, 'mapgroup-d/topicgroup')
   let $classIsTopicrefOrTopichead as xs:boolean := 

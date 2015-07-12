@@ -363,9 +363,11 @@ declare function lmm:resolveMapHandleNode($node as node(), $logID as xs:string) 
  : Apply identity transform to elements of any type. 
  :)
 declare function lmm:resolveMapHandleElement($elem as element(), $logID as xs:string) as element()* {
-   if (df:class($elem, 'map/topicref'))
-      then lmm:resolveMapHandleTopicref($elem, $logID)
-      else lmm:resolveMapCopy($elem, $logID)
+   let $result :=
+     if (df:class($elem, 'map/topicref'))
+        then lmm:resolveMapHandleTopicref($elem, $logID)
+        else lmm:resolveMapCopy($elem, $logID)
+   return $result
 };
 
 (:~
@@ -386,9 +388,11 @@ declare function lmm:resolveMapCopy($elem as element(), $logID as xs:string) as 
  : copy processing.
  :)
 declare function lmm:resolveMapHandleTopicref($elem as element(), $logID as xs:string) as element()* {
-   if ($elem/@format = ('ditamap') and $elem/@scope = ('local'))
-      then lmm:resolveMapHandleMapRef($elem, $logID)
-      else lmm:resolveMapCopy($elem, $logID)
+   let $result :=
+     if ($elem/@format = ('ditamap') and df:getEffectiveScope($elem) = ('local'))
+        then lmm:resolveMapHandleMapRef($elem, $logID)
+        else lmm:resolveMapCopy($elem, $logID)
+   return $result
 };
 
 (:~
@@ -403,14 +407,15 @@ declare function lmm:resolveMapHandleMapRef($elem as element(), $logID as xs:str
   let $submap := $resolutionMap('target')
   (: FIXME: add resolution messages to log once we get logging infrastructure in place :)
   return 
-    <topicgroup origMapURI="{document-uri(root($submap))}"
+    <submap origMapURI="{document-uri(root($submap))}"
       origMapClass="{string($submap/@class)}"
+      class="+ map/topicref dfst-d/submap "
     >
       <topicmeta>{comment {'submap metadata goes here '}}</topicmeta>,
       {for $e in $submap/*[df:class(., 'map/topicref') or df:class(., 'map/reltable')]
           return lmm:resolveMapHandleElement($e, $logID)
       }
-    </topicgroup>
+    </submap>
 };
 
 
