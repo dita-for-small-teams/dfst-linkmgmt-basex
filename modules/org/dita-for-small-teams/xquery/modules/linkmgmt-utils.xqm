@@ -29,6 +29,21 @@ import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-
  : 'resolvedMap' : The fully-resolved map that defines key space the key
  :                 reference is resolved in.
  : 'keySpace' : The constructed key space for the root map.
+ : 'processingRole' : For topicrefs, the @processing-role value. For
+ :                    other links, 'normal'.
+ : 'linkContext': The relevant container type for the link, one of:
+ :                - 'title' : Link occurs within a title element
+ :                - 'prolog' : Link occurs with topicmeta (maps) or prolog (topics)
+ :                - 'shortdesc' : Link occurs within a short description
+ :                - 'abstract' : Link occurs within an abstract (but not within a
+ :                               short description within an abstract)
+ :                - 'body' : Link occurs within a topic body
+ :                - 'reltable' : Link is a topicref within a relationship table.
+ :                - 'navtree' : Link is a topicref with @processing-role of 'normal' and
+ :                              is not within a relationship table
+ :                - 'resources' : Link is a topicref with a processing role of "resource-only". 
+ :  'isDirect' : - 'true' if link is a direct URI reference
+ :               - 'false' if link uses a resolvable key reference
  : 
  : For direct links the link element is sufficient
  : to allow resolution as use context has no affect on how the link is resolved.
@@ -52,8 +67,40 @@ declare function lmutil:findAllDirectLinks($dbName) as map(*)* {
        return map{'link': $link, 
                   'rootMap': (), 
                   'resolvedMap': (), 
-                  'keySpace': ()
+                  'keySpace': (),
+                  'processingRole': 
+                     if (df:isTopicRef($link))
+                        then if ($link/@processing-role)
+                                then string($link/@processing-role)
+                                else 'normal' (: Default for topicref :)
+                        else 'normal', (: non-topicref links :)
+                  'linkContext': lmutil:getLinkContext($link)
                  }
+};
+
+
+(:~
+ : Given a link element, determines the linkContext value for it.
+ :)
+declare function lmutil:getLinkContext($link as element()) as xs:string {
+  if (df:class($link, 'map/topicref'))
+     then if ($link/ancestor::*[df:class(., 'map/reltable')])
+             then 'reltable'
+          else if ($link/@processing-role = ('resource-only'))
+               then 'resources'
+          else 'navtree'
+     else if ($link/ancestor::*[df:class(., 'topic/title')])
+          then 'title'
+     else if ($link/ancestor::*[df:class(., 'topic/shortdesc')])
+          then 'shortdesc'
+     else if ($link/ancestor::*[df:class(., 'topic/abstract')])
+          then 'abstract'
+     else if ($link/ancestor::*[df:class(., 'topic/prolog') or df:class(., 'map/topicmeta')])
+          then 'prolog'
+     else if ($link/ancestor::*[df:class(., 'topic/body')])
+          then 'body'
+     else 'unknown-context'
+      
 };
 
 (:~ 

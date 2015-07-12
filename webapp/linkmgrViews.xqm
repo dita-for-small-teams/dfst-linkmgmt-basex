@@ -586,7 +586,7 @@ declare function linkmgr:useRecordToHtml($use as element()) {
     <span class="using-doc">{bxutil:getPathForDoc(doc(string($use/@usingDoc)))}</span><br/>
     <span class="use-locator">{string($use/@useLocator)}</span>
     </td>
-    <td>{string($use/@linkType)}</td>
+    <td>{string($use/@linkType)} (within {string($use/@linkContext)})</td>
     <td>{string($use/@format)}</td>
     <td>{string($use/@scope)}</td>
     <td>[Action] [Action] [Action]</td>

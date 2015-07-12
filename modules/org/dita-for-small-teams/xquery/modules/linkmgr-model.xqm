@@ -201,6 +201,8 @@ declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget(
    let $scope := if ($link/@scope)
                      then string($link/@scope)
                      else 'local'
+   let $linkContext := $linkItem('linkContext')                     
+                     
    (: df:getTitleForLinkElementContainer($link) :)                     
    let $useRecord := 
      <dfst:useRecord resourceKey="{$reskey}"
@@ -208,6 +210,7 @@ declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget(
                      usingDoc="{document-uri(root($link))}"
                      linkType="{df:getBaseLinkType($link)}"
                      linkClass="{string($link/@class)}"
+                     linkContext="{$linkContext}"
                      format="{$format}"
                      scope="{$scope}"
      >
