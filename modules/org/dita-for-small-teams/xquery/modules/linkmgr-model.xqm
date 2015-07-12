@@ -340,19 +340,18 @@ declare function lmm:resolveMap(
                      $logID as xs:string) as element() {
                      
     
-    (: Array of sequences of key scope names, ordered from
-       highest to lowest.
+    (: Array of sequences of key scope names, lowest to highest
+       (e.g., as for ancestor:: axis)
        Each sequence is the set of key scope names defined
        on a given map or topicref, establishing a new set
        of key scopes.
        
-       There is always the '#root' (anonymous) key scope
+       There is always the root (anonymous) key scope
        bound to the root map. The root map can also
        establish additional scope names.
     :)
-    let $keyScopes as array(xs:string+) := 
-       [ ('#root',
-          if ($map/@keyscope)
+    let $keyScopes as array(*) := 
+       [ (if ($map/@keyscope)
              then tokenize(string($map/@keyscope), ' ')
              else ()
          )
@@ -375,13 +374,17 @@ declare function lmm:resolveMap(
  :)
 declare function lmm:resolveMapHandleNode(
                      $node as node(),
-                     $keyScopes as array(xs:string+),
+                     $keyScopes as array(*),
                      $logID as xs:string) as node()* {
   typeswitch ($node) 
     case element() return lmm:resolveMapHandleElement(
                               $node,
                               $keyScopes,
                               $logID)
+    case attribute(keys) return lmm:expandKeyNames(
+                                    $node, 
+                                    $keyScopes,
+                                    $logID)
     default return $node
 };
 
@@ -390,7 +393,7 @@ declare function lmm:resolveMapHandleNode(
  :)
 declare function lmm:resolveMapHandleElement(
                        $elem as element(),
-                       $keyScopes as array(xs:string+), 
+                       $keyScopes as array(*), 
                        $logID as xs:string) as element()* {
    let $result :=
      if (df:class($elem, 'map/topicref'))
@@ -404,7 +407,7 @@ declare function lmm:resolveMapHandleElement(
  :)
 declare function lmm:resolveMapCopy(
                     $elem as element(),
-                    $keyScopes as array(xs:string+), 
+                    $keyScopes as array(*), 
                     $logID as xs:string) as element()* {
    let $result :=
      element {name($elem)} {
@@ -421,7 +424,7 @@ declare function lmm:resolveMapCopy(
  :)
 declare function lmm:resolveMapHandleTopicref(
                       $elem as element(),
-                      $keyScopes as array(xs:string+), 
+                      $keyScopes as array(*), 
                       $logID as xs:string) as element()* {
    let $result :=
      if ($elem/@format = ('ditamap') and df:getEffectiveScope($elem) = ('local'))
@@ -443,7 +446,7 @@ declare function lmm:resolveMapHandleTopicref(
  :)
 declare function lmm:resolveMapHandleMapRef(
                         $elem as element(),
-                        $keyScopes as array(xs:string+), 
+                        $keyScopes as array(*), 
                         $logID as xs:string) as element()* {
   let $resolutionMap as map(*) := df:resolveTopicRef($elem)
   let $submap := $resolutionMap('target')
@@ -494,8 +497,62 @@ declare function lmm:mergeKeyScopeNames($elem1 as element(), $elem2 as element()
   return $result
 };
 
+(:~
+ : Expand the @keys value to add scope qualifications for all the scopes
+ : @return keys attribute node with the expanded values.
+ :)
+declare function lmm:expandKeyNames($keysAtt as attribute(keys), 
+                                    $keyScopes as array(*),
+                                    $logID as xs:string) as attribute() {
+  
+  let $baseKeyNames as xs:string* := 
+                    tokenize(string($keysAtt), " ") 
+  let $expandedKeyNames := for $keyName in $baseKeyNames
+                               return lmm:scopeQualifyKeyName($keyName, $keyScopes, ($keyName))
+  let $result := attribute {name($keysAtt)} {string-join($expandedKeyNames, ' ')}
+  return $result
+};  
+
+(:~
+ : Recursive function to construct list of scope-qualified key names for a given
+ : base key. 
+ :
+ : Takes the unqualified key name and adds to it the scope names from the end
+ : of the keyScopes array. Adds the result to the incoming list of qualified
+ : key names and then calls itself against the result and the cadr of the
+ : key scope array. 
+ :)
+declare function lmm:scopeQualifyKeyName(
+                     $keyName as xs:string, 
+                     $keyScopes as array(*)?,
+                     $qualfiedKeyNames as xs:string+) as xs:string* {
+  let $result := 
+    if (count($keyScopes) = 0)
+       then $qualfiedKeyNames
+       else  
+          let $scopeNames as xs:string* := $keyScopes?1  (: "?" is the array lookup operator :) 
+          let $newNames as xs:string* := 
+              for $scopeName in $scopeNames
+                  return $scopeName || '.' || $keyName
+          return
+            for $newName in $newNames 
+                 return lmm:scopeQualifyKeyName(
+                           $newNames, 
+                           $keyScopes?(2 to array:size($keyScopes)),
+                           ($qualfiedKeyNames, $newNames)
+                           )
+  return $result
+};
+ 
+
+(:~
+ : Construct the database URI to use for a resolved map.
+ :
+ : @param map DITA map element to get the URI for
+ : @returns The URI of the resolved map as a string
+ :)
 declare function lmm:getResolvedMapURIForMap(
-                        $map as element()) {
+                        $map as element()) as xs:string {
   let $mapDocHash := hash:md5(document-uri(root($map)))
   return $dfstcnst:resolved-map-dir ||
          "/" || $mapDocHash || ".ditamap"
