@@ -527,7 +527,7 @@ declare function lmm:scopeQualifyKeyName(
                      $keyScopes as array(*)?,
                      $qualfiedKeyNames as xs:string+) as xs:string* {
   let $result := 
-    if (count($keyScopes) = 0)
+    if (not(exists($keyScopes)) or array:size($keyScopes) = 0 or not($keyScopes(1)))
        then $qualfiedKeyNames
        else  
           let $scopeNames as xs:string* := $keyScopes?1  (: "?" is the array lookup operator :) 
