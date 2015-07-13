@@ -114,6 +114,22 @@ declare function df:getEffectiveScope($link as element()) as xs:string {
   return $result
 };
 
+(:
+ : Given a linking element that may exhibit a @format attribute, returns
+ : the effective format value. Topicrefs have an effective default of "dita",
+ : other elements have no defined default.
+ :)
+declare function df:getEffectiveFormat($link as element()) as xs:string? {
+  let $baseFormat := string($link/@format)
+  let $result :=
+    if ($baseFormat)
+       then $baseFormat
+       else if (df:class($link, 'map/topicref'))
+               then 'dita'
+               else ()
+  return $result
+};
+
 declare function df:isTopicGroup($context as element()) as xs:boolean {
   let $classIsTopicgroup as xs:boolean := df:class($context, 'mapgroup-d/topicgroup')
   let $classIsTopicrefOrTopichead as xs:boolean := 
@@ -315,7 +331,13 @@ declare function df:resolveTopicOrMapUri($topicref as element(), $targetUri as x
                   else resolve-uri($targetResourcePart, $baseUri)           
            return 
              try {
-               doc($resolvedUri)
+               (: In BaseX, the collection() function will return a document
+                  if the collection value is {dbname}/path-to-doc.
+                  
+                  Basically, BaseX does not handle URIs properly using the 
+                  doc() function
+                :)
+               collection($resolvedUri)
              } catch * {
                ()
              }
@@ -374,7 +396,7 @@ declare function df:getEffectiveUriForKeyref($rootMap, $refElem) as xs:string? {
    return "key resolution not yet implemented"
 };
 
-(: 
+(: ~
  : Returns true if the topicref element points to something and
  : has a @format value of 'ditamap'
  :
@@ -383,10 +405,30 @@ declare function df:isMapRef($topicref as element()) as xs:boolean {
   (df:class($topicref, 'map/topicref') and ($topicref/@format = 'ditamap')) 
 };
 
-declare function df:isTopicRef($topicref as element()) as xs:boolean {
-  df:class($topicref, 'map/topicref') and
-      (($topicref/@href and $topicref/@href != '') or
-       ($topicref/@keyref and $topicref/@keyref != ''))
+(:~
+ : Returns true if the element is a topicref and specifies
+ : a value for @href or @keyref
+ : 
+ : @param elem Candidate element to check for topicrefness.
+ :)
+declare function df:isTopicRef($elem as element()) as xs:boolean {
+  df:class($elem, 'map/topicref') and
+      (($elem/@href and $elem/@href != '') or
+       ($elem/@keyref and $elem/@keyref != ''))
+};
+
+(:~
+ : Returns true if the element has an effective value of "local"
+ : for the @scope attribute. Does not check if the element is one
+ : for which @scope is meaningful.
+ : 
+ : @param elem Element to check @scope value of.
+ : @return true() if the @scope value is 'local' or if the
+ : default value resolved to 'local'
+ :)
+declare function df:isLocalScope($elem as element()) as xs:boolean {
+   let $result := df:getEffectiveScope($elem) = ('local')
+   return $result
 };
 
 (:~

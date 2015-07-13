@@ -291,7 +291,7 @@ declare %updating function lmm:constructResolvedMap(
                                     $logID as xs:string) {
   let $contentDbName := db:name($map)
   let $resolvedMap := lmm:resolveMap($map, $logID)
-  let $resolvedMapURI := lmm:getResolvedMapURIForMap($map)
+  let $resolvedMapURI := lmutil:getResolvedMapURIForMap($map)
   return (db:replace($metadataDbName, $resolvedMapURI, $resolvedMap),
           db:output(<info>Stored resolved map "{$resolvedMapURI}"</info>))
                          
@@ -335,7 +335,7 @@ declare function lmm:resolveMap(
             {
               attribute origMapURI { document-uri(root($map)) },
               attribute origMapDB { db:name($map) },
-              attribute xml:base { document-uri(root($map)) },
+              attribute xml:base { encode-for-uri(document-uri(root($map))) },
               $map/@*,
               for $node in $map/node() 
                   return lmm:resolveMapHandleNode($node, $keyScopes, $logID)
@@ -516,18 +516,5 @@ declare function lmm:scopeQualifyKeyName(
   return $result
 };
  
-
-(:~
- : Construct the database URI to use for a resolved map.
- :
- : @param map DITA map element to get the URI for
- : @returns The URI of the resolved map as a string
- :)
-declare function lmm:getResolvedMapURIForMap(
-                        $map as element()) as xs:string {
-  let $mapDocHash := hash:md5(document-uri(root($map)))
-  return $dfstcnst:resolved-map-dir ||
-         "/" || $mapDocHash || ".ditamap"
-};
 
 (: End of Module :)

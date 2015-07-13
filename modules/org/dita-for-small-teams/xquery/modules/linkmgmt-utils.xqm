@@ -327,13 +327,62 @@ declare function lmutil:findAllIndirectLinks($dbName) as map(*)* {
    
    let $rootMaps as element()* := lmutil:getRootMaps($dbName)
    
-   let $links := map{ 'link' : (), 
+   let $linksFromTopics :=
+       for $map in $rootMaps
+           let $resolvedMap := lmutil:getResolvedMapForMap($map)
+           let $topics := lmutil:getMapBoundedObjectSet($resolvedMap, ('dita'))
+           return for $topic in $topics
+              return () (:lmm:getIndirectLinks:)
+           
+    let $links := $linksFromTopics
+   
+(:   let $links := map{ 'link' : (), 
                       'rootMap' : (),
                       'resolvedMap' : (),
                       'keySpace' : ()
                     }
-   
+:)   
    return $links
+};
+
+(:~
+ : Given a map resolves all the topicrefs to their local-scope resources
+ : and returns the set (a "bounded object set" or BOS).
+ : 
+ : @param map Map to process. Does not resolve submap references, so if
+ : you want the resources for a map tree supply the resolved map.
+ :
+ : @param formats A list of one or more @format values to return in the set.
+ : The special value '#non-dita' matches any @format value that is not 'dita'
+ : or 'dita-map'. Specify ('dita') to return only topic members of 
+ : the BOS. Non-DITA resources are represented by the topicrefs that point to
+ : them. If not specified, all local-scope resources are returned.
+ : @return Set of elements in the bounded object set.
+ :)
+declare function lmutil:getMapBoundedObjectSet(
+                            $map as element(), 
+                            $formats as xs:string*) as element()* {
+  let $topicrefs := $map//*[df:isTopicRef(.)]
+                           [df:isLocalScope(.)]
+                           [not($formats) or 
+                            df:getEffectiveFormat(.) = $formats]
+  let $members := 
+      for $topicref in $topicrefs
+          return if (df:getEffectiveFormat($topicref) = ('dita'))
+             then lmutil:resolveTopicRefFromResolvedMap($topicref)
+             else $topicref
+  return $members
+      
+};
+
+(:~
+ : Resolves a topicref from a resolved map. Uses the additional metadata
+ : in the resolved map to determine the target document that contains
+ : the element.
+ :)
+declare function lmutil:resolveTopicRefFromResolvedMap($topicref as element()) as element()? {
+  let $result := ()
+  return $result
 };
 
 (:~
@@ -402,5 +451,36 @@ declare function lmutil:reportAtts($elem as element(), $attNames) as xs:string {
                                 else ()
    return string-join($result, ' ')
 };
+
+(:~
+ : Get the resolved map document for a map. The resolved map must have already
+ : been constructed (XQuery doesn't let use do updating actions wherever we
+ : want).
+ :
+ : @param map Content map to get the resolved map for.
+ : @return the resolved map or an empty sequence if there is no resolved map
+ : (for example, because the map is not a root map).
+ :)
+declare function lmutil:getResolvedMapForMap($map as element()) as element()? {
+  let $resolvedMapURI := lmutil:getResolvedMapURIForMap($map)
+  let $metadataDbName := bxutil:getMetadataDbNameForDoc(root($map))
+  
+  let $resolvedMap := collection($metadataDbName || $resolvedMapURI)
+  return $resolvedMap
+};
+
+(:~
+ : Construct the database URI to use for a resolved map.
+ :
+ : @param map DITA map element to get the URI for
+ : @returns The URI of the resolved map as a string
+ :)
+declare function lmutil:getResolvedMapURIForMap(
+                        $map as element()) as xs:string {
+  let $mapDocHash := hash:md5(document-uri(root($map)))
+  return $dfstcnst:resolved-map-dir ||
+         "/" || $mapDocHash || ".ditamap"
+};
+
 
 (: End of Module :)

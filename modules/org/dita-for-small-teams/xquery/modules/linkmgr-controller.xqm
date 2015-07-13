@@ -6,10 +6,11 @@
    access to the link manager data models used to optimize
    link manager features (where-use, dependency tracking).
    
-   Not sure this module is needed. Ended up refactoring all 
-   the business logic to linkmgmt-utils so it could be
-   used from multiple modules, leaving nothing but a 
-   simple delegate.
+   This module serves mostly to delegate calls from the 
+   UI to the underlying link management utilities, but
+   it provides a level of indirection that might be
+   useful and it maintains the M/V/C distinction, for
+   what that's worth.
    
    Author: W. Eliot Kimber
    
