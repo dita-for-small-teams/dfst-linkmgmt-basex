@@ -21,6 +21,17 @@ import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-
 import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-utils";
 import module namespace dfstcnst="http://dita-for-small-teams.org/xquery/modules/dfst-constants";
 
+declare variable $lmutil:useMatchParamsLocalMaps := 
+                               map{'linktype' :'topicref', 
+                                   'format' : 'ditamap',
+                                   'scope' : 'local'
+                                  };
+declare variable $lmutil:useMatchParamsPeerMaps := 
+                               map{'linktype' :'topicref', 
+                                   'format' : 'ditamap',
+                                   'scope' : 'peer'
+                                  };
+
 (:~
  : Find all links that use direct URI references to their target resources.
  : Returns list of link item maps
@@ -105,9 +116,12 @@ declare function lmutil:findAllDirectLinks($dbName) as map(*)* {
              
    TBD: Need for direct/indirect filter, other filters.          
    
+   FIXME: Need to rationalize the coding pattern for use parameters and
+          their use by the useRecordMatcher() function. The code is a little
+          confused right now as a result of some quick refactoring.
    
  :)
-declare function lmutil:getUses($doc as document-node(), $useParams) as element()* {
+declare function lmutil:getUses($elem as element(), $useParams) as element()* {
 
    let $linktypes := if ($useParams('linktype')) 
                         then $useParams('linktype') 
@@ -133,13 +147,13 @@ declare function lmutil:getUses($doc as document-node(), $useParams) as element(
       directory that contains the where-used records for
       this element.
     :)
-   let $resKey := lmutil:constructResourceKeyForElement($doc/*)
+   let $resKey := lmutil:constructResourceKeyForElement($elem)
    
    (: Now find all use records for the resource key that match the filter
       specification. 
         
       :)
-    let $dbName := bxutil:getMetadataDbNameForDoc($doc)
+    let $dbName := bxutil:getMetadataDbNameForDoc(root($elem))
     let $collection := $dbName || $dfstcnst:where-used-dir || '/' || $resKey
     let $records := collection($collection)
                        /dfst:useRecord[lmutil:useRecordMatcher(., $linktypes, $formats, $scopes)]
@@ -183,9 +197,9 @@ declare function lmutil:constructResourceKeyForElement($elem as element()) as xs
  : individual arguments.
  :)
 declare function lmutil:useRecordMatcher($record as element(),
-                                              $linktypes as xs:string*,
-                                              $formats as xs:string*,
-                                              $scopes as xs:string*) as xs:boolean {
+                                         $linktypes as xs:string*,
+                                         $formats as xs:string*,
+                                         $scopes as xs:string*) as xs:boolean {
    let $result := ((if ($linktypes = '#any')
                        then true()
                        else string($record/@linkType) = $linktypes) and
@@ -331,8 +345,53 @@ declare function lmutil:findAllIndirectLinks($dbName) as map(*)* {
  :)
 declare function lmutil:getRootMaps($dbName as xs:string) as element()* {
   let $candMaps := collection($dbName)/*[df:class(., 'map/map')]
-  for $cand in $candMaps
-      return $cand
+  let $result := 
+      for $candMap in $candMaps
+          return if (lmutil:isRootMap($candMap))
+                   then $candMap
+                   else ()
+  return $result             
+};
+
+(:~
+ : Returns true if the specified map element is a root map.
+ :
+ : Note that there are many ways that root mapness could be determined.
+ : The logic used here is any map that has no direct map local-scope references
+ : or any peer-scope references. This is based on the presumption that a root
+ : map would not normally be useable as local-scope submap. DITA 1.3's new 
+ : meaning for scope="peer" on topicrefs to maps explicitly means "the referenced
+ : map is a root map". 
+ :
+ : Other options would be to have a master map that uses peer map references to
+ : explicitly identify root maps and use only that to determine rootness, to
+ : maintain some sort of metadata that indicates rootness, use a specific map
+ : specialization or map specialization plus descendant element configuration
+ : (e.g., bookmaps that have booktitle elements are root maps, all others are 
+ : not).
+ : 
+ : @param map Map to check for rootness
+ : @return true() if the map is a root map.
+ :) 
+declare function lmutil:isRootMap($map as element()) as xs:boolean {
+  let $result := ((lmutil:getRefCount($map, $lmutil:useMatchParamsLocalMaps) = 0) or
+                  (lmutil:getRefCount($map, $lmutil:useMatchParamsPeerMaps) > 0))
+  return $result
+};
+
+(:~
+ : Gets the number of references to the specified element that match the specified 
+ : match criteria.
+ : 
+ : @param elem Element to get reference count for.
+ : @param matcher Use record matcher to use for selecting references
+ : @return Number of matches
+ :)
+declare function lmutil:getRefCount($elem as element(), 
+                                    $matchParams as map(*)) as xs:integer {
+  let $uses := lmutil:getUses($elem, $matchParams)
+  let $result := count($uses) 
+  return $result
 };
 
 (: Construct a string report of the listed attributes :)

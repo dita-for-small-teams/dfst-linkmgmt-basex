@@ -180,6 +180,11 @@ p {
    
 }
 
+.isRootMap {
+  text-align: center;
+  color: green;
+}
+
 .label {
   font-weight: bold;
   color: lightblue;

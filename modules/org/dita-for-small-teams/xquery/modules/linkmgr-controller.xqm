@@ -6,6 +6,11 @@
    access to the link manager data models used to optimize
    link manager features (where-use, dependency tracking).
    
+   Not sure this module is needed. Ended up refactoring all 
+   the business logic to linkmgmt-utils so it could be
+   used from multiple modules, leaving nothing but a 
+   simple delegate.
+   
    Author: W. Eliot Kimber
    
    Copyright (c) 2015 DITA For Small Teams
@@ -24,9 +29,17 @@ import module namespace dfstcnst="http://dita-for-small-teams.org/xquery/modules
 
 declare namespace dfst="http://dita-for-small-teams.org";
 
+declare %updating function lmc:updateLinkManagementIndexes($contentDbName, $metadataDbName) {
+  lmm:updateLinkManagementIndexes($contentDbName, $metadataDbName)
+};
+
 declare function lmc:getUses($doc as document-node(), $useParams as map(*)) {
-   let $result := lmutil:getUses($doc, $useParams)
+   let $result := lmutil:getUses($doc/*, $useParams)
    return $result
 };
 
+declare function lmc:isRootMap($mapDoc as document-node()) as xs:boolean {
+  let $result := lmutil:isRootMap($mapDoc/*)
+  return $result
+};
 (: End of Module :)

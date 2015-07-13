@@ -17,6 +17,8 @@ import module namespace linkutil="http://dita-for-small-teams.org/xquery/modules
 import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-utils";
 import module namespace linkmgr='http://basex.org/modules/linkmgr' at "linkmgrViews.xqm";
 import module namespace lmm="http://dita-for-small-teams.org/xquery/modules/linkmgr-model";
+import module namespace lmc="http://dita-for-small-teams.org/xquery/modules/linkmgr-controller";
+
 
 
 (:~
@@ -100,6 +102,7 @@ declare
               <tr>
                 <th>Title</th>
                 <th>Path</th>
+                <th>Root Map</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -184,6 +187,7 @@ declare
       return <tr>
         <td>{df:getTitleText($map/*)}</td>
         <td>{linkmgr:makeLinkToDocSource(document-uri(root($map)))}</td>
+        <td class="isRootMap">{if (lmc:isRootMap($map)) then '&#x2713;' else ''}</td>
         <td>
         [{html:linkToTarget('Navigation&#xa0;Tree', concat('/linkmgr/navtreeView/', document-uri($map)),
          'navtree')}] 
@@ -257,7 +261,7 @@ declare
    
    
   (: FIXME: This is a quick hack in advance of setting up proper logging infrastructure :)
-  return lmm:updateLinkManagementIndexes($contentDbName, $metadataDbName)
+  return lmc:updateLinkManagementIndexes($contentDbName, $metadataDbName)
   
 (:  let $status := string($result/@status)
   let $headColor := if ($status = ('error')) 
