@@ -228,7 +228,31 @@ declare function relpath:analyzePathTokens($sourceTokens as xs:string*,
 };
 
 
-
+(:~
+ : Given a base URI for a resource and another, possibly relative, URI, return the absolute URI
+ : reflecting the relative relationship of the first resource and the second URI. See fn:resolve-uri().
+ : NOTE: This version of resolveURI does not check the URIs for correctness against the 
+ : anyURI requirements. This is a workaround for bugs in BaseX's implementation of base-uri() and
+ : other URI-handling functions that do not handle non-URI characters in database names.
+ :
+ : @param relative The URI to resolve relative to the base
+ : @param base The base URI. Must be the URI of a resource, not a path.
+ :)
+ declare function relpath:resolveURI($relative as xs:string?,
+                                     $base as xs:string?) as xs:string? {
+   let $result := 
+      if (not($relative)) 
+         then ()
+         else 
+           if (matches($relative, '^[a-zA-Z]+:.*$'))
+              then $relative
+              else 
+                let $parent := relpath:getParent($base)
+                let $temp := relpath:newFile($parent, $relative)
+                return relpath:getAbsolutePath($temp)
+  return $result
+           
+};
 
 
 

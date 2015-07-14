@@ -20,6 +20,8 @@ declare namespace dfst="http://dita-for-small-teams.org";
 import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-utils";
 import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-utils";
 import module namespace dfstcnst="http://dita-for-small-teams.org/xquery/modules/dfst-constants";
+import module namespace relpath="http://dita-for-small-teams.org/xquery/modules/relpath-utils";
+
 
 declare variable $lmutil:useMatchParamsLocalMaps := 
                                map{'linktype' :'topicref', 
@@ -380,8 +382,12 @@ declare function lmutil:getMapBoundedObjectSet(
  : in the resolved map to determine the target document that contains
  : the element.
  :)
-declare function lmutil:resolveTopicRefFromResolvedMap($topicref as element()) as element()? {
-  let $result := ()
+declare function lmutil:resolveTopicRefFromResolvedMap($topicref as element()) 
+                                                                    as element()? {
+  let $baseURI := string(($topicref/ancestor::*[@origMapURI]/@origMapURI)[1])                          
+  let $targetURI := string($topicref/@href)
+  let $resolvedURI := relpath:resolveURI($targetURI, $baseURI)
+  let $result := doc($resolvedURI)/*
   return $result
 };
 
