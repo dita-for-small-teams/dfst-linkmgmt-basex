@@ -332,8 +332,8 @@ declare function lmutil:findAllIndirectLinks($dbName) as map(*)* {
    let $linksFromTopics :=
        for $map in $rootMaps
            let $resolvedMap := lmutil:getResolvedMapForMap($map)
-           let $topics := lmutil:getMapBoundedObjectSet($resolvedMap, ('dita'))
-           return for $topic in $topics
+           let $bos as map(*)* := lmutil:getMapBoundedObjectSet($resolvedMap, ('dita'))
+           return for $member in $bos
               return () (:lmm:getIndirectLinks:)
            
     let $links := $linksFromTopics
@@ -349,7 +349,13 @@ declare function lmutil:findAllIndirectLinks($dbName) as map(*)* {
 
 (:~
  : Given a map resolves all the topicrefs to their local-scope resources
- : and returns the set (a "bounded object set" or BOS).
+ : and returns the set of "BOS members", where each member is a map 
+ : with the topicref that pointed to the topic and the resolved topic.
+ : The topicref is required in order to have the map context, which is required
+ : in order to determine the key space within which any key references within the 
+ : topic are resolved. Note that a BOS member is a unique topicref/resource pair.
+ : If the same resource is referenced multiple times in the map there will be one BOS member
+ : for each reference.
  : 
  : @param map Map to process. Does not resolve submap references, so if
  : you want the resources for a map tree supply the resolved map.
@@ -359,20 +365,22 @@ declare function lmutil:findAllIndirectLinks($dbName) as map(*)* {
  : or 'dita-map'. Specify ('dita') to return only topic members of 
  : the BOS. Non-DITA resources are represented by the topicrefs that point to
  : them. If not specified, all local-scope resources are returned.
- : @return Set of elements in the bounded object set.
+ : @return Sequence of maps, one for each topicref/resource pair
  :)
 declare function lmutil:getMapBoundedObjectSet(
                             $map as element(), 
-                            $formats as xs:string*) as element()* {
+                            $formats as xs:string*) as map(*)* {
   let $topicrefs := $map//*[df:isTopicRef(.)]
                            [df:isLocalScope(.)]
                            [not($formats) or 
                             df:getEffectiveFormat(.) = $formats]
   let $members := 
       for $topicref in $topicrefs
-          return if (df:getEffectiveFormat($topicref) = ('dita'))
+          let $resource := if (df:getEffectiveFormat($topicref) = ('dita'))
              then lmutil:resolveTopicRefFromResolvedMap($topicref)
              else $topicref
+          return map { 'topicref' : $topicref,
+                       'resource' : $resource }
   return $members
       
 };
