@@ -81,19 +81,48 @@ declare function lmutil:findAllDirectLinks($dbName) as map(*)* {
                 collection($dbName)//*[@conref]
    (: Construct a link item map for each link element :)
    for $link in $links
-       return map{'link': $link, 
-                  'rootMap': (), 
-                  'resolvedMap': (), 
-                  'keySpace': (),
-                  'processingRole': 
-                     if (df:isTopicRef($link))
-                        then if ($link/@processing-role)
-                                then string($link/@processing-role)
-                                else 'normal' (: Default for topicref :)
-                        else 'normal', (: non-topicref links :)
-                  'linkContext': lmutil:getLinkContext($link)
-                 }
+       return lmutil:constructLinkItemMap($link) 
 };
+
+(:~
+ : Constructs a link item map for a direct link.
+ :
+ : @param link The link element
+ : @return Link item map
+ :)
+declare function lmutil:constructLinkItemMap(
+                        $link as element()) as map(*) {
+  let $result := lmutil:constructLinkItemMap($link)
+  return $result
+};
+
+
+(:~
+ : Constructs a link item map
+ :
+ : @param link The link element
+ : @param topicref For indirect links, the topicref that establishes 
+ :                 the key resolution context for the link. Not set for direct URI links.
+ :                 Note that this topicref element must be from the resolved map, not the
+ :                 original source map.
+ :)
+declare function lmutil:constructLinkItemMap(
+                        $link as element(),
+                        $topicref as element()?) as map(*) {
+   let $linkItem := 
+      map{'link': $link, 
+          'resolvedMap': if ($topicref) then root($topicref)/* else (), 
+          'processingRole': 
+             if (df:isTopicRef($link))
+                then if ($link/@processing-role)
+                        then string($link/@processing-role)
+                        else 'normal' (: Default for topicref :)
+                else 'normal', (: non-topicref links :)
+          'linkContext': lmutil:getLinkContext($link)
+         }
+    return $linkItem
+};
+                          
 
 (: Give a document, finds all references to that document that match the 
    type of uses as configured in the $useParams.
@@ -334,17 +363,48 @@ declare function lmutil:findAllIndirectLinks($dbName) as map(*)* {
            let $resolvedMap := lmutil:getResolvedMapForMap($map)
            let $bos as map(*)* := lmutil:getMapBoundedObjectSet($resolvedMap, ('dita'))
            return for $member in $bos
-              return () (:lmm:getIndirectLinks:)
+              return lmutil:getIndirectLinks($bos)
            
     let $links := $linksFromTopics
    
 (:   let $links := map{ 'link' : (), 
-                      'rootMap' : (),
                       'resolvedMap' : (),
-                      'keySpace' : ()
                     }
 :)   
    return $links
+};
+
+(:~
+ : Takes a sequence of map BOS members and, for each member, 
+ : finds the key-based links in the member and returns a of link
+ : structures reflecting those links.
+ :
+ : @param bos Sequence of maps, one for each use of a topic from a
+ : DITA map. Each map has two members, "topicref", and "resource"
+ : @return A sequence, possibly empty, of link maps.
+ :)
+declare function lmutil:getIndirectLinks($bos as map(*)) as map(*)* {
+   let $result as map(*)* := 
+       for $member in $bos
+           return lmutil:getIndirectLinksForBOSMember($member)
+   return $result
+};
+
+(:~
+ : Given a BOS member map for a topic, finds all key-based links in the 
+ : topic and returns a sequence of link items for the links.
+ :
+ : @param member BOS member map containing a topic BOS member.
+ : @return A sequence, possibly empty, of link items.
+ :)
+declare function lmutil:getIndirectLinksForBOSMember($member as map(*)) as map(*)* {
+   let $topicref := $member('topicref')
+   let $topic := $member('resource')
+   let $linkElems := $topic//*[@keyref]
+   let $linkItems := 
+       for $elem in $linkElems
+           return lmutil:constructLinkItemMap($elem, $topicref)
+   return $linkItems
 };
 
 (:~
