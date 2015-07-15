@@ -112,6 +112,7 @@ declare function lmutil:constructLinkItemMap(
    let $linkItem := 
       map{'link': $link, 
           'resolvedMap': if ($topicref) then root($topicref)/* else (), 
+          'topicref' : $topicref,
           'processingRole': 
              if (df:isTopicRef($link))
                 then if ($link/@processing-role)
@@ -358,20 +359,29 @@ declare function lmutil:findAllIndirectLinks($dbName) as map(*)* {
    
    let $rootMaps as element()* := lmutil:getRootMaps($dbName)
    
-   let $linksFromTopics :=
-       for $map in $rootMaps
-           let $resolvedMap := lmutil:getResolvedMapForMap($map)
-           let $bos as map(*)* := lmutil:getMapBoundedObjectSet($resolvedMap, ('dita'))
-           return for $member in $bos
-              return lmutil:getIndirectLinks($bos)
+   let $linksFromTopics := lmutil:getIndirectLinksFromTopics($rootMaps)
            
-    let $links := $linksFromTopics
+    let $linksFromMaps := () (: FIXME: Build this list as well :)
+    let $links := ($linksFromTopics, $linksFromMaps)
    
-(:   let $links := map{ 'link' : (), 
-                      'resolvedMap' : (),
-                    }
-:)   
    return $links
+};
+
+(:~
+ : Get all the indirect links in topics referenced from the root maps
+ : 
+ : @para rootMaps list of root content maps.
+ : 
+ : @return Sequence, possibly empty, of link item maps.
+ :)
+declare function lmutil:getIndirectLinksFromTopics($rootMaps as element()*) as map(*)* {
+  let $result :=
+     for $map in $rootMaps
+         let $resolvedMap as element() := lmutil:getResolvedMapForMap($map)
+         let $bos as map(*)* := lmutil:getMapBoundedObjectSet($resolvedMap, ('dita'))
+         return for $member in $bos
+            return lmutil:getIndirectLinks($bos)
+  return $result
 };
 
 (:~
@@ -383,7 +393,7 @@ declare function lmutil:findAllIndirectLinks($dbName) as map(*)* {
  : DITA map. Each map has two members, "topicref", and "resource"
  : @return A sequence, possibly empty, of link maps.
  :)
-declare function lmutil:getIndirectLinks($bos as map(*)) as map(*)* {
+declare function lmutil:getIndirectLinks($bos as map(*)*) as map(*)* {
    let $result as map(*)* := 
        for $member in $bos
            return lmutil:getIndirectLinksForBOSMember($member)
@@ -455,7 +465,14 @@ declare function lmutil:resolveTopicRefFromResolvedMap($topicref as element())
   let $baseURI := string(($topicref/ancestor::*[@origMapURI]/@origMapURI)[1])                          
   let $targetURI := string($topicref/@href)
   let $resolvedURI := relpath:resolveURI($targetURI, $baseURI)
-  let $result := doc($resolvedURI)/*
+  let $result := try {
+    let $doc as document-node()? := doc($resolvedURI)
+    let $elem := if ($doc) then $doc/* else()
+    return $elem
+  } catch * {
+    (: Document not found :)
+    ()
+  }
   return $result
 };
 
@@ -536,11 +553,11 @@ declare function lmutil:reportAtts($elem as element(), $attNames) as xs:string {
  : (for example, because the map is not a root map).
  :)
 declare function lmutil:getResolvedMapForMap($map as element()) as element()? {
-  let $resolvedMapURI := lmutil:getResolvedMapURIForMap($map)
-  let $metadataDbName := bxutil:getMetadataDbNameForDoc(root($map))
+  let $resolvedMapURI as xs:string := lmutil:getResolvedMapURIForMap($map)
+  let $metadataDbName as xs:string := bxutil:getMetadataDbNameForDoc(root($map))
   
   let $resolvedMap := collection($metadataDbName || $resolvedMapURI)
-  return $resolvedMap
+  return $resolvedMap/*
 };
 
 (:~
