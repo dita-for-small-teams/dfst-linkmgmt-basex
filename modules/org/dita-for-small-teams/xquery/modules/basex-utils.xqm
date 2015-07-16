@@ -124,5 +124,26 @@ module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-ut
  declare function bxutil:getPathForDocURI($uri as xs:string) as xs:string? {
    string-join(tokenize($uri, '/')[position() gt 1], '/')
  };
-
+ 
+ (:~
+  : Report a map as XML for debugging purposes
+  :
+  : @return a sequence of zero or more elements, one for each
+  : element in the map, where the tagname is the key name (assumes
+  : string keys) and the contents are the serialized value of the
+  : the map element.
+  :)
+declare function bxutil:reportMapAsXML($map as map(*)) as element()* {
+   let $result :=
+       for $key in map:keys($map)
+           let $member := $map($key)
+           return element {$key} {
+              typeswitch ($member)
+                case map(*)
+                  return bxutil:reportMapAsXML($member)
+                default
+                  return $member             
+           }
+    return $result
+};
 (: End of Module :)

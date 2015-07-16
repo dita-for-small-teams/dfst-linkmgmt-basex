@@ -73,7 +73,6 @@ declare %updating function lmm:updateLinkManagementIndexes(
     let $logID := 'linkMgmtIndex' (: ID of the log to log messages to :)
      
     let $directLinks := lmutil:findAllDirectLinks($contentDbName)
-    let $indirectLinks := lmutil:findAllIndirectLinks($contentDbName)
        
     return (
       try {
@@ -93,11 +92,11 @@ declare %updating function lmm:updateLinkManagementIndexes(
          $contentDbName,
          $metadataDbName,
          $logID),
-      
+
       (: Now create resource use records for all the indirect links: :)
       lmm:createIndirectLinkResourceRecords(
                   $metadataDbName, 
-                  $indirectLinks, 
+                  lmutil:findAllIndirectLinks($contentDbName), 
                   $logID)
     )
         
@@ -266,7 +265,7 @@ declare %updating function lmm:constructKeySpaces(
      
    :)
    
-   let $maps := collection($contentDbName)/*[df:class(., 'map/map')]
+   let $maps := collection($contentDbName)/*[df:class(., 'map/map')][lmutil:isRootMap(.)]
    return for $map in $maps
               return (db:output(<info>Resolving map {document-uri(root($map))}...</info>),
                       lmm:constructResolvedMap(
