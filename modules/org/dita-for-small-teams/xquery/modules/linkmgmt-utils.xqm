@@ -320,11 +320,46 @@ declare function lmutil:resolveDirectLink($linkItem as map(*)) as map(*) {
    'link':   The input link item.
  :)
 declare function lmutil:resolveIndirectLink($linkItem as map(*)) as map(*) {
-
-   (: FIXME: Implement this function :)
-   let $targets := ()
+   
+   let $topicref := $linkItem?topicref
+   let $link := $linkItem?link
+   let $keyName := df:getKeyNameForKeyref($link)
+   (: Given the key name, look it up in the topicref's map (which must be a 
+      resolved map to find the key definition. The resolved map has had
+      all key names expanded with their scope qualifications, so we can 
+      look up scope-qualified keys directly. :)
+   let $keydef := lmutil:findKeyDefinition($keyName, $topicref)
+   let $targets := 
+       if ($keydef)
+          then lmutil:resolveTopicRefFromResolvedMap($keydef)
+          else ()
+              
    let $log := ()
    return map{'target' : $targets, 'log' : $log , 'link' : $linkItem}
+};
+
+(:~
+ : Given a key name and a topicref in a resolved map, find the applicable
+ : key-defining topicref, if any.
+ :
+ : @param keyName The key name to look up.
+ : @param topicref The topicref that establishes the map context (and thus
+ :                 the starting key scope for the lookup)
+ : @return The key-defining topicref or empty sequence if no key definition 
+ :             is found.
+ :)
+declare function lmutil:findKeyDefinition(
+                            $keyName as xs:string,
+                            $topicref as element()) as element()? {
+  (: Key scope-defining element is either the nearest ancestor topicref that
+     specifies @keyscope or the root map element.
+   :)
+  let $scope := ($topicref//ancestor-or-self::*[@keyscope], root($topicref)/*)[1]
+  (: Within the scope, the effective key definition is the first definition, 
+     in depth-first (document) order that specifies the key name. 
+   :)
+  let $result := ()
+  return $result
 };
 
 (:~

@@ -478,9 +478,16 @@ declare function lmm:expandKeyNames($keysAtt as attribute(keys),
   
   let $baseKeyNames as xs:string* := 
                     tokenize(string($keysAtt), " ") 
-  let $expandedKeyNames := for $keyName in $baseKeyNames
-                               return lmm:scopeQualifyKeyName($keyName, $keyScopes, ($keyName))
-  let $result := attribute {name($keysAtt)} {string-join($expandedKeyNames, ' ')}
+  let $expandedKeyNames := 
+      for $keyName in $baseKeyNames
+          return lmm:scopeQualifyKeyName(
+                      $keyName, 
+                      $keyScopes, 
+                      ($keyName))
+  (: FIXME: use of distinct-values() here is a hack to put off fixing the scope qualification
+            logic so it doesn't result in duplicated key names. 
+   :)
+  let $result := attribute {name($keysAtt)} {string-join(distinct-values($expandedKeyNames), ' ')}
   return $result
 };  
 
@@ -495,10 +502,10 @@ declare function lmm:expandKeyNames($keysAtt as attribute(keys),
  :)
 declare function lmm:scopeQualifyKeyName(
                      $keyName as xs:string, 
-                     $keyScopes as array(*)?,
-                     $qualfiedKeyNames as xs:string+) as xs:string* {
+                     $keyScopes as array(*),
+                     $qualfiedKeyNames as xs:string*) as xs:string* {
   let $result := 
-    if (not(exists($keyScopes)) or array:size($keyScopes) = 0 or not($keyScopes(1)))
+    if (array:size($keyScopes) = 0)
        then $qualfiedKeyNames
        else  
           let $scopeNames as xs:string* := $keyScopes?1  (: "?" is the array lookup operator :) 
@@ -508,8 +515,10 @@ declare function lmm:scopeQualifyKeyName(
           return
             for $newName in $newNames 
                  return lmm:scopeQualifyKeyName(
-                           $newNames, 
-                           $keyScopes?(2 to array:size($keyScopes)),
+                           $newName, 
+                           if (array:size($keyScopes) = 1)
+                              then array{}
+                              else $keyScopes?(2 to array:size($keyScopes)),
                            ($qualfiedKeyNames, $newNames)
                            )
   return $result

@@ -385,15 +385,27 @@ declare function df:getEffectiveTargetUri($rootMap, $refElem as element()) as xs
  : needs to be a resolved map).
  :)
 declare function df:getEffectiveUriForKeyref($rootMap, $refElem) as xs:string? {
-   let $keyref as xs:string := string($refElem/@keyref)
-   let $keyname as xs:string := if (contains($keyref, '/'))
-        then tokenize($keyref, '/')[1]
-        else $keyref
+   let $keyname as xs:string := df:getKeyNameForKeyref($refElem)
    (: At this point, need to look up the key reference in the
       the appropriate key space.
       
     :)
    return "key resolution not yet implemented"
+};
+
+(:~
+ : Given an element that may have a @keyref attribute, return the
+ : key name part of the keyref, if any.
+ :
+ : @param refElem Element that may exhibit a @keyref attribute
+ : @return The key name or empty sequence if there is no @keyref attribute
+ :)
+declare function df:getKeyNameForKeyref($refElem as element()) as xs:string? {
+   let $keyref := $refElem/@keyref   
+   let $keyname as xs:string := if (contains($keyref, '/'))
+        then tokenize($keyref, '/')[1]
+        else $keyref
+   return $keyname
 };
 
 (: ~
