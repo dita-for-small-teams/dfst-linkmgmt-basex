@@ -482,8 +482,7 @@ declare function lmm:expandKeyNames($keysAtt as attribute(keys),
       for $keyName in $baseKeyNames
           return lmm:scopeQualifyKeyName(
                       $keyName, 
-                      $keyScopes, 
-                      ($keyName))
+                      $keyScopes)
   (: FIXME: use of distinct-values() here is a hack to put off fixing the scope qualification
             logic so it doesn't result in duplicated key names. 
    :)
@@ -492,37 +491,63 @@ declare function lmm:expandKeyNames($keysAtt as attribute(keys),
 };  
 
 (:~
- : Recursive function to construct list of scope-qualified key names for a given
- : base key. 
+ : Given a key name and an array of key scope sequences returns the
+ : names reflecting the qualification of the base key name using the 
+ : the scope hierarchy. 
  :
- : Takes the unqualified key name and adds to it the scope names from the end
- : of the keyScopes array. Adds the result to the incoming list of qualified
- : key names and then calls itself against the result and the cadr of the
- : key scope array. 
+ : @param keyName The base key name to be qualified
+ : @param keyScopes Array of sequences of scope names, where each array member
+ :                  reflects one level in the scope hierarchy, ordered from
+ :                  highest (root scope, array index 1), lowest (array index last()).
+ : @return List of qualified key names.
  :)
 declare function lmm:scopeQualifyKeyName(
                      $keyName as xs:string, 
-                     $keyScopes as array(*),
-                     $qualfiedKeyNames as xs:string*) as xs:string* {
-  let $result := 
-    if (array:size($keyScopes) = 0)
-       then $qualfiedKeyNames
-       else  
-          let $scopeNames as xs:string* := $keyScopes?1  (: "?" is the array lookup operator :) 
-          let $newNames as xs:string* := 
-              for $scopeName in $scopeNames
-                  return $scopeName || '.' || $keyName
-          return
-            for $newName in $newNames 
-                 return lmm:scopeQualifyKeyName(
-                           $newName, 
-                           if (array:size($keyScopes) = 1)
-                              then array{}
-                              else $keyScopes?(2 to array:size($keyScopes)),
-                           ($qualfiedKeyNames, $newNames)
-                           )
+                     $keyScopes as array(*)) as xs:string* {
+  (: We process the key scopes from nearest (lowest) to 
+     farthest (highest) but the scopes come in ordered from 
+     highest to lowest. Reversing the scope array so that
+     the called function can use array:head and array:tail
+     on the array.
+   :)
+  let $result := ($keyName, 
+                 lmm:applyScopesToNames(
+                           ($keyName), 
+                           array:reverse($keyScopes), 
+                           ()))
   return $result
 };
+
+(:~
+ : Apply key scopes to a set of base names to produce
+ : a set of scope-qualified names.
+ :
+ : @param baseNames Sequence of base names to be qualified.
+ : @param keyScopes Array of sequences of key scope names.
+ : @param qualifiedNames Sequence of qualified names
+ :
+ : @return Qualified names.
+ :)
+declare function lmm:applyScopesToNames(
+                     $keyNames as xs:string+,
+                     $keyScopes as array(*),
+                     $qualifiedNames as xs:string*) as xs:string* {
+  let $result := 
+      if (array:size($keyScopes) = 0) 
+         then $qualifiedNames
+         else 
+           let $newNames := 
+               for $name in $keyNames
+                   return for $scopeName in $keyScopes(1)
+                          return $scopeName || "." || $name
+           return lmm:applyScopesToNames(
+                      $newNames,
+                      array:tail($keyScopes),
+                      ($qualifiedNames, $newNames)
+                  )
+  return $result
+};
+
  
 
 (: End of Module :)
