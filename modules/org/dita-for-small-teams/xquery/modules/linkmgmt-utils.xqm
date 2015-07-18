@@ -432,7 +432,7 @@ declare function lmutil:getIndirectLinks($bos as map(*)*) as map(*)* {
    let $result as map(*)* := 
        for $member in $bos
            return lmutil:getIndirectLinksForBOSMember($member)
-   return () (: $result :)
+   return $result
 };
 
 (:~
@@ -594,9 +594,8 @@ declare function lmutil:reportLinkItemMap($linkItem as map(*)) as element() {
  : 'keySpace' : The constructed key space for the root map.
  :)
   <linkItem>{
-   for $key in map:keys($linkItem)
-       return element {$key} { $linkItem($key) }
-  }</linkItem>
+     bxutil:reportMapAsXML($linkItem)
+}</linkItem>
 };
 
 (:~
