@@ -92,7 +92,7 @@ declare function lmutil:findAllDirectLinks($dbName) as map(*)* {
  :)
 declare function lmutil:constructLinkItemMap(
                         $link as element()) as map(*) {
-  let $result := lmutil:constructLinkItemMap($link)
+  let $result := lmutil:constructLinkItemMap($link, ())
   return $result
 };
 
