@@ -432,7 +432,7 @@ declare function lmutil:getIndirectLinks($bos as map(*)*) as map(*)* {
    let $result as map(*)* := 
        for $member in $bos
            return lmutil:getIndirectLinksForBOSMember($member)
-   return $result
+   return () (: $result :)
 };
 
 (:~

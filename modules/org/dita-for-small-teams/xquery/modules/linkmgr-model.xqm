@@ -86,7 +86,9 @@ declare %updating function lmm:updateLinkManagementIndexes(
       
       lmm:createDirectLinkResourceRecords($metadataDbName, $directLinks, $logID),
       
-      (: Now create resolved maps and key space documents for each of the root maps.
+      (: Now create resolved maps for each of the root maps.
+         The resolved maps serve to enable key resolution
+         without creating separate data sets just for the key spaces.
        :)
       lmm:constructKeySpaces(
          $contentDbName,
@@ -94,10 +96,11 @@ declare %updating function lmm:updateLinkManagementIndexes(
          $logID),
 
       (: Now create resource use records for all the indirect links: :)
+      () (:
       lmm:createIndirectLinkResourceRecords(
                   $metadataDbName, 
                   lmutil:findAllIndirectLinks($contentDbName), 
-                  $logID)
+                  $logID) :)
     )
         
 };
@@ -324,11 +327,11 @@ declare function lmm:resolveMap(
        establish additional scope names.
     :)
     let $keyScopes as array(*) := 
-       [ (if ($map/@keyscope)
-             then tokenize(string($map/@keyscope), ' ')
-             else ()
+       (if ($map/@keyscope)
+             then [ tokenize(string($map/@keyscope), ' ') ]
+             else [ ]
          )
-       ]  
+       
     let $resolvedMap := 
           element {name($map)} 
             {
@@ -483,10 +486,8 @@ declare function lmm:expandKeyNames($keysAtt as attribute(keys),
           return lmm:scopeQualifyKeyName(
                       $keyName, 
                       $keyScopes)
-  (: FIXME: use of distinct-values() here is a hack to put off fixing the scope qualification
-            logic so it doesn't result in duplicated key names. 
-   :)
-  let $result := attribute {name($keysAtt)} {string-join(distinct-values($expandedKeyNames), ' ')}
+  let $result := attribute {name($keysAtt)} 
+                {string-join($expandedKeyNames, ' ')}
   return $result
 };  
 

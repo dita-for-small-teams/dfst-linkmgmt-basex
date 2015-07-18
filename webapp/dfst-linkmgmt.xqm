@@ -13,11 +13,12 @@ module namespace page = 'http://basex.org/modules/web-page';
 
 import module namespace html = 'dba/html';
 import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-utils";
-import module namespace linkutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
+import module namespace lmutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
 import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-utils";
 import module namespace linkmgr='http://basex.org/modules/linkmgr' at "linkmgrViews.xqm";
 import module namespace lmm="http://dita-for-small-teams.org/xquery/modules/linkmgr-model";
 import module namespace lmc="http://dita-for-small-teams.org/xquery/modules/linkmgr-controller";
+
 
 
 
@@ -187,7 +188,14 @@ declare
       return <tr>
         <td>{df:getTitleText($map/*)}</td>
         <td>{linkmgr:makeLinkToDocSource(document-uri(root($map)))}</td>
-        <td class="isRootMap">{if (lmc:isRootMap($map)) then '&#x2713;' else ''}</td>
+        <td class="isRootMap">{
+          let $resolvedMap as element()? := lmutil:getResolvedMapForMap($map/*)
+          return if (not($resolvedMap))
+             then "?"
+             else if (lmc:isRootMap($map)) 
+                     then '&#x2713;' 
+                     else ''
+        }</td>
         <td>
         [{html:linkToTarget('Navigation&#xa0;Tree', concat('/linkmgr/navtreeView/', document-uri($map)),
          'navtree')}] 
