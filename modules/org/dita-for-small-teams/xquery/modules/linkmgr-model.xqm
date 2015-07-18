@@ -264,17 +264,28 @@ declare %updating function lmm:constructKeySpaces(
      the root maps and thus the maps for which key space construction
      is relevant.
      
+     Key spaces are constructed 
+     
    :)
    
    let $maps := collection($contentDbName)/*[df:class(., 'map/map')][lmutil:isRootMap(.)]
-   return for $map in $maps
-              return (db:output(<info>Resolving map {document-uri(root($map))}...</info>),
-                      lmm:constructResolvedMap(
-                                              $map, 
-                                              $metadataDbName,
-                                              $logID)
+   let $resolvedMaps := 
+        map:merge(
+               for $map at $i in $maps 
+                  let $resolvedMap := lmm:resolveMap($map)
+                  return map:entry($i, $resolvedMap))
+
+    return
+      for $key in map:keys($resolvedMaps)
+            let $obj := $resolvedMaps($key)
+            let $map := $obj('map')
+            return (db:output(<info>Resolving map {document-uri(root($map))}...</info>),
+                    lmm:storeResolvedMap($map,
+                                         $obj('resolvedMap'), 
+                                         $metadataDbName,
+                                         $obj('log'),
+                                         $logID)
                      )
-        
 };
 
 (:~
@@ -285,22 +296,31 @@ declare %updating function lmm:constructKeySpaces(
  : @param metadataDbName Name of the metadata database to store the
  :        resolved map in
  :)
-declare %updating function lmm:constructResolvedMap(
+declare %updating function lmm:storeResolvedMap(
                                     $map as element(), 
+                                    $resolvedMap as element(),
                                     $metadataDbName as xs:string,
+                                    $log as element()*,
                                     $logID as xs:string) {
-  let $contentDbName := db:name($map)
-  let $resolvedMap := lmm:resolveMap($map, $logID)
   let $resolvedMapURI := lmutil:getResolvedMapURIForMap($map)
   return (db:replace($metadataDbName, $resolvedMapURI, $resolvedMap),
-          db:output(<info>Stored resolved map "{$resolvedMapURI}"</info>))
+          db:output(($log, <info>Stored resolved map "{$resolvedMapURI}"</info>)))
                          
 };
 
 
 (:~
- : Takes a root map and returns the resolved version of the map.
+ : Takes a root map and returns the resolved map within a map
+ : containing the original map, resolved map, and any log messages:
  : 
+ : @param map Content map to be resolved.
+ : 
+ : @return Map with the following members:
+ :
+ : map : The input map
+ : resolvedMap : The resolved map
+ : log : Sequence, possibly empty, of log entry elements.
+ :
  : The resolution process preserves the original structure and 
  : adds <topicgroup> elements to record submap boundaries.
  :
@@ -308,10 +328,10 @@ declare %updating function lmm:constructResolvedMap(
  : Because the resolved map is used for constructing key spaces it is 
  : not useful or necessary to resolve key-based map references as those
  : maps cannot contribute to the final set of effective key spaces.
+ :
  :)
 declare function lmm:resolveMap(
-                     $map as element(),
-                     $logID as xs:string) as element() {
+                     $map as element()) as map(*) {
                      
     
     (: Array of sequences of key scope names, lowest to highest
@@ -338,9 +358,15 @@ declare function lmm:resolveMap(
               attribute xml:base { encode-for-uri(document-uri(root($map))) },
               $map/@*,
               for $node in $map/node() 
-                  return lmm:resolveMapHandleNode($node, $keyScopes, $logID)
+                  return lmm:resolveMapHandleNode($node, $keyScopes)
             }
-    return $resolvedMap
+    let $result := 
+       map{
+           'map' : $map,
+           'resolvedMap' : $resolvedMap,
+           'log' : ()
+          }
+    return $result
 };
 
 (:~
@@ -348,17 +374,14 @@ declare function lmm:resolveMap(
  :)
 declare function lmm:resolveMapHandleNode(
                      $node as node(),
-                     $keyScopes as array(*),
-                     $logID as xs:string) as node()* {
+                     $keyScopes as array(*)) as node()* {
   typeswitch ($node) 
     case element() return lmm:resolveMapHandleElement(
                               $node,
-                              $keyScopes,
-                              $logID)
+                              $keyScopes)
     case attribute(keys) return lmm:expandKeyNames(
                                     $node, 
-                                    $keyScopes,
-                                    $logID)
+                                    $keyScopes)
     default return $node
 };
 
@@ -367,12 +390,11 @@ declare function lmm:resolveMapHandleNode(
  :)
 declare function lmm:resolveMapHandleElement(
                        $elem as element(),
-                       $keyScopes as array(*), 
-                       $logID as xs:string) as element()* {
+                       $keyScopes as array(*)) as element()* {
    let $result :=
      if (df:class($elem, 'map/topicref'))
-        then lmm:resolveMapHandleTopicref($elem, $keyScopes, $logID)
-        else lmm:resolveMapCopy($elem, $keyScopes, $logID)
+        then lmm:resolveMapHandleTopicref($elem, $keyScopes)
+        else lmm:resolveMapCopy($elem, $keyScopes)
    return $result
 };
 
@@ -381,12 +403,11 @@ declare function lmm:resolveMapHandleElement(
  :)
 declare function lmm:resolveMapCopy(
                     $elem as element(),
-                    $keyScopes as array(*), 
-                    $logID as xs:string) as element()* {
+                    $keyScopes as array(*)) as element()* {
    let $result :=
      element {name($elem)} {
         for $node in ($elem/@*, $elem/node())
-            return lmm:resolveMapHandleNode($node, $keyScopes, $logID)           
+            return lmm:resolveMapHandleNode($node, $keyScopes)           
      }
    return $result
 };
@@ -398,12 +419,11 @@ declare function lmm:resolveMapCopy(
  :)
 declare function lmm:resolveMapHandleTopicref(
                       $elem as element(),
-                      $keyScopes as array(*), 
-                      $logID as xs:string) as element()* {
+                      $keyScopes as array(*)) as element()* {
    let $result :=
      if ($elem/@format = ('ditamap') and df:getEffectiveScope($elem) = ('local'))
-        then lmm:resolveMapHandleMapRef($elem, $keyScopes, $logID)
-        else lmm:resolveMapCopy($elem, $keyScopes, $logID)
+        then lmm:resolveMapHandleMapRef($elem, $keyScopes)
+        else lmm:resolveMapCopy($elem, $keyScopes)
    return $result
 };
 
@@ -420,8 +440,7 @@ declare function lmm:resolveMapHandleTopicref(
  :)
 declare function lmm:resolveMapHandleMapRef(
                         $elem as element(),
-                        $keyScopes as array(*), 
-                        $logID as xs:string) as element()* {
+                        $keyScopes as array(*)) as element()* {
   let $resolutionMap as map(*) := df:resolveTopicRef($elem)
   let $submap := $resolutionMap('target')
   (: FIXME: add resolution messages to log once we get logging infrastructure in place :)
@@ -437,7 +456,7 @@ declare function lmm:resolveMapHandleMapRef(
        <navtitle class="- map/navtitle ">{($submap/*[df:class(., 'topic/title')], string($submap/@title))[1]}</navtitle>
      </topicmeta>
       {for $e in $submap/*[df:class(., 'map/topicref') or df:class(., 'map/reltable')]
-          return lmm:resolveMapHandleElement($e, $keyScopes, $logID)
+          return lmm:resolveMapHandleElement($e, $keyScopes)
       }
     </dfst:submap>
 };
@@ -474,8 +493,7 @@ declare function lmm:mergeKeyScopeNames($elem1 as element(), $elem2 as element()
  : @return keys attribute node with the expanded values.
  :)
 declare function lmm:expandKeyNames($keysAtt as attribute(keys), 
-                                    $keyScopes as array(*),
-                                    $logID as xs:string) as attribute() {
+                                    $keyScopes as array(*)) as attribute() {
   
   let $baseKeyNames as xs:string* := 
                     tokenize(string($keysAtt), " ") 

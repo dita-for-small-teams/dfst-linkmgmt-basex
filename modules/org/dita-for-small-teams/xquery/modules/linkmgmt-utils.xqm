@@ -334,8 +334,15 @@ declare function lmutil:resolveIndirectLink($linkItem as map(*)) as map(*) {
           then lmutil:resolveTopicRefFromResolvedMap($keydef)
           else ()
               
-   let $log := ()
-   return map{'target' : $targets, 'log' : $log , 'link' : $linkItem}
+   let $log := (if (not($keydef)) 
+                   then <warn>No key definition found for key "{$keyName}"</warn>
+                   else ()
+               )
+   return map{'target' : $targets, 
+              'log' : $log , 
+              'link' : $linkItem, 
+              'keydef' : $keydef
+             }
 };
 
 (:~
@@ -351,31 +358,21 @@ declare function lmutil:resolveIndirectLink($linkItem as map(*)) as map(*) {
 declare function lmutil:findKeyDefinition(
                             $keyName as xs:string,
                             $topicref as element()) as element()? {
-  (: Key scope-defining element is either the nearest ancestor topicref that
-     specifies @keyscope or the root map element.
-   :)
-  let $scope := ($topicref//ancestor-or-self::*[@keyscope], root($topicref)/*)[1]
-  (: Within the scope, the effective key definition is the first definition, 
-     in depth-first (document) order that specifies the key name. 
-   :)
+     
+                            
   let $result := ()
   return $result
 };
 
 (:~
  : Given a database, finds all the indirect links. Returns a map
- : the the members:
- : 'links' : A sequence of maps, where each map represents one link.
+ : the the members.
+ : @param dbName Name of the content database to find the links for
+ : @return Map with two members:
+ :
+ : 'links' : A sequence of linkItem maps, where each map represents one link.
  : 'log' : A sequence of log entry elements.
  : 
- : Each link map has the following items:
- : 
- : 'link' : The element that is the link
- : 'rootMap' : The root map document that defines the namespace the link
- :             is resolved in.
- : 'resolvedMap' : The fully-resolved map that defines key space the key
- :                 reference is resolved in.
- : 'keySpace' : The constructed key space for the root map.
  : 
  :)
 declare function lmutil:findAllIndirectLinks($dbName) as map(*)* {
