@@ -90,12 +90,10 @@ declare %updating function lmm:updateLinkManagementIndexes(
          The resolved maps serve to enable key resolution
          without creating separate data sets just for the key spaces.
        :)
-       (:
       lmm:constructKeySpaces(
          $contentDbName,
          $metadataDbName,
          $logID),
-:)
       (: Now create resource use records for all the indirect links: :)
       () (:
       lmm:createIndirectLinkResourceRecords(
