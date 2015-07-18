@@ -95,11 +95,10 @@ declare %updating function lmm:updateLinkManagementIndexes(
          $metadataDbName,
          $logID),
       (: Now create resource use records for all the indirect links: :)
-      () (:
       lmm:createIndirectLinkResourceRecords(
                   $metadataDbName, 
                   lmutil:findAllIndirectLinks($contentDbName), 
-                  $logID) :)
+                  $logID) 
     )
         
 };

@@ -579,6 +579,27 @@ declare function lmutil:reportAtts($elem as element(), $attNames) as xs:string {
 };
 
 (:~
+ : Report a link item map as XML
+ :
+ : @param linkItem
+ : @return XML representation of the link
+ :)
+declare function lmutil:reportLinkItemMap($linkItem as map(*)) as element() {
+(:
+ : 'link' : The element that is the link
+ : 'rootMap' : The root map document that defines the namespace the link
+ :             is resolved in.
+ : 'resolvedMap' : The fully-resolved map that defines key space the key
+ :                 reference is resolved in.
+ : 'keySpace' : The constructed key space for the root map.
+ :)
+  <linkItem>{
+   for $key in map:keys($linkItem)
+       return element {$key} { $linkItem($key) }
+  }</linkItem>
+};
+
+(:~
  : Get the resolved map document for a map. The resolved map must have already
  : been constructed (XQuery doesn't let use do updating actions wherever we
  : want).
