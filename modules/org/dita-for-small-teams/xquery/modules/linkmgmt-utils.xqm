@@ -625,5 +625,25 @@ declare function lmutil:getResolvedMapURIForMap(
          "/" || $mapDocHash || ".ditamap"
 };
 
+(:~
+ : Given a keyspace element return the document URI to use when
+ : storing or finding the key space.
+ : 
+ : @param keyspace Element that is the key space.
+ : @return The URI for the key space document.
+ :)
+declare function lmutil:getKeySpaceURIForKeySpace(
+                            $keyspace as element()) as xs:string {
+  let $keyspaceID := string($keyspace/@id)
+  let $resolvedMapURI := string($keyspace/@resolvedMap)
+  let $baseName := relpath:getNamePart($resolvedMapURI)
+  let $uri := relpath:newFile($dfstcnst:keyspaces-dir, 
+                              concat($baseName, 
+                                     '-keyspace-', 
+                                     $keyspaceID,
+                                     '.xml'))
+  return $uri
+};
+
 
 (: End of Module :)

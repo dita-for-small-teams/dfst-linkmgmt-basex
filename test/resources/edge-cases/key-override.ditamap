@@ -1,0 +1,11 @@
+<map>
+ <title>Edge Cases for Key Overriding From Scope to Scope</title>
+ <topicref keys="key1" href="root-binding.dita"/>
+ <topicgroup keyscope="scope-1">
+   <keydef keys="key1" href="scope-1-binding.dita"/>
+   <topicref id="tr-01" keyref="key1"/>
+   <topicref id="tr-02" keyref="scope-1.key1"/>
+ </topicgroup>
+ <topicref id="tr-03" keyref="key1"/>
+ <topicref id="tr-04" keyref="scope-1.key1"/>
+</map>

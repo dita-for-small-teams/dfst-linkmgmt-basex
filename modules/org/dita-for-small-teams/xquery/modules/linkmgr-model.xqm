@@ -264,44 +264,174 @@ declare %updating function lmm:constructKeySpaces(
      the root maps and thus the maps for which key space construction
      is relevant.
      
-     Key spaces are constructed 
+     Key spaces are constructed from resolved maps and stored in the metadata
+     database.
      
    :)
    
-   let $maps := collection($contentDbName)/*[df:class(., 'map/map')][lmutil:isRootMap(.)]
-   let $resolvedMaps := 
-        map:merge(
-               for $map at $i in $maps 
-                  let $resolvedMap := lmm:resolveMap($map)
-                  return map:entry($i, $resolvedMap))
-
+   let $contentMaps := collection($contentDbName)/*[df:class(., 'map/map')][lmutil:isRootMap(.)]
+   (: Sequence of maps containing the things to be stored :)
+   let $dataToStore as map(*)* := 
+       for $ditaMap in $contentMaps 
+          let $resolvedMap as map(*) := lmm:resolveMap($ditaMap)
+          (: Sequence of maps containing the source map, resolved map,
+             and sequence of key space documents to be stored.
+           :)
+          let $keySpaces as map(*) := 
+                lmm:constructKeySpacesForResolvedMap(
+                   $resolvedMap)
+          let $dataMap := 
+               map{ 
+                    'resolvedMap' : $resolvedMap,
+                    'keyspaces' : $keySpaces
+                  }
+          return $dataMap
     return
-      for $key in map:keys($resolvedMaps)
-            let $obj := $resolvedMaps($key)
-            let $map := $obj('map')
-            return (db:output(<info>Resolving map {document-uri(root($map))}...</info>),
-                    lmm:storeResolvedMap($map,
-                                         $obj('resolvedMap'), 
+      for $obj in $dataToStore
+            let $ditaMap := $obj('resolvedMap')('map')
+            let $resolvedMap := $obj('resolvedMap')
+            let $keySpaces as map(*) := $obj('keySpaces')
+            return (db:output(<info>Resolving map {document-uri(root($ditaMap))}...</info>),
+                    lmm:storeResolvedMap($resolvedMap, 
                                          $metadataDbName,
                                          $obj('log'),
+                                         $logID),
+                    for $keySpace in $keySpaces 
+                        return lmm:storeKeySpace(
+                                         $keySpace, 
+                                         $metadataDbName,
                                          $logID)
                      )
 };
 
 (:~
- : Construct a resolved map suiteable for doing key resolution. The map
- : is stored in the metadata database.
- :
- : @param map DITA map that is the root of the resolved map.
+ : Store a keyspace document in the metadata database.
+ : 
+ : @param keySpaceMap Map containing the source map and a key space
+ :                    document constructed from the map.
  : @param metadataDbName Name of the metadata database to store the
  :        resolved map in
+ : @logID ID of the log to write the messages to.
+ :)
+declare %updating function lmm:storeKeySpace(
+                     $keySpaceMap as map(*),
+                     $metadataDbName as xs:string,
+                     $logID as xs:string) {
+  let $map := $keySpaceMap('map')
+  let $resolvedMap := $keySpaceMap('resolvedMap')
+  let $keySpace := $keySpaceMap('keyspace')
+  let $keySpaceURI := lmutil:getKeySpaceURIForKeySpace($keySpace)
+  return (db:replace($metadataDbName, $keySpaceURI, $keySpace),
+          db:output((<info>Stored key space "{$keySpaceURI}"</info>)))
+};
+
+(:~
+ : Given a resolved map, construct one or more key space documents
+ : reflecting the key spaces defined by the map, one for each
+ : key scope defined in the map. At minimum there will be one
+ : key space document with no key definitions.
+ : 
+ : @param map Source content map (returned in the result key)
+ : @param resolvedMap Resolved map constructed from the source map
+ : @return Map containing the members:
+ :
+ :   map : The content map 
+ :   resolvedMap : The resolved map the key spaces were constructed from
+ :   keySpaces : Sequence of one or more keyspace documents.
+ :)
+declare function lmm:constructKeySpacesForResolvedMap(
+                       $dataMap as map(*)) as map(*) {
+   let $ditaMap as element() := $dataMap('map')
+   let $resolvedMap as element() := $dataMap('resolvedMap')
+   let $keyspaces := lmm:constructKeySpace($resolvedMap)
+   
+   let $result := 
+      map{ 'map' : $ditaMap,
+           'resolvedMap' : $resolvedMap,
+           'keySpaces' : $keyspaces
+         }
+   return $result
+};
+
+(:~
+ : The identity of a key space is the element that defines it, either map
+ : or a topicref. In order to resolve a key you must know the key space
+ : hierarchy because you have to start with the root key space, see if 
+ : the key-as-referenced is defined in that space, then if not, walk
+ : down the ancestor tree until you either find a match for the key
+ : name or run out of options. 
+ :
+ : Logically, an ancestor key space reflects in itself all the scope-qualified
+ : names of the keys from its descentant key space that it does not
+ : explicitly override, meaning that, starting from any descedant key space you 
+ : can resolve any fully-qualified key name. 
+ :
+ : @param spaceDefiner Element, map or topicref, that defines a new key space.
+ :
+ : @return Keyspace element, which will contain any descendant keyspaces
+ :)
+declare function lmm:constructKeySpace($spaceDefiner as element()) as element() {
+  let $keyspaceMaps := lmm:constructKeySpaceMap($spaceDefiner, ())
+  (: FIXME: Replace this proper to-XML serialization logic :)
+  let $result := bxutil:reportMapAsXML($keyspaceMaps)
+  return $result
+};
+
+(:~
+ : Construct map object that reflects the key space rooted at the specified
+ : key space defining element. 
+ :
+ : The map is a map of key names to key definitions, where a given key name
+ : may reflect multiple definitions. The key definitions are in precedence
+ : order from highest to lowest.
+ :
+ : @param spaceDefiner Element, map or topicref, that defines a new key space.
+ : @parentSpace The parent key space (enables walking up the key space ancestry)
+ : @return map object with the following members:
+ : 
+ : 'scopeNames' : A sequence, possibly empty, of the scope names for the scope.
+ :                (Only the root scope can have no name).
+ : 'directKeys' : Keys defined directly within the space-defining element
+ :                and not within any descendant scope. A map of key names
+ :                sequences of key definitions.
+ : 'inheritedKeys' : Keys inherited from descendant scopes. A map of key names
+ :                   to sequences of key definitions.
+ : 'childSpaces' : Sequence of maps objects representing the child key spaces
+ :                 of this key space.
+ : 'parentSpace' : The parent key space's map. The root space has no parent.
+ :)
+declare function lmm:constructKeySpaceMap($spaceDefiner as element(),
+                                          $parentSpace as map(*)?
+                                          ) as map(*) {
+   let $result := map{ 'scopeNames' : (),
+                       'directKeys' : map {},
+                       'inheritedKeys' : map {}
+                     }
+   (: Determine the directly-declared keys and then call recursively to get
+      the maps for any child key spaces. Then add the direct and
+      inherited keys from those maps to the inherited keys of this key space.
+    :)
+   return $result
+};
+
+(:~
+ : Store a resolved map in the metadata database.
+ :
+ : @param map DITA map that is the root of the resolved map.
+ : @param resolvedMap The resolved map constructed from the content map
+ : @param metadataDbName Name of the metadata database to store the
+ :        resolved map in
+ : @log Sequence, possibly empty, of log message elements.
+ : @logID ID of the log to write the messages to.
  :)
 declare %updating function lmm:storeResolvedMap(
-                                    $map as element(), 
-                                    $resolvedMap as element(),
+                                    $dataMap as map(*),
                                     $metadataDbName as xs:string,
                                     $log as element()*,
                                     $logID as xs:string) {
+  let $map := $dataMap('map')
+  let $resolvedMap := $dataMap('resolvedMap')
+  let $log := $dataMap('log')
   let $resolvedMapURI := lmutil:getResolvedMapURIForMap($map)
   return (db:replace($metadataDbName, $resolvedMapURI, $resolvedMap),
           db:output(($log, <info>Stored resolved map "{$resolvedMapURI}"</info>)))
