@@ -391,11 +391,8 @@ declare function lmm:constructKeySpace($spaceDefiner as element()) as element() 
  : 
  : 'scopeNames' : A sequence, possibly empty, of the scope names for the scope.
  :                (Only the root scope can have no name).
- : 'directKeys' : Keys defined directly within the space-defining element
- :                and not within any descendant scope. A map of key names
- :                sequences of key definitions.
- : 'inheritedKeys' : Keys inherited from descendant scopes. A map of key names
- :                   to sequences of key definitions.
+ : 'keydefs'     : Sequence of key-to-definition maps for each of the keys
+ :                 defined in the key space or its descendant key spaces.
  : 'childSpaces' : Sequence of maps objects representing the child key spaces
  :                 of this key space.
  : 'parentSpace' : The parent key space's map. The root space has no parent.
@@ -403,15 +400,85 @@ declare function lmm:constructKeySpace($spaceDefiner as element()) as element() 
 declare function lmm:constructKeySpaceMap($spaceDefiner as element(),
                                           $parentSpace as map(*)?
                                           ) as map(*) {
-   let $result := map{ 'scopeNames' : (),
-                       'directKeys' : map {},
-                       'inheritedKeys' : map {}
-                     }
-   (: Determine the directly-declared keys and then call recursively to get
-      the maps for any child key spaces. Then add the direct and
-      inherited keys from those maps to the inherited keys of this key space.
-    :)
+  
+   (: Walk the element tree, collecting key definitions and child key 
+      key spaces as we go. 
+      
+      Result is the key space map
+      :)
+   let $keySpace as map(*) := 
+       lmm:constructKeySpaceWalkMapElement(
+           $spaceDefiner, 
+           map{'definer' : $spaceDefiner,
+               'scopeNames' : if ($spaceDefiner/@keyscopes)
+                                 then tokenize($spaceDefiner/@keyscopes, ' ')
+                                 else (),
+               'parentSpace' : $parentSpace
+              }
+           )
+   
+   let $result := map:put($keySpace, 'definer', $spaceDefiner)
    return $result
+};
+
+(:~
+ : Takes an element in a map, either a map or a topicref, adds any
+ : keys it defines, then walk its children.
+ : 
+ : @param cand Candidate element that may define keys and/or establish
+ :             a new key scope.
+ : @param keySpace The key space map this element may contribute to
+ : @return The updated key space map
+ :)
+declare function lmm:constructKeySpaceWalkMapElement(
+              $cand as element(), 
+              $keySpace as map(*)) {
+
+  (: Scope-qualified names from child key spaces get added to this
+     key space at the point of occurrence of the child key space.
+   :)
+  let $m1 := lmm:addKeyDef($keySpace, $cand)             
+  let $childSpace := if ($cand/@keyspace)
+                        then lmm:constructKeySpaceMap($cand, $keySpace)
+                        else ()
+  (: Add my key definitions, qualified by 
+     my scope names, to the parent space's key definitions: :)
+  let $parentSpace := $keySpace('parentSpace')
+  let $m2 := 
+      if ($parentSpace)
+         then (: Add scope-qualified entries to parent :)
+           let $newParent := 
+                map:merge(($parentSpace,
+                           map{})) (: Map with updated keyDefs :)
+           return map:merge(($m1, 
+                             map{'parentSpace' : $newParent}))
+         else $m1
+   return $m2       
+ 
+};
+
+(:~
+ : Adds a key-defining element's definition to the key space if
+ : it actually defines a key (this function can be called on any
+ : topicref)
+ :
+ : @param keySpace The key space to add the definition to
+ : @param elem The key-defining element to add
+ : @return Updated key space map.
+ :) 
+declare function lmm:addKeyDef($keySpace, $elem as element()) as map(*) {
+  let $keyDefs := $keySpace('keydefs') (: Map of key name to sequence of key defs :)
+  
+  let $keyNames := tokenize($elem/@keys, ' ')
+  let $newKeyDefs :=
+     map:merge((
+       $keyDefs,
+       for $keyName in $keyNames
+           return map{$keyName :
+                      ($keyDefs($keyName), $elem)
+                     }))
+  let $result := map:put($keySpace, 'keydefs', $newKeyDefs)
+  return $result           
 };
 
 (:~
