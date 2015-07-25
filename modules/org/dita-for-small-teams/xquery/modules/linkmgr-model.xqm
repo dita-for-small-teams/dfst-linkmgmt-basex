@@ -279,7 +279,10 @@ declare %updating function lmm:constructKeySpaces(
            :)
           let $keySpaces as map(*) := 
                 lmm:constructKeySpacesForResolvedMap(
-                   $resolvedMap)
+                   map {'map' : $ditaMap,
+                        'resolvedMap' : $resolvedMap,
+                        'somefield' : ()
+                        })
           let $dataMap := 
                map{ 
                     'resolvedMap' : $resolvedMap,
@@ -327,10 +330,12 @@ declare %updating function lmm:storeKeySpace(
 };
 
 (:~
- : Given a resolved map, construct one or more key space documents
- : reflecting the key spaces defined by the map, one for each
- : key scope defined in the map. At minimum there will be one
- : key space document with no key definitions.
+ : Given a resolved DITA map, construct the key space map 
+ : for it.
+ : 
+ : The key space map reflects the hierarchy
+ : of key spaces defined in the map. Every root map represents
+ : at least one, possibly empty, key space.
  : 
  : @param map Source content map (returned in the result key)
  : @param resolvedMap Resolved map constructed from the source map
@@ -346,13 +351,11 @@ declare function lmm:constructKeySpacesForResolvedMap(
    let $resolvedMap as element() := $dataMap('resolvedMap')
    let $keyspaces := lmm:constructKeySpace($resolvedMap)
    
-   let $result := map {}
-   (:
+   let $result :=
       map{ 'map' : $ditaMap,
            'resolvedMap' : $resolvedMap,
            'keySpaces' : $keyspaces
          }
-         :)
    return $result
 };
 
@@ -376,7 +379,7 @@ declare function lmm:constructKeySpacesForResolvedMap(
 declare function lmm:constructKeySpace($spaceDefiner as element()) as element() {
   let $keyspaceMap := lmm:constructKeySpaceMap($spaceDefiner, ())
   (: FIXME: Replace this proper to-XML serialization logic :)
-  let $result := bxutil:reportMapAsXML($keyspaceMap)
+  let $result := <keyspace>{bxutil:reportMapAsXML($keyspaceMap)}</keyspace>
   return $result
 };
 
@@ -478,7 +481,9 @@ declare function lmm:addKeyDef($keySpace, $elem as element()) as map(*) {
        $keyDefs,
        for $keyName in $keyNames
            return map{$keyName :
-                      ($keyDefs($keyName), $elem)
+                      if ($keyDefs)
+                         then ($keyDefs($keyName), $elem)
+                         else ($elem)
                      }))
   let $result := map:put($keySpace, 'keydefs', $newKeyDefs)
   return $result           

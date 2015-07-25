@@ -137,7 +137,8 @@ declare function bxutil:reportMapAsXML($map as map(*)) as element()* {
    let $result :=
        for $key in map:keys($map)
            let $member := $map($key)
-           return element {$key} {
+           return element item {
+              attribute key { $key },
               typeswitch ($member)
                 case map(*)
                   return bxutil:reportMapAsXML($member)
