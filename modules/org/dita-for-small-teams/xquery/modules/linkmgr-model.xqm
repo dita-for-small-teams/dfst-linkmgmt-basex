@@ -410,48 +410,41 @@ declare function lmm:constructKeySpaceMap($spaceDefiner as element(),
       
       Result is the key space map.
       :)
-   let $keySpace as map(*) := 
-       lmm:constructKeySpaceWalkMapElement(
-           $spaceDefiner, 
+   let $initialKeySpaceMap :=
            map{'definer' : $spaceDefiner,
                'scopeNames' : if ($spaceDefiner/@keyscopes)
                                  then tokenize($spaceDefiner/@keyscopes, ' ')
                                  else (),
                'parentSpace' : $parentSpace
               }
-           )
+   let $thisScopeKeyDefs :=
+       $spaceDefiner//descendant-or-self::*[df:class(., 'map/topicref')][@keys]
    
-   let $result := map:put($keySpace, 'definer', $spaceDefiner)
+   
+   let $result := lmm:addKeyDefs($initialKeySpaceMap, $thisScopeKeyDefs)
    return $result
 };
 
 (:~
- : Takes an element in a DITA map, either a map or a topicref, adds any
- : keys it defines, then walks its children.
+ : Add a set of key definitions to a key space, returning the updated
+ : key space map.
  : 
- : @param cand Candidate element that may define keys and/or establish
- :             a new key scope.
- : @param keySpace The key space map this element contributes to.
- : @return The updated key space map
+ : Calls itself recursively to process the list of elements.
+ :
+ : @param keySpace Key space map to add the key definitions to
+ : @param elems Key-defining elements
+ : @return New key space map with the key definitions added.
  :)
-declare function lmm:constructKeySpaceWalkMapElement(
-              $cand as element(), 
-              $keySpace as map(*)) as map(*) {
+declare function lmm:addKeyDefs($keySpace, $elems as element()*) as map(*) {
 
-  let $updatedKeySpace := lmm:addKeyDef($keySpace, $cand)
-  let $result :=
-     if ($cand/*[df:class(., 'map/topicref')])
-        then  
-           map:merge( 
-              for $child in $cand/*[df:class(., 'map/topicref')]
-                  return lmm:constructKeySpaceWalkMapElement($child, $updatedKeySpace)
-                  )
-        else $updatedKeySpace
-             
-          
-  return $result
-      
- 
+let $result :=
+    if (count($elems) = 0)
+       then $keySpace
+       else
+         let $newKeySpace := lmm:addKeyDef($keySpace, $elems[1])
+         return lmm:addKeyDefs($newKeySpace, tail($elems))
+       
+return $result
 };
 
 (:~
@@ -471,10 +464,13 @@ declare function lmm:addKeyDef($keySpace, $elem as element()) as map(*) {
      map:merge((
        $keyDefs,
        for $keyName in $keyNames
+           let $existingDefsForKey := 
+                if (exists($keyDefs))
+                   then $keyDefs($keyName)
+                   else ()
+
            return map{$keyName :
-                      if (exists($keyDefs))
-                         then ($keyDefs($keyName), $elem)
-                         else ($elem)
+                      ($existingDefsForKey, $elem)
                      }))
   let $result := map:put($keySpace, 'keydefs', $newKeyDefs)
   return $result           
