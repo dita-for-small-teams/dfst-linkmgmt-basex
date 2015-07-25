@@ -347,13 +347,12 @@ declare function lmm:constructKeySpacesForResolvedMap(
                        $resolvedMapMap as map(*)) as map(*) {
    let $ditaMap as element() := $resolvedMapMap('map')
    let $resolvedMap as element() := $resolvedMapMap('resolvedMap')
-   (:
-   let $keyspaces as map(*) := map{}:) (: lmm:constructKeySpace($resolvedMap) :)
+   let $keyspaces as element(keyspace) := lmm:constructKeySpace($resolvedMap)
    
    let $result :=
       map{ 'map' : $ditaMap,
            'resolvedMap' : $resolvedMap,
-           'keySpaces' : map{}
+           'keySpaces' : $keyspaces
          }
    return $result
 };
