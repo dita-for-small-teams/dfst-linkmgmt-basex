@@ -274,30 +274,26 @@ declare %updating function lmm:constructKeySpaces(
    let $dataToStore as map(*)* := 
        for $ditaMap in $contentMaps 
           let $resolvedMapMap as map(*) := lmm:resolveMap($ditaMap)
-          (: Sequence of maps containing the source map, resolved map,
-             and sequence of key space documents to be stored.
-           :)
-          let $keySpaces as map(*) := 
-                lmm:constructKeySpacesForResolvedMap(
+          let $keySpace as map(*) := 
+                lmm:constructKeySpaceForResolvedMap(
                      $resolvedMapMap
                    )
           let $dataMap := 
                map{ 
-                    'resolvedMap' : $resolvedMapMap,
-                    'keyspaces' : $keySpaces
+                    'resolvedMapMap' : $resolvedMapMap,
+                    'keySpace' : $keySpace
                   }
           return $dataMap
     return
       for $obj in $dataToStore
-            let $ditaMap := $obj('resolvedMap')('map')
-            let $resolvedMap := $obj('resolvedMap')
-            let $keySpaces as map(*) := $obj('keySpaces')
+            let $ditaMap := $obj('resolvedMapMap')('map')
+            let $resolvedMapMap := $obj('resolvedMapMap')
+            let $keySpace as map(*) := $obj('keySpace')
             return (db:output(<info>Resolving map {document-uri(root($ditaMap))}...</info>),
-                    lmm:storeResolvedMap($resolvedMap, 
+                    lmm:storeResolvedMap($resolvedMapMap, 
                                          $metadataDbName,
                                          $obj('log'),
-                                         $logID)
-                                         (:,
+                                         $logID)(:,
                     for $keySpace in $keySpaces 
                         return lmm:storeKeySpace(
                                          $keySpace, 
@@ -331,28 +327,28 @@ declare %updating function lmm:storeKeySpace(
  : Given a resolved DITA map, construct the key space map 
  : for it.
  : 
- : The key space map reflects the hierarchy
- : of key spaces defined in the map. Every root map represents
- : at least one, possibly empty, key space.
+ : The key space map reflects the hierarchy of key spaces defined 
+ : in the map. Every root map represents at least one, possibly 
+ : empty, key space.
  : 
- : @param map Source content map (returned in the result key)
+ : @param map Source content map (returned in the result map)
  : @param resolvedMap Resolved map constructed from the source map
  : @return Map containing the members:
  :
  :   map : The content map 
  :   resolvedMap : The resolved map the key spaces were constructed from
- :   keySpaces : Sequence of one or more keyspace documents.
+ :   keySpace : The key space document rooted at the resolved map.
  :)
-declare function lmm:constructKeySpacesForResolvedMap(
+declare function lmm:constructKeySpaceForResolvedMap(
                        $resolvedMapMap as map(*)) as map(*) {
    let $ditaMap as element() := $resolvedMapMap('map')
    let $resolvedMap as element() := $resolvedMapMap('resolvedMap')
-   let $keyspaces as element(keyspace) := lmm:constructKeySpace($resolvedMap)
+   let $keyspace as element(keyspace) := lmm:constructKeySpace($resolvedMap)
    
    let $result :=
       map{ 'map' : $ditaMap,
            'resolvedMap' : $resolvedMap,
-           'keySpaces' : $keyspaces
+           'keySpace' : $keyspace
          }
    return $result
 };
@@ -376,9 +372,43 @@ declare function lmm:constructKeySpacesForResolvedMap(
  :)
 declare function lmm:constructKeySpace($spaceDefiner as element()) as element() {
   let $keyspaceMap := lmm:constructKeySpaceMap($spaceDefiner, ())
-  (: FIXME: Replace this proper to-XML serialization logic :)
-  let $result := <keyspace>{bxutil:reportMapAsXML($keyspaceMap)}</keyspace>
+  let $result := lmm:keySpaceMapToXML($keyspaceMap)
   return $result
+};
+
+(:~
+ : Given a key space map, return an XML serialization of it suitalbe for storing
+ : in the XML metadata store
+ :)
+declare function lmm:keySpaceMapToXML($keyspaceMap as map(*)) as element(keyspace) {
+
+let $definer as element() := $keyspaceMap('definer')
+let $scopeNames as xs:string* := $keyspaceMap('scopeNames')
+let $keydefs as map(*)? := $keyspaceMap('keydefs')
+let $childScopes as map(*)* := $keyspaceMap('childScopes')
+
+let $result :=
+<keyspace
+  resolvedMap="{document-uri(root($definer))}"
+>{
+ <scopeNames>{
+   for $name in $scopeNames
+       return <scopeName>{$name}</scopeName>
+ }</scopeNames>,
+ <keys>{
+ for $keyName in map:keys($keydefs) order by $keyName
+     return <key name="{$keyName}">{
+               $keydefs($keyName)
+             }</key>
+ }</keys>,
+ <childScopes>{
+ for $childScope in $childScopes
+     return lmm:keySpaceMapToXML($childScope)
+ }</childScopes>
+}</keyspace>
+
+return $result
+
 };
 
 (:~
@@ -415,7 +445,8 @@ declare function lmm:constructKeySpaceMap($spaceDefiner as element(),
                'scopeNames' : if ($spaceDefiner/@keyscopes)
                                  then tokenize($spaceDefiner/@keyscopes, ' ')
                                  else (),
-               'parentSpace' : $parentSpace
+               'parentSpace' : $parentSpace,
+               'keydefs' : map {}
               }
    let $thisScopeKeyDefs :=
        $spaceDefiner//descendant-or-self::*[df:class(., 'map/topicref')][@keys]
