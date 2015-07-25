@@ -295,12 +295,13 @@ declare %updating function lmm:constructKeySpaces(
                     lmm:storeResolvedMap($resolvedMap, 
                                          $metadataDbName,
                                          $obj('log'),
-                                         $logID),
+                                         $logID)
+                                         (:,
                     for $keySpace in $keySpaces 
                         return lmm:storeKeySpace(
                                          $keySpace, 
                                          $metadataDbName,
-                                         $logID)
+                                         $logID) :)
                      )
 };
 
@@ -345,11 +346,13 @@ declare function lmm:constructKeySpacesForResolvedMap(
    let $resolvedMap as element() := $dataMap('resolvedMap')
    let $keyspaces := lmm:constructKeySpace($resolvedMap)
    
-   let $result := 
+   let $result := map {}
+   (:
       map{ 'map' : $ditaMap,
            'resolvedMap' : $resolvedMap,
            'keySpaces' : $keyspaces
          }
+         :)
    return $result
 };
 
@@ -371,9 +374,9 @@ declare function lmm:constructKeySpacesForResolvedMap(
  : @return Keyspace element, which will contain any descendant keyspaces
  :)
 declare function lmm:constructKeySpace($spaceDefiner as element()) as element() {
-  let $keyspaceMaps := lmm:constructKeySpaceMap($spaceDefiner, ())
+  let $keyspaceMap := lmm:constructKeySpaceMap($spaceDefiner, ())
   (: FIXME: Replace this proper to-XML serialization logic :)
-  let $result := bxutil:reportMapAsXML($keyspaceMaps)
+  let $result := bxutil:reportMapAsXML($keyspaceMap)
   return $result
 };
 
@@ -422,12 +425,12 @@ declare function lmm:constructKeySpaceMap($spaceDefiner as element(),
 };
 
 (:~
- : Takes an element in a map, either a map or a topicref, adds any
+ : Takes an element in a DITA map, either a map or a topicref, adds any
  : keys it defines, then walk its children.
  : 
  : @param cand Candidate element that may define keys and/or establish
  :             a new key scope.
- : @param keySpace The key space map this element may contribute to
+ : @param keySpace The key space map this element contributes to
  : @return The updated key space map
  :)
 declare function lmm:constructKeySpaceWalkMapElement(
@@ -531,22 +534,6 @@ declare function lmm:resolveMap(
                      $map as element()) as map(*) {
                      
     
-    (: Array of sequences of key scope names, lowest to highest
-       (e.g., as for ancestor:: axis)
-       Each sequence is the set of key scope names defined
-       on a given map or topicref, establishing a new set
-       of key scopes.
-       
-       There is always the root (anonymous) key scope
-       bound to the root map. The root map can also
-       establish additional scope names.
-    :)
-    let $keyScopes as array(*) := 
-       (if ($map/@keyscope)
-             then [ tokenize(string($map/@keyscope), ' ') ]
-             else [ ]
-         )
-       
     let $resolvedMap := 
           element {name($map)} 
             {
@@ -555,7 +542,7 @@ declare function lmm:resolveMap(
               attribute xml:base { encode-for-uri(document-uri(root($map))) },
               $map/@*,
               for $node in $map/node() 
-                  return lmm:resolveMapHandleNode($node, $keyScopes)
+                  return lmm:resolveMapHandleNode($node)
             }
     let $result := 
        map{
@@ -570,15 +557,10 @@ declare function lmm:resolveMap(
  : Simple identity transform dispatch handler for nodes of any type.
  :)
 declare function lmm:resolveMapHandleNode(
-                     $node as node(),
-                     $keyScopes as array(*)) as node()* {
+                     $node as node()) as node()* {
   typeswitch ($node) 
     case element() return lmm:resolveMapHandleElement(
-                              $node,
-                              $keyScopes)
-    case attribute(keys) return lmm:expandKeyNames(
-                                    $node, 
-                                    $keyScopes)
+                              $node)
     default return $node
 };
 
@@ -586,12 +568,11 @@ declare function lmm:resolveMapHandleNode(
  : Apply identity transform to elements of any type. 
  :)
 declare function lmm:resolveMapHandleElement(
-                       $elem as element(),
-                       $keyScopes as array(*)) as element()* {
+                       $elem as element()) as element()* {
    let $result :=
      if (df:class($elem, 'map/topicref'))
-        then lmm:resolveMapHandleTopicref($elem, $keyScopes)
-        else lmm:resolveMapCopy($elem, $keyScopes)
+        then lmm:resolveMapHandleTopicref($elem)
+        else lmm:resolveMapCopy($elem)
    return $result
 };
 
@@ -599,28 +580,26 @@ declare function lmm:resolveMapHandleElement(
  : Copy an element as for xsl:copy instruction.
  :)
 declare function lmm:resolveMapCopy(
-                    $elem as element(),
-                    $keyScopes as array(*)) as element()* {
+                    $elem as element()) as element()* {
    let $result :=
      element {name($elem)} {
         for $node in ($elem/@*, $elem/node())
-            return lmm:resolveMapHandleNode($node, $keyScopes)           
+            return lmm:resolveMapHandleNode($node)           
      }
    return $result
 };
 
 (:~
- : Handle topicrefs. If the topicref is to local-scope map, then resolve the topicref
+ : Handle topicrefs. If the topicref is to a local-scope map, then resolve the topicref
  : to the map and include the map in the resolved result, otherwise apply normal
  : copy processing.
  :)
 declare function lmm:resolveMapHandleTopicref(
-                      $elem as element(),
-                      $keyScopes as array(*)) as element()* {
+                      $elem as element()) as element()* {
    let $result :=
      if ($elem/@format = ('ditamap') and df:getEffectiveScope($elem) = ('local'))
-        then lmm:resolveMapHandleMapRef($elem, $keyScopes)
-        else lmm:resolveMapCopy($elem, $keyScopes)
+        then lmm:resolveMapHandleMapRef($elem)
+        else lmm:resolveMapCopy($elem)
    return $result
 };
 
@@ -636,8 +615,7 @@ declare function lmm:resolveMapHandleTopicref(
  :
  :)
 declare function lmm:resolveMapHandleMapRef(
-                        $elem as element(),
-                        $keyScopes as array(*)) as element()* {
+                        $elem as element()) as element()* {
   let $resolutionMap as map(*) := df:resolveTopicRef($elem)
   let $submap := $resolutionMap('target')
   (: FIXME: add resolution messages to log once we get logging infrastructure in place :)
@@ -653,7 +631,7 @@ declare function lmm:resolveMapHandleMapRef(
        <navtitle class="- map/navtitle ">{($submap/*[df:class(., 'topic/title')], string($submap/@title))[1]}</navtitle>
      </topicmeta>
       {for $e in $submap/*[df:class(., 'map/topicref') or df:class(., 'map/reltable')]
-          return lmm:resolveMapHandleElement($e, $keyScopes)
+          return lmm:resolveMapHandleElement($e)
       }
     </dfst:submap>
 };
