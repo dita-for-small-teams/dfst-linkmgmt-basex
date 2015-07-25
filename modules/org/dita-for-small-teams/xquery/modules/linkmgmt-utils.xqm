@@ -409,10 +409,13 @@ declare function lmutil:findAllIndirectLinks($dbName) as map(*)* {
 declare function lmutil:getIndirectLinksFromTopics($rootMaps as element()*) as map(*)* {
   let $result :=
      for $map in $rootMaps
-         let $resolvedMap as element() := lmutil:getResolvedMapForMap($map)
-         let $bos as map(*)* := lmutil:getMapBoundedObjectSet($resolvedMap, ('dita'))
-         return for $member in $bos
-            return lmutil:getIndirectLinks($bos)
+         let $resolvedMap as element()? := lmutil:getResolvedMapForMap($map)
+         return if ($resolvedMap)
+            then
+               let $bos as map(*)* := lmutil:getMapBoundedObjectSet($resolvedMap, ('dita'))
+               return for $member in $bos
+                  return lmutil:getIndirectLinks($bos)
+            else ()
   return $result
 };
 
@@ -546,8 +549,13 @@ declare function lmutil:getRootMaps($dbName as xs:string) as element()* {
  : @return true() if the map is a root map.
  :) 
 declare function lmutil:isRootMap($map as element()) as xs:boolean {
-  let $result := ((lmutil:getRefCount($map, $lmutil:useMatchParamsLocalMaps) = 0) or
-                  (lmutil:getRefCount($map, $lmutil:useMatchParamsPeerMaps) > 0))
+  let $resolvedMap as element()? := lmutil:getResolvedMapForMap($map)
+  let $result :=
+      if (not($resolvedMap)) (: If no resolved map, link management database hasn't 
+                                been initialized and have to assume all maps are root:)
+         then true()
+         else ((lmutil:getRefCount($map, $lmutil:useMatchParamsLocalMaps) = 0) or
+               (lmutil:getRefCount($map, $lmutil:useMatchParamsPeerMaps) > 0))
   return $result
 };
 
@@ -633,15 +641,16 @@ declare function lmutil:getResolvedMapURIForMap(
  : @return The URI for the key space document.
  :)
 declare function lmutil:getKeySpaceURIForKeySpace(
-                            $keyspace as element()) as xs:string {
-  let $keyspaceID := string($keyspace/@id)
-  let $resolvedMapURI := string($keyspace/@resolvedMap)
-  let $baseName := relpath:getNamePart($resolvedMapURI)
-  let $uri := relpath:newFile($dfstcnst:keyspaces-dir, 
-                              concat($baseName, 
-                                     '-keyspace-', 
-                                     $keyspaceID,
-                                     '.xml'))
+                            $keySpace as element()) as xs:string {
+  let $resolvedMapURI as xs:string? := string($keySpace/@resolvedMap)
+  let $filenameBase := 
+      if ($resolvedMapURI)
+         then relpath:getNamePart($resolvedMapURI)
+         else string(hash:md5(string($keySpace)))
+  let $uri :=
+            let $parentDir := relpath:getParent($resolvedMapURI)
+            return relpath:newFile($parentDir, 
+               concat($filenameBase, '.keyspace'))
   return $uri
 };
 

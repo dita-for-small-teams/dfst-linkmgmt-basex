@@ -274,9 +274,9 @@ declare %updating function lmm:constructKeySpaces(
    let $dataToStore as map(*)* := 
        for $ditaMap in $contentMaps 
           let $resolvedMapMap as map(*) := lmm:resolveMap($ditaMap)
-          let $keySpace as map(*) := 
-                lmm:constructKeySpaceForResolvedMap(
-                     $resolvedMapMap
+          let $keySpace as element(keyspace) := 
+                lmm:constructKeySpace(
+                     $resolvedMapMap('resolvedMap')
                    )
           let $dataMap := 
                map{ 
@@ -288,36 +288,31 @@ declare %updating function lmm:constructKeySpaces(
       for $obj in $dataToStore
             let $ditaMap := $obj('resolvedMapMap')('map')
             let $resolvedMapMap := $obj('resolvedMapMap')
-            let $keySpace as map(*) := $obj('keySpace')
+            let $keySpace as element(keyspace) := $obj('keySpace')
             return (db:output(<info>Resolving map {document-uri(root($ditaMap))}...</info>),
                     lmm:storeResolvedMap($resolvedMapMap, 
                                          $metadataDbName,
                                          $obj('log'),
-                                         $logID)(:,
-                    for $keySpace in $keySpaces 
-                        return lmm:storeKeySpace(
+                                         $logID),
+                    lmm:storeKeySpace(
                                          $keySpace, 
                                          $metadataDbName,
-                                         $logID) :)
+                                         $logID) 
                      )
 };
 
 (:~
  : Store a keyspace document in the metadata database.
  : 
- : @param keySpaceMap Map containing the source map and a key space
- :                    document constructed from the map.
+ : @param keySpace XML document representing the key space to be stored
  : @param metadataDbName Name of the metadata database to store the
  :        resolved map in
  : @logID ID of the log to write the messages to.
  :)
 declare %updating function lmm:storeKeySpace(
-                     $keySpaceMap as map(*),
+                     $keySpace as element(keyspace),
                      $metadataDbName as xs:string,
                      $logID as xs:string) {
-  let $map := $keySpaceMap('map')
-  let $resolvedMap := $keySpaceMap('resolvedMap')
-  let $keySpace := $keySpaceMap('keyspace')
   let $keySpaceURI := lmutil:getKeySpaceURIForKeySpace($keySpace)
   return (db:replace($metadataDbName, $keySpaceURI, $keySpace),
           db:output((<info>Stored key space "{$keySpaceURI}"</info>)))
