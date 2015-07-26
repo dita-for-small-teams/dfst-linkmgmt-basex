@@ -271,20 +271,8 @@ declare %updating function lmm:constructKeySpaces(
    
    let $contentMaps := collection($contentDbName)/*[df:class(., 'map/map')][lmutil:isRootMap(.)]
    (: Sequence of maps containing the things to be stored :)
-   let $dataToStore as map(*)* := 
-       for $ditaMap in $contentMaps 
-          let $resolvedMapMap as map(*) := lmm:resolveMap($ditaMap)
-          let $keySpace as element(keyspace) := 
-                lmm:constructKeySpace(
-                     $resolvedMapMap('resolvedMap')
-                   )
-          let $dataMap := 
-               map{ 
-                    'resolvedMapMap' : $resolvedMapMap,
-                    'keySpace' : $keySpace
-                  }
-          return $dataMap
-    return
+   let $dataToStore as map(*)* := lmm:constructKeySpacesToBeStored($contentMaps)
+   return
       for $obj in $dataToStore
             let $ditaMap := $obj('resolvedMapMap')('map')
             let $resolvedMapMap := $obj('resolvedMapMap')
@@ -293,12 +281,31 @@ declare %updating function lmm:constructKeySpaces(
                     lmm:storeResolvedMap($resolvedMapMap, 
                                          $metadataDbName,
                                          $obj('log'),
-                                         $logID),
+                                         $logID) (:,
                     lmm:storeKeySpace(
                                          $keySpace, 
                                          $metadataDbName,
-                                         $logID) 
+                                         $logID) :)
                      )
+};
+
+(:~
+ : Constructs the XML key space documents to be stored for each content map.
+ : 
+ : @param contentMaps Sequence of content (unresolved) map elements.
+ : @return Sequence of maps with two items:
+ :
+ : 'resolvedMapMap' : The resolved map data map. Includes the content map
+ :                    as an item.
+ : 'keySpace' : The XML representation of the key space for the map
+ :)
+declare function lmm:constructKeySpacesToBeStored($contentMaps as element()*) as map(*)* {
+  let $result := 
+    for $ditaMap in $contentMaps 
+        let $resolvedMapMap as map(*) := lmm:resolveMap($ditaMap)
+        let $dataMap := lmm:constructKeySpaceForResolvedMap($resolvedMapMap)
+        return $dataMap
+  return $result
 };
 
 (:~
@@ -337,12 +344,14 @@ declare %updating function lmm:storeKeySpace(
 declare function lmm:constructKeySpaceForResolvedMap(
                        $resolvedMapMap as map(*)) as map(*) {
    let $ditaMap as element() := $resolvedMapMap('map')
-   let $resolvedMap as element() := $resolvedMapMap('resolvedMap')
-   let $keyspace as element(keyspace) := lmm:constructKeySpace($resolvedMap)
+   let $keyspace as element(keyspace) := 
+         lmm:constructKeySpace(
+                 $resolvedMapMap, 
+                 $resolvedMapMap('resolvedMap'))
    
    let $result :=
       map{ 'map' : $ditaMap,
-           'resolvedMap' : $resolvedMap,
+           'resolvedMapMap' : $resolvedMapMap,
            'keySpace' : $keyspace
          }
    return $result
@@ -361,12 +370,15 @@ declare function lmm:constructKeySpaceForResolvedMap(
  : explicitly override, meaning that, starting from any descedant key space you 
  : can resolve any fully-qualified key name. 
  :
+ : @param resolvedMapMap Data map that represents the resolved map.
  : @param spaceDefiner Element, map or topicref, that defines a new key space.
  :
  : @return Keyspace element, which will contain any descendant keyspaces
  :)
-declare function lmm:constructKeySpace($spaceDefiner as element()) as element() {
-  let $keyspaceMap := lmm:constructKeySpaceMap($spaceDefiner, ())
+declare function lmm:constructKeySpace(
+                      $resolvedMapMap as map(*),
+                      $spaceDefiner as element()) as element() {
+  let $keyspaceMap := lmm:constructKeySpaceMap($resolvedMapMap, $spaceDefiner, ())
   let $result := lmm:keySpaceMapToXML($keyspaceMap)
   return $result
 };
@@ -381,10 +393,11 @@ let $definer as element() := $keyspaceMap('definer')
 let $scopeNames as xs:string* := $keyspaceMap('scopeNames')
 let $keydefs as map(*)? := $keyspaceMap('keydefs')
 let $childScopes as map(*)* := $keyspaceMap('childScopes')
+let $resolvedMapMap as map(*) := $keyspaceMap('resolvedMapMap')
 
 let $result :=
 <keyspace
-  resolvedMap="{document-uri(root($definer))}"
+  resolvedMap="{$resolvedMapMap('resolvedMapURI')}"
 >{
  <scopeNames>{
    for $name in $scopeNames
@@ -414,6 +427,7 @@ return $result
  : may reflect multiple definitions. The key definitions are in precedence
  : order from highest to lowest.
  :
+ : @param resolvedMapMap Data map representing the resolved map
  : @param spaceDefiner Element, map or topicref, that defines a new key space.
  : @parentSpace The parent key space (enables walking up the key space ancestry)
  : @return map object with the following members:
@@ -425,11 +439,14 @@ return $result
  : 'childSpaces' : Sequence of maps objects representing the child key spaces
  :                 of this key space.
  : 'parentSpace' : The parent key space's map. The root space has no parent.
+ : 'resolvedMapMap' : The resolved map data map.
  :)
-declare function lmm:constructKeySpaceMap($spaceDefiner as element(),
-                                          $parentSpace as map(*)?
-                                          ) as map(*) {
-  
+declare function lmm:constructKeySpaceMap(
+                         $resolvedMapMap as map(*),
+                         $spaceDefiner as element(),
+                         $parentSpace as map(*)?
+                        ) as map(*) {
+
    (: Walk the element tree, collecting key definitions and child key 
       key spaces as we go. 
       
@@ -441,7 +458,8 @@ declare function lmm:constructKeySpaceMap($spaceDefiner as element(),
                                  then tokenize($spaceDefiner/@keyscopes, ' ')
                                  else (),
                'parentSpace' : $parentSpace,
-               'keydefs' : map {}
+               'keydefs' : map {},
+               'resolvedMapMap' : $resolvedMapMap
               }
    let $thisScopeKeyDefs :=
        $spaceDefiner//descendant-or-self::*[df:class(., 'map/topicref')][@keys]
@@ -520,7 +538,7 @@ declare %updating function lmm:storeResolvedMap(
   let $map := $dataMap('map')
   let $resolvedMap := $dataMap('resolvedMap')
   let $log := $dataMap('log')
-  let $resolvedMapURI := lmutil:getResolvedMapURIForMap($map)
+  let $resolvedMapURI := $dataMap('resolvedMapURI')
   return (db:replace($metadataDbName, $resolvedMapURI, $resolvedMap),
           db:output(($log, <info>Stored resolved map "{$resolvedMapURI}"</info>)))
                          
@@ -537,6 +555,9 @@ declare %updating function lmm:storeResolvedMap(
  :
  : map : The input map
  : resolvedMap : The resolved map
+ : resolvedMapURI: The URI of the resolved map. This is the URI the map
+ : will be stored at (but may not yet be stored at due to order of update
+ : operations)
  : log : Sequence, possibly empty, of log entry elements.
  :
  : The resolution process preserves the original structure and 
@@ -566,6 +587,7 @@ declare function lmm:resolveMap(
        map{
            'map' : $map,
            'resolvedMap' : $resolvedMap,
+           'resolvedMapURI' : lmutil:getResolvedMapURIForMap($map),
            'log' : ()
           }
     return $result
