@@ -281,11 +281,11 @@ declare %updating function lmm:constructKeySpaces(
                     lmm:storeResolvedMap($resolvedMapMap, 
                                          $metadataDbName,
                                          $obj('log'),
-                                         $logID) (:,
+                                         $logID),
                     lmm:storeKeySpace(
                                          $keySpace, 
                                          $metadataDbName,
-                                         $logID) :)
+                                         $logID) 
                      )
 };
 
