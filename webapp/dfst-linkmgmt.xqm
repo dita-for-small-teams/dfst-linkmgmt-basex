@@ -395,16 +395,19 @@ declare
                              $metadataDbName as xs:string,
                              $logID as xs:string
                              ) {
-   try {
-                             
+
+    try {
+                            
+      let $indirectLinks := lmutil:findAllIndirectLinks($contentDbName)
         (: Now create resolved maps for each of the root maps.
          The resolved maps serve to enable key resolution
          without creating separate data sets just for the key spaces.
        :)
-      lmm:constructKeySpaces(
-         $contentDbName,
-         $metadataDbName,
-         $logID),
+      return 
+      lmm:createIndirectLinkResourceRecords(
+                  $metadataDbName, 
+                  $indirectLinks, 
+                  $logID), 
       db:output(web:redirect(concat("/repo/", $repo, "/", $branch),
                                        map { 'infoMessage' : 'Link management indexes updated'
                                            }))      
@@ -420,7 +423,10 @@ declare
 
 };
 
-(: REST API to trigger creation or update of link management indexes. :)
+(:~ 
+ : Generic error report page. This is a placeholder in advance of more sophisticated
+ : error reporting infrastructure.
+ :)
 declare
   %rest:path("/error")
   %rest:query-param("contentDbName",    "{$contentDbName}")
