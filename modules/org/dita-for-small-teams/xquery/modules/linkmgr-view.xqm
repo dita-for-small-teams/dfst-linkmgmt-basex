@@ -93,8 +93,16 @@ declare function lmv:makeKeyDefTableEntries($keydef as element()) as element()* 
      <td>{(: topicmeta :)
        lmv:formatTopicmetaToHTML($keydef/*[df:class(., 'map/topicmeta')])
      }</td>,
-     <td>{(: Conditions :)
-        lmv:formatKeydefAtts($keydef)
+     <td>{(: Properties :)
+       <table width="200px" class="nested-table">
+         <col/>
+         <col/>
+         <tr>
+           <td>Tagname</td>
+           <td>{name($keydef)}</td>
+         </tr>         
+         {lmv:formatKeydefAtts($keydef)}
+       </table>
      }</td>)
    return $result
 };
@@ -108,11 +116,13 @@ declare function lmv:formatTopicmetaToHTML($topicmeta as element()?) as node()* 
    return $result
 };
 
-declare function lmv:formatKeydefAtts($keydef as element()) as xs:string {
+declare function lmv:formatKeydefAtts($keydef as element()) as node()* {
     let $result :=
-    string-join(
         for $att in $keydef/@*[not(name(.) = ('class', 'processing-role', 'scope', 'keyref', 'href', 'keys'))]                     
-            return concat(name($att), '="', string($att)), ' ')     
+            return <tr>
+                    <td class="attname">{name($att)}</td>
+                    <td class="attvalue">{string($att)}</td>
+                   </tr>
      return $result
 };
 

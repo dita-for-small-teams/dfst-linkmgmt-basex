@@ -19,6 +19,37 @@ dt {
   font-weight: bold;
 }
 
+.nested-table {
+  font-size: 100%;
+  padding: 0;
+  table-layout: fixed;
+  border-top: none 0.1pt white ;
+  border-bottom: none 0.1pt white;
+}
+
+.nested-table td {
+  border-top:  none 1pt black;
+  border-bottom: none 0.1pt white;
+  padding: 1pt;
+}
+
+.nested-table tr:first-child td {
+  border-top: none 0.1pt white ;
+  border-bottom: none 1pt black;
+  
+}
+
+.nested-table tr td:first-child:after {
+  content: ":";
+}
+
+.nested-table tr td:first-child {
+   text-align: right;
+   font-style: italic;
+}
+
+
+
 table {
   font-size: 100%;
   padding: 0;
