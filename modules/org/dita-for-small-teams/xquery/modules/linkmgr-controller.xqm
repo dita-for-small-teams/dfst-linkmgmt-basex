@@ -30,8 +30,40 @@ import module namespace dfstcnst="http://dita-for-small-teams.org/xquery/modules
 
 declare namespace dfst="http://dita-for-small-teams.org";
 
-declare %updating function lmc:updateLinkManagementIndexes($contentDbName, $metadataDbName) {
-  lmm:updateLinkManagementIndexes($contentDbName, $metadataDbName)
+declare %updating function lmc:updateLinkManagementIndexesStage1(
+                 $contentDbName, 
+                 $metadataDbName,
+                 $logID) {
+    let $directLinks := lmutil:findAllDirectLinks($contentDbName)
+
+    return
+      (db:delete($metadataDbName, $dfstcnst:where-used-dir),
+       db:delete($metadataDbName, $dfstcnst:resolved-map-dir),
+       db:delete($metadataDbName, $dfstcnst:keyspaces-dir),
+       (: FIXME: Initialize the update log document :)
+       (: Now create new resource use records for direct links :)
+       
+       lmm:createDirectLinkResourceRecords($metadataDbName, $directLinks, $logID)
+      )
+};
+
+declare %updating function lmc:constructKeySpaces(
+         $contentDbName as xs:string,
+         $metadataDbName  as xs:string,
+         $logID as xs:string) {
+         
+    lmm:constructKeySpaces($contentDbName, $metadataDbName, $logID)
+};
+
+declare %updating function lmc:createIndirectLinkResourceRecords(
+                  $metadataDbName as xs:string, 
+                  $indirectLinks as xs:string, 
+                  $logID as xs:string) {
+                  
+      lmm:createIndirectLinkResourceRecords(
+                  $metadataDbName, 
+                  $indirectLinks, 
+                  $logID)                  
 };
 
 declare function lmc:getUses($doc as document-node(), $useParams as map(*)) {

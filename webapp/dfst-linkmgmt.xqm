@@ -296,17 +296,9 @@ declare
                              $metadataDbName as xs:string,
                              $logID as xs:string) {
   
-  let $directLinks := lmutil:findAllDirectLinks($contentDbName)
 
-  return        
       try {
-          db:delete($metadataDbName, $dfstcnst:where-used-dir),
-          db:delete($metadataDbName, $dfstcnst:resolved-map-dir),
-          db:delete($metadataDbName, $dfstcnst:keyspaces-dir),
-          (: FIXME: Initialize the update log document :)
-          (: Now create new resource use records for direct links :)
-          
-          lmm:createDirectLinkResourceRecords($metadataDbName, $directLinks, $logID),
+          lmc:updateLinkManagementIndexesStage1($contentDbName, $metadataDbName, $logID),
           db:output(web:redirect(concat("/repo/", $repo, "/", $branch, "/updateLMIStage2"),
                                  map { 'contentDbName' : $contentDbName,
                                        'metadataDbName' : $metadataDbName,
@@ -352,7 +344,7 @@ declare
          The resolved maps serve to enable key resolution
          without creating separate data sets just for the key spaces.
        :)
-      lmm:constructKeySpaces(
+      lmc:constructKeySpaces(
          $contentDbName,
          $metadataDbName,
          $logID),
@@ -404,7 +396,7 @@ declare
          without creating separate data sets just for the key spaces.
        :)
       return 
-      lmm:createIndirectLinkResourceRecords(
+      lmc:createIndirectLinkResourceRecords(
                   $metadataDbName, 
                   $indirectLinks, 
                   $logID), 
