@@ -57,8 +57,9 @@ declare function lmv:formatKeySpacesForMap($doc) as node()* {
                      then <tr><td colspan="6" style="text-align: center;">No keys defined in key space</td></tr>
                      else 
                        for $key in $keys
-                           let $defCount := count($key/keydef)
-                           let $firstDef := $key/keydef[1]
+                           let $keydefs := $key/*[df:class(., 'map/topicref')]
+                           let $defCount := count($key/*[df:class(., 'map/topicref')])
+                           let $firstDef := $keydefs[1]
                            return 
                              (<tr>
                                <td>
@@ -69,7 +70,7 @@ declare function lmv:formatKeySpacesForMap($doc) as node()* {
                                </td>
                                {lmv:makeKeyDefTableEntries($firstDef)}
                              </tr>,
-                             for $keyDef in $key/keydef[position() > 1]
+                             for $keyDef in $keydefs[position() > 1]
                                  return lmv:makeKeyDefTableEntries($keyDef)
                              )
                 }
@@ -107,7 +108,7 @@ declare function lmv:formatTopicmetaToHTML($topicmeta as element()?) as node()* 
    return $result
 };
 
-declare function lmv:formatKeydefAtts($keydef as element(keydef)) as xs:string {
+declare function lmv:formatKeydefAtts($keydef as element()) as xs:string {
     let $result :=
     string-join(
         for $att in $keydef/@*[not(name(.) = ('class', 'processing-role', 'scope', 'keyref', 'href', 'keys'))]                     
