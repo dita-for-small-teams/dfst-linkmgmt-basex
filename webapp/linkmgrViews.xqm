@@ -14,6 +14,7 @@ module namespace linkmgr='http://basex.org/modules/linkmgr';
 import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-utils";
 import module namespace linkutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
 import module namespace lmc="http://dita-for-small-teams.org/xquery/modules/linkmgr-controller";
+import module namespace lmv="http://dita-for-small-teams.org/xquery/modules/linkmgr-view";
 import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-utils";
 import module namespace preview='http://basex.org/modules/htmlpreview' at "htmlPreview.xqm";
 
@@ -349,61 +350,8 @@ declare
     </head>
     <body>
       <h1>Key Spaces for Map "{$title}"</h1>
-      {linkmgr:reportDocDetails($doc)}
-      <div class="listblock">
-        <h4>Root (Anonymous) Key Space</h4>
-        <table>
-          <thead>
-            <th>Key Name</th>
-            <th>Directly-addressed resource</th>
-            <th>Ultimately-addressed resource</th>
-            <th>Scope</th>
-            <th>Topicmeta</th>
-            <th>Conditions</th>
-          </thead>
-          <tbody>
-          {
-            let $keydefs := $doc//*[df:class(., 'map/topicref')][@keys]
-            for $key in distinct-values(for $keydef in $keydefs return tokenize($keydef/@keys, ' '))
-                let $keydef := ($keydefs[contains-token(@keys, $key)])[1]
-                let $directResource := df:resolveTopicRef($keydef)('target')
-                return 
-                  <tr>
-                    <td>{$key}</td>
-                    <td>{if ($directResource) 
-                            then linkmgr:makeLinkToDocSource(document-uri(root($directResource)))
-                            else string(($keydef/@keyref, $keydef/@href)[1])
-                        }</td>
-                    <td>{
-                      if ($keydef/@keyref)
-                         then 'Keyref resolution not yet implemented'
-                         else linkmgr:makeLinkToDocSource(document-uri(root($directResource)))
-                    }</td>
-                    <td>{df:getEffectiveAttributeValue($keydef, 'scope')}</td>
-                    <td>{
-                      let $linktext := $keydef/*[df:class(.,'map/topicmeta')]/*[df:class(.,'map/linktext')]
-                      return if ($linktext)
-                         then <div class="linktext">Link text: {string($linktext)}</div>
-                         else ''
-                    }
-                    {
-                       let $keywords := $keydef/*[df:class(.,'map/topicmeta')]/*[df:class(.,'map/keywords')]
-                      return if ($keywords)
-                         then <div class="linktext">
-                           <span class="label">Keywords</span>
-                           {for $keyword in $keywords/*
-                                return (<br/>,<span class="keyword">{string($keyword)}</span>)
-                           }
-                         </div>
-                         else ''
-                    }
-                    </td>
-                    <td></td>
-                  </tr>
-          }
-          </tbody>
-        </table>
-      </div>
+      {linkmgr:reportDocDetails($doc),
+       lmv:formatKeySpacesForMap($doc)}
    </body>
  </html>
 };

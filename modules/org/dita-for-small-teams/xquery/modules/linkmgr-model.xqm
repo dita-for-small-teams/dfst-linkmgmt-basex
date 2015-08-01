@@ -358,6 +358,19 @@ declare function lmm:constructKeySpaceForResolvedMap(
 };
 
 (:~
+ : Given a content map element, return the corresponding keyspace document.
+ : The key space must have already been constructed.
+ :)
+declare function lmm:getKeySpaceForMap($contentMap as element()) as element()? {
+    let $resolvedMapURI := lmutil:getResolvedMapURIForMap($contentMap)
+    let $metadataDbName as xs:string := bxutil:getMetadataDbNameForDoc(root($contentMap))
+    
+    let $keyspaceURI := lmutil:getKeySpaceURIForResolvedMapURI($resolvedMapURI)
+    let $result := collection($metadataDbName || $keyspaceURI)/keyspace
+    return $result
+};
+
+(:~
  : The identity of a key space is the element that defines it, either map
  : or a topicref. In order to resolve a key you must know the key space
  : hierarchy because you have to start with the root key space, see if 

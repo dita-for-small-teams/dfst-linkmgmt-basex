@@ -643,10 +643,16 @@ declare function lmutil:getResolvedMapURIForMap(
 declare function lmutil:getKeySpaceURIForKeySpace(
                             $keySpace as element()) as xs:string {
   let $resolvedMapURI as xs:string? := string($keySpace/@resolvedMap)
-  let $filenameBase := 
-      if ($resolvedMapURI)
-         then relpath:getNamePart($resolvedMapURI)
-         else string(hash:md5(string($keySpace)))
+  let $result := lmutil:getKeySpaceURIForResolvedMapURI($resolvedMapURI)
+  return $result
+};
+
+(:~
+ : Given the URI of a resolved map, construct the URI for the corresponding key space document
+ :
+ :)
+declare function lmutil:getKeySpaceURIForResolvedMapURI($resolvedMapURI as xs:string) as xs:string {
+  let $filenameBase := relpath:getNamePart($resolvedMapURI)
   let $uri :=
             let $parentDir := relpath:getParent($resolvedMapURI)
             return relpath:newFile($parentDir, 

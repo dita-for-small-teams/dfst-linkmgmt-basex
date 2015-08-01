@@ -43,4 +43,16 @@ declare function lmc:isRootMap($mapDoc as document-node()) as xs:boolean {
   let $result := lmutil:isRootMap($mapDoc/*)
   return $result
 };
+
+(:~
+ : Given a content map element, return the corresponding keyspace document,
+ : if any. It's possible that the keyspace won't have been constructed at
+ : the time this request is made, although it should be under normal 
+ : circumstances.
+ :)
+declare function lmc:getKeySpaceForMap($contentMap as document-node()) as element()? {
+   let $result as element() := lmm:getKeySpaceForMap($contentMap/*)
+   return $result
+
+};
 (: End of Module :)
