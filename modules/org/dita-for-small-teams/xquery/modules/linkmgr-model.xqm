@@ -79,7 +79,7 @@ declare %updating function lmm:updateLinkManagementIndexes(
           db:delete($metadataDbName, $dfstcnst:where-used-dir)        
       } catch * {
           (: FIXME: Log to log doc :)
-          db:output(<error>Exception deleting where-used directory "{$dfstcnst:where-used-dir}": {$err:description}</error>)
+          error('LMI-Update', concat('Exception deleting where-used directory "', $dfstcnst:where-used-dir, '":  ',$err:description))
       },
        
       (: Now create new resource use records for direct links :)
@@ -210,13 +210,14 @@ declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget(
           else(),
        db:replace($metadataDbName, 
                   $useRecordUri,
-                  $useRecord),
+                  $useRecord) (:,
        (: FIXME: Write record to log doc :)
-       db:output(<info>Stored use record "{$useRecordUri}"</info>)
+       db:output(<info>Stored use record "{$useRecordUri}"</info>) :)
        )
     } catch * {
        (: FIXME: Write record to log doc :)
-       db:output(<error>Error storing use record to "{$useRecordUri}": {$err:description}</error>)
+       error('LMI-UpdateUseRecord001', 
+             concat('Error storing use record to "', $useRecordUri, '": ', $err:description))
     }
 };
 
@@ -277,7 +278,7 @@ declare %updating function lmm:constructKeySpaces(
             let $ditaMap := $obj('resolvedMapMap')('map')
             let $resolvedMapMap := $obj('resolvedMapMap')
             let $keySpace as element(keyspace) := $obj('keySpace')
-            return (db:output(<info>Resolving map {document-uri(root($ditaMap))}...</info>),
+            return ((: FIXME: Write to log. db:output(<info>Resolving map {document-uri(root($ditaMap))}...</info>), :)
                     lmm:storeResolvedMap($resolvedMapMap, 
                                          $metadataDbName,
                                          $obj('log'),
@@ -321,8 +322,10 @@ declare %updating function lmm:storeKeySpace(
                      $metadataDbName as xs:string,
                      $logID as xs:string) {
   let $keySpaceURI := lmutil:getKeySpaceURIForKeySpace($keySpace)
-  return (db:replace($metadataDbName, $keySpaceURI, $keySpace),
-          db:output((<info>Stored key space "{$keySpaceURI}"</info>)))
+  return (db:replace($metadataDbName, $keySpaceURI, $keySpace) (: ,
+          FIXME: Write to log doc.
+          db:output((<info>Stored key space "{$keySpaceURI}"</info>)):)
+          )
 };
 
 (:~
@@ -552,8 +555,10 @@ declare %updating function lmm:storeResolvedMap(
   let $resolvedMap := $dataMap('resolvedMap')
   let $log := $dataMap('log')
   let $resolvedMapURI := $dataMap('resolvedMapURI')
-  return (db:replace($metadataDbName, $resolvedMapURI, $resolvedMap),
-          db:output(($log, <info>Stored resolved map "{$resolvedMapURI}"</info>)))
+  return (db:replace($metadataDbName, $resolvedMapURI, $resolvedMap) (:,
+          FIXME: Write to log
+          db:output(($log, <info>Stored resolved map "{$resolvedMapURI}"</info>)) :)
+          )
                          
 };
 

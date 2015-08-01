@@ -18,6 +18,7 @@ import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-
 import module namespace linkmgr='http://basex.org/modules/linkmgr' at "linkmgrViews.xqm";
 import module namespace lmm="http://dita-for-small-teams.org/xquery/modules/linkmgr-model";
 import module namespace lmc="http://dita-for-small-teams.org/xquery/modules/linkmgr-controller";
+import module namespace dfstcnst="http://dita-for-small-teams.org/xquery/modules/dfst-constants";
 
 
 
@@ -70,11 +71,12 @@ declare
 
 declare
   %rest:path("/repo/{$repo}/{$branch}")
+  %rest:query-param("infoMessage",    "{$infoMessage}")
   %output:method("xhtml")
   %output:omit-xml-declaration("no")
   %output:doctype-public("-//W3C//DTD XHTML 1.0 Transitional//EN")
   %output:doctype-system("http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd")
-  function page:branchMainView($repo as xs:string, $branch as xs:string)
+  function page:branchMainView($repo as xs:string, $branch as xs:string, $infoMessage as xs:string?)
   as element(Q{http://www.w3.org/1999/xhtml}html)
 {
   <html xmlns="http://www.w3.org/1999/xhtml">
@@ -90,10 +92,14 @@ declare
       <div class="title-block">
         <h2>Git repo {$repo}/{$branch}</h2>
       </div>
-      <div class="management-actions">
+      <div class="management-actions">      
       [<a href="/repo/{$repo}/{$branch}/updateLinkManagementIndexes" 
             target="_updateLinkManagementIndexes"
             >Update Link Management Indexes</a>]
+      { if ($infoMessage and $infoMessage != '')
+           then <p>{$infoMessage}</p>
+           else ()
+      }
       </div>
       <div class="action-block">
         <h3>DITA Maps</h3>
@@ -260,37 +266,189 @@ declare
   
   let $contentDbName := bxutil:getDbNameForRepoAndBranch($repo, $branch)
   let $metadataDbName := bxutil:getMetadataDbNameForRepoAndBranch($repo, $branch)
+  let $logID := "lmindex-update-log"
 
-  (:
-   : XQuery update doesn't allow for returning results from updating functions.
-   : So we'll need to find another way of capturing the log details and success
-   : or failure.
-   :)
-   
-   
-  (: FIXME: This is a quick hack in advance of setting up proper logging infrastructure :)
-  return lmc:updateLinkManagementIndexes($contentDbName, $metadataDbName)
   
-(:  let $status := string($result/@status)
-  let $headColor := if ($status = ('error')) 
-                       then 'red'
-                       else if ($status = ('warn')) then 'yellow'
-                       else 'blue'
-                            
-  return <html>
-    <head>
-    <title>Update Link Management Indexes: {$status}</title></head>
-    <body>
-      <h1 style="color: {$headColor}">Update Link Management Indexes: {$status}</h1>
-      <div>
-        <p>Repository: {$repo}/{$branch}</p>
-      </div>
-      <div class="log">
-      {page:formatLogAsHtml($result/log)}
-      </div>
-    </body>
+  return db:output(web:redirect(concat("/repo/", $repo, "/", $branch, "/updateLMIStage1"),
+                                 map { 'contentDbName' : $contentDbName,
+                                       'metadataDbName' : $metadataDbName,
+                                       'logID' : $logID
+                                     }))
+};
+
+(: Link management index stage 1: Clear the database and construct all 
+ : direct link resource records. On return, redirects to stage 2.
+ :)
+declare
+  %updating
+  %rest:path("/repo/{$repo}/{$branch}/updateLMIStage1")
+  %rest:query-param("contentDbName",  "{$contentDbName}")
+  %rest:query-param("metadataDbName", "{$metadataDbName}")
+  %rest:query-param("logID",          "{$logID}")
+  %rest:GET
+  %output:method("xhtml")
+  %output:omit-xml-declaration("no")
+  %output:doctype-public("-//W3C//DTD XHTML 1.0 Transitional//EN")
+  %output:doctype-system("http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd")
+  function page:updateStage1($repo as xs:string, 
+                             $branch as xs:string,
+                             $contentDbName as xs:string,
+                             $metadataDbName as xs:string,
+                             $logID as xs:string) {
+  
+  let $directLinks := lmutil:findAllDirectLinks($contentDbName)
+
+  return        
+      try {
+          db:delete($metadataDbName, $dfstcnst:where-used-dir),
+          db:delete($metadataDbName, $dfstcnst:resolved-map-dir),
+          db:delete($metadataDbName, $dfstcnst:keyspaces-dir),
+          (: FIXME: Initialize the update log document :)
+          (: Now create new resource use records for direct links :)
+          
+          lmm:createDirectLinkResourceRecords($metadataDbName, $directLinks, $logID),
+          db:output(web:redirect(concat("/repo/", $repo, "/", $branch, "/updateLMIStage2"),
+                                 map { 'contentDbName' : $contentDbName,
+                                       'metadataDbName' : $metadataDbName,
+                                       'logID' : $logID
+                                     }))
+      } catch * {
+          db:output(web:redirect("/error",
+                                 map { 'contentDbName' : $contentDbName,
+                                       'metadataDbName' : $metadataDbName,
+                                       'error' : $err:description,
+                                       'logID' : $logID
+                                       
+                                     }))
+      }
+      
+  
+};
+
+(:~
+ : Link management index update stage 2: Construct key spaces.
+ : On return redirects to stage 3.  
+ :)
+declare
+  %updating 
+  %rest:path("/repo/{$repo}/{$branch}/updateLMIStage2")
+  %rest:query-param("contentDbName",  "{$contentDbName}")
+  %rest:query-param("metadataDbName", "{$metadataDbName}")
+  %rest:query-param("logID",          "{$logID}")
+  %rest:GET
+  %output:method("xhtml")
+  %output:omit-xml-declaration("no")
+  %output:doctype-public("-//W3C//DTD XHTML 1.0 Transitional//EN")
+  %output:doctype-system("http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd")
+  function page:updateStage2($repo as xs:string, 
+                             $branch as xs:string,
+                             $contentDbName as xs:string,
+                             $metadataDbName as xs:string,
+                             $logID as xs:string
+                             ) {
+   try {
+                             
+        (: Now create resolved maps for each of the root maps.
+         The resolved maps serve to enable key resolution
+         without creating separate data sets just for the key spaces.
+       :)
+      lmm:constructKeySpaces(
+         $contentDbName,
+         $metadataDbName,
+         $logID),
+      db:output(web:redirect(concat("/repo/", $repo, "/", $branch, "/updateLMIStage3"),
+                                       map { 'contentDbName' : $contentDbName,
+                                             'metadataDbName' : $metadataDbName,
+                                             'logID' : $logID
+                                           }))      
+    } catch * {
+          db:output(web:redirect("/error",
+                                 map { 'contentDbName' : $contentDbName,
+                                       'metadataDbName' : $metadataDbName,
+                                       'error' : $err:description,
+                                       'logID' : $logID
+                                       
+                                     }))
+    }
+
+};
+
+(:~
+ : Link management index update stage 3: Construct indirect link
+ : where-used records.
+ : On return redirects back to the page for the repo and branch.
+ :)
+declare
+  %updating 
+  %rest:path("/repo/{$repo}/{$branch}/updateLMIStage3")
+  %rest:query-param("contentDbName",  "{$contentDbName}")
+  %rest:query-param("metadataDbName", "{$metadataDbName}")
+  %rest:query-param("logID",          "{$logID}")
+  %rest:GET
+  %output:method("xhtml")
+  %output:omit-xml-declaration("no")
+  %output:doctype-public("-//W3C//DTD XHTML 1.0 Transitional//EN")
+  %output:doctype-system("http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd")
+  function page:updateStage3($repo as xs:string, 
+                             $branch as xs:string,
+                             $contentDbName as xs:string,
+                             $metadataDbName as xs:string,
+                             $logID as xs:string
+                             ) {
+   try {
+                             
+        (: Now create resolved maps for each of the root maps.
+         The resolved maps serve to enable key resolution
+         without creating separate data sets just for the key spaces.
+       :)
+      lmm:constructKeySpaces(
+         $contentDbName,
+         $metadataDbName,
+         $logID),
+      db:output(web:redirect(concat("/repo/", $repo, "/", $branch),
+                                       map { 'infoMessage' : 'Link management indexes updated'
+                                           }))      
+    } catch * {
+          db:output(web:redirect("/error",
+                                 map { 'contentDbName' : $contentDbName,
+                                       'metadataDbName' : $metadataDbName,
+                                       'error' : $err:description,
+                                       'logID' : $logID
+                                       
+                                     }))
+    }
+
+};
+
+(: REST API to trigger creation or update of link management indexes. :)
+declare
+  %rest:path("/error")
+  %rest:query-param("contentDbName",    "{$contentDbName}")
+  %rest:query-param("metadataDbName", "{$metadataDbName}")
+  %rest:query-param("error", "{$error}")
+  %rest:GET
+  %output:method("xhtml")
+  %output:omit-xml-declaration("no")
+  %output:doctype-public("-//W3C//DTD XHTML 1.0 Transitional//EN")
+  %output:doctype-system("http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd")
+  function page:reportError($contentDbName as xs:string?,
+                            $metadataDbName as xs:string?,
+                            $error as xs:string?
+                           ) {
+  <html>
+   <head>
+     <title>Error</title>
+   </head>
+   <body>
+    <h1 style="color: red;">Error</h1>
+    <div>
+      <p>Error</p>
+      <p>content database: {$contentDbName}</p>
+      <p>Metadata database: {$metadataDbName}</p>
+      <p>Error message: {$error}</p>
+    </div>
+   </body>
   </html>
-:)
 };
 
 declare function page:formatLogAsHtml($log) as element() {
