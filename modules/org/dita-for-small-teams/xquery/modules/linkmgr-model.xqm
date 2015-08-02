@@ -352,9 +352,12 @@ let $result :=
  for $keyName in map:keys($keydefs) order by $keyName
      return <key name="{$keyName}">{
                for $keydef in $keydefs($keyName)
-                   return <keydef 
-                            resID="{lmutil:constructResourceKeyForElement($contentMapDocURI, $keydef)}"
-                          >{$keydef}</keydef>
+                   let $keydefResID := lmutil:constructResourceKeyForElement($contentMapDocURI, $keydef)
+                   return element {name($keydef)} {
+                     attribute resID {$keydefResID},
+                     $keydef/@*,
+                     $keydef/node()
+                   }
              }</key>
  }</keys>,
  <childScopes>{
