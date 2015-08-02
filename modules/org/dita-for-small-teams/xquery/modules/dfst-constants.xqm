@@ -16,4 +16,4 @@
    
    declare variable $dfstcnst:where-used-dir := '/linkmgmt/where-used';
    declare variable $dfstcnst:resolved-map-dir := '/linkmgmt/resolved-maps';
-   declare variable $dfstcnst:keyspaces-dir := '/linkmgmt/keyspaces';
+   declare variable $dfstcnst:keyspaces-dir := '/linkmgmt/resolved-maps';

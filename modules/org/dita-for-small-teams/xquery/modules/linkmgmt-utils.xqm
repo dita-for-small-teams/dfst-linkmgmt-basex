@@ -237,7 +237,7 @@ declare function lmutil:constructResourceKeyForElement($elem as element()) as xs
 declare function lmutil:constructResourceKeyForElement(
                                         $docURI as xs:string, 
                                         $elem as element()) as xs:string {
-  let $targetDocHash := hash:md5($docURI)
+  let $targetDocHash := replace(string(hash:md5($docURI)), '/', '~')
   let $treepos := for $anc in ($elem/ancestor-or-self::*)
                       return string(count($anc | $anc/preceding-sibling::*))
   let $key := string-join($treepos, '.')
@@ -658,7 +658,7 @@ declare function lmutil:getResolvedMapForMap($map as element()) as element()? {
  :)
 declare function lmutil:getResolvedMapURIForMap(
                         $map as element()) as xs:string {
-  let $mapDocHash := hash:md5(document-uri(root($map)))
+  let $mapDocHash := replace(string(hash:md5(document-uri(root($map)))), '/', '~')
   return $dfstcnst:resolved-map-dir ||
          "/" || $mapDocHash || ".ditamap"
 };
