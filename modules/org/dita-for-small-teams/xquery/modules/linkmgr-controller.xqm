@@ -30,6 +30,17 @@ import module namespace dfstcnst="http://dita-for-small-teams.org/xquery/modules
 
 declare namespace dfst="http://dita-for-small-teams.org";
 
+(:~
+ : Do stage one of link management index update: Find all direct
+ : links and create where-used records for them. This information
+ : is required to then create resolved maps and construct the
+ : key spaces used to resolve indirect links.
+ : 
+ : @param contentDbName The name of the content database to index
+ : @param metadataDbName The name of the metadata database to store
+ : the index entries into.
+ : @logID The ID of the log to write messages to.
+ :)
 declare %updating function lmc:updateLinkManagementIndexesStage1(
                  $contentDbName, 
                  $metadataDbName,
@@ -47,7 +58,17 @@ declare %updating function lmc:updateLinkManagementIndexesStage1(
       )
 };
 
-declare %updating function lmc:constructKeySpaces(
+(:~
+ : Do stage 2 of the link management index updating: Construct key
+ : spaces using the resolved maps constructed in stage 1.
+ :
+ : @param contentDbName The name of the content database to index
+ : @param metadataDbName The name of the metadata database to store
+ : the index entries into.
+ : @logID The ID of the log to write messages to.
+ :)
+
+declare %updating function lmc:updateLinkManagementIndexesStage2(
          $contentDbName as xs:string,
          $metadataDbName  as xs:string,
          $logID as xs:string) {
@@ -55,15 +76,30 @@ declare %updating function lmc:constructKeySpaces(
     lmm:constructKeySpaces($contentDbName, $metadataDbName, $logID)
 };
 
-declare %updating function lmc:createIndirectLinkResourceRecords(
-                  $metadataDbName as xs:string, 
-                  $indirectLinks as xs:string, 
-                  $logID as xs:string) {
-                  
+
+
+(:~
+ : Do stage 3 of the link management index updating: Find all indirect
+ : links and create where-used records for all the addressed resources,
+ : using the key spaces constructed in stage 2.
+ :
+ : @param contentDbName The name of the content database to index
+ : @param metadataDbName The name of the metadata database to store
+ : the index entries into.
+ : @logID The ID of the log to write messages to.
+ :)
+declare %updating function lmc:updateLinkManagementIndexesStage3(
+                 $contentDbName, 
+                 $metadataDbName,
+                 $logID) {
+      let $indirectLinks as map(*)* := lmutil:findAllIndirectLinks($contentDbName)
+      
+      return 
       lmm:createIndirectLinkResourceRecords(
                   $metadataDbName, 
                   $indirectLinks, 
                   $logID)                  
+
 };
 
 declare function lmc:getUses($doc as document-node(), $useParams as map(*)) {

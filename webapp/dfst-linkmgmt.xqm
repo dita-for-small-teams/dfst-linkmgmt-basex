@@ -340,11 +340,7 @@ declare
                              ) {
    try {
                              
-        (: Now create resolved maps for each of the root maps.
-         The resolved maps serve to enable key resolution
-         without creating separate data sets just for the key spaces.
-       :)
-      lmc:constructKeySpaces(
+      lmc:updateLinkManagementIndexesStage2(
          $contentDbName,
          $metadataDbName,
          $logID),
@@ -390,16 +386,7 @@ declare
 
     try {
                             
-      let $indirectLinks := lmutil:findAllIndirectLinks($contentDbName)
-        (: Now create resolved maps for each of the root maps.
-         The resolved maps serve to enable key resolution
-         without creating separate data sets just for the key spaces.
-       :)
-      return 
-      lmc:createIndirectLinkResourceRecords(
-                  $metadataDbName, 
-                  $indirectLinks, 
-                  $logID), 
+      lmc:updateLinkManagementIndexesStage3($contentDbName, $metadataDbName, $logID),
       db:output(web:redirect(concat("/repo/", $repo, "/", $branch),
                                        map { 'infoMessage' : 'Link management indexes updated'
                                            }))      
