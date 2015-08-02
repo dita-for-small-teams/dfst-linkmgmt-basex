@@ -212,7 +212,32 @@ declare function lmutil:getUses($elem as element(), $useParams) as element()* {
    
  :)
 declare function lmutil:constructResourceKeyForElement($elem as element()) as xs:string {
-  let $targetDocHash := hash:md5(document-uri(root($elem)))
+   lmutil:constructResourceKeyForElement(document-uri(root($elem)), $elem)
+};
+
+(: Given an element with an @id value, construct the unique resource key for it. 
+   For a given element the resource ID is guaranteed to be unique within
+   a snapshot (git commit).
+
+   @param docURI URI of the document that contains the element.
+   @param elem Element to get resource ID for.
+   @returns Resource key string. 
+
+   The resource key is a combination of the absolute URI of the containing
+   document and the element's tree position within the document, producing
+   a unique key for any element in any document on a given snapshot (version
+   in time). Resource keys are not reliably unique across snapshots as the position of
+   the element within its containing document could change from version to 
+   version. 
+   
+   The resource key is used to look up the element in where-used records, either
+   as the element used or the element doing the use (links).
+   
+ :)
+declare function lmutil:constructResourceKeyForElement(
+                                        $docURI as xs:string, 
+                                        $elem as element()) as xs:string {
+  let $targetDocHash := hash:md5($docURI)
   let $treepos := for $anc in ($elem/ancestor-or-self::*)
                       return string(count($anc | $anc/preceding-sibling::*))
   let $key := string-join($treepos, '.')
@@ -358,7 +383,12 @@ declare function lmutil:resolveIndirectLink($linkItem as map(*)) as map(*) {
 declare function lmutil:findKeyDefinition(
                             $keyName as xs:string,
                             $topicref as element()) as element()? {
-     
+  (: Given a topicref, find the key space that it contributes to,
+     then find the effective key binding for the key name within
+     the key space hierarchy.
+   :)
+  let $topicrefID := "someid"
+  let $keyDefInKeySpace := collection(dfstcnst:keyspaces-dir)/x
                             
   let $result := ()
   return $result

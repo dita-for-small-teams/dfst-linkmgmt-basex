@@ -337,6 +337,7 @@ let $keydefs as map(*)? := $keyspaceMap('keydefs')
 let $childScopes as map(*)* := $keyspaceMap('childScopes')
 let $resolvedMapMap as map(*) := $keyspaceMap('resolvedMapMap')
 let $ditaMap := $resolvedMapMap('map')
+let $contentMapDocURI := document-uri(root($ditaMap))
 
 let $result :=
 <keyspace
@@ -350,7 +351,10 @@ let $result :=
  <keys>{
  for $keyName in map:keys($keydefs) order by $keyName
      return <key name="{$keyName}">{
-               $keydefs($keyName)
+               for $keydef in $keydefs($keyName)
+                   return <keydef 
+                            resID="{lmutil:constructResourceKeyForElement($contentMapDocURI, $keydef)}"
+                          >{$keydef}</keydef>
              }</key>
  }</keys>,
  <childScopes>{
