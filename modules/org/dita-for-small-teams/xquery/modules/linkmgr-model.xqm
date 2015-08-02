@@ -336,10 +336,12 @@ let $scopeNames as xs:string* := $keyspaceMap('scopeNames')
 let $keydefs as map(*)? := $keyspaceMap('keydefs')
 let $childScopes as map(*)* := $keyspaceMap('childScopes')
 let $resolvedMapMap as map(*) := $keyspaceMap('resolvedMapMap')
+let $ditaMap := $resolvedMapMap('map')
 
 let $result :=
 <keyspace
   resolvedMap="{$resolvedMapMap('resolvedMapURI')}"
+  contentMap="{document-uri(root($ditaMap))}"
 >{
  <scopeNames>{
    for $name in $scopeNames
