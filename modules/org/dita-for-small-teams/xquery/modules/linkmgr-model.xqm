@@ -48,7 +48,7 @@ declare %updating function lmm:createIndirectLinkResourceRecords(
                                $indirectLinks as map(*)*,
                                $logID as xs:string) {
     for $linkItem in $indirectLinks
-        let $resolveResult as map(*) := lmutil:resolveIndirectLink($linkItem)
+        let $resolveResult as map(*) := lmutil:resolveIndirectLink($metadataDbName, $linkItem)
         return lmm:createOrUpdateResourceUseRecord(
                    $metadataDbName,
                    $linkItem,
