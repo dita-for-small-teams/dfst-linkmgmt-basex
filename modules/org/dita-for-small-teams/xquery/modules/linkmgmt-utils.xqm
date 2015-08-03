@@ -446,7 +446,7 @@ declare function lmutil:findKeyDefinition(
  : 
  : 
  :)
-declare function lmutil:findAllIndirectLinks($dbName) as map(*)* {
+declare function lmutil:findAllIndirectLinks($contentDbName) as map(*)* {
    (: 
    
 1. Find all root maps (maps with no local-scope topicref references or
@@ -460,11 +460,11 @@ declare function lmutil:findAllIndirectLinks($dbName) as map(*)* {
    
    :)
    
-   let $rootMaps as element()* := lmutil:getRootMaps($dbName)
+   let $rootMaps as element()* := lmutil:getRootMaps($contentDbName)
    
-   let $linksFromTopics := lmutil:getIndirectLinksFromTopics($rootMaps)
+   let $linksFromTopics as map(*)* := lmutil:getIndirectLinksFromTopics($rootMaps)
            
-    let $linksFromMaps := () (: FIXME: Build this list as well :)
+    let $linksFromMaps as map(*)* := () (: FIXME: Build this list as well :)
     let $links := ($linksFromTopics, $linksFromMaps)
    
    return $links

@@ -401,7 +401,7 @@ declare function df:getEffectiveUriForKeyref($rootMap, $refElem) as xs:string? {
  : @return The key name or empty sequence if there is no @keyref attribute
  :)
 declare function df:getKeyNameForKeyref($refElem as element()) as xs:string? {
-   let $keyref := $refElem/@keyref   
+   let $keyref := string($refElem/@keyref)   
    let $keyname as xs:string := if (contains($keyref, '/'))
         then tokenize($keyref, '/')[1]
         else $keyref

@@ -140,6 +140,8 @@ declare function bxutil:reportMapAsXML($map as map(*)) as element()* {
            return element item {
               attribute key { $key },
               typeswitch ($member)
+                case attribute()
+                  return <att name="{name($member)}">string($member)</att>
                 case map(*)
                   return bxutil:reportMapAsXML($member)
                 default
