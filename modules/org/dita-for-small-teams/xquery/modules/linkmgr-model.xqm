@@ -354,7 +354,6 @@ let $result :=
                for $keydef in $keydefs($keyName)
                    let $keydefResID := lmutil:constructResourceKeyForElement($contentMapDocURI, $keydef)
                    return element {name($keydef)} {
-                     attribute resID {$keydefResID},
                      $keydef/@*,
                      $keydef/node()
                    }
@@ -576,6 +575,9 @@ declare function lmm:resolveMapCopy(
                     $elem as element()) as element()* {
    let $result :=
      element {name($elem)} {
+        if (df:class($elem, 'map/topicref'))
+           then attribute resID {lmutil:constructResourceKeyForElement($elem)}
+           else (),
         for $node in ($elem/@*, $elem/node())
             return lmm:resolveMapHandleNode($node)           
      }
