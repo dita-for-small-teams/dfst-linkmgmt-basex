@@ -352,20 +352,30 @@ declare function lmutil:resolveIndirectLink(
                         $metadataDbName as xs:string,
                         $linkItem as map(*)) as map(*) {
    
-   let $topicref := $linkItem?topicref (: Topicref in resolved map :)
+   (: Topicref in resolved map that establishes the use
+      context for the linking element. :)
+   let $topicref := $linkItem?topicref 
    let $link := $linkItem?link
    let $keyName := df:getKeyNameForKeyref($link)
    let $rootMap := $linkItem?rootMap
    let $contentMapURI := string(root($topicref)/*/@origMapURI)
    
-   (: Given the key name, look it up in the topicref's map (which must be a 
-      resolved map to find the key definition. The resolved map has had
-      all key names expanded with their scope qualifications, so we can 
-      look up scope-qualified keys directly. :)
-   let $keydef := lmutil:findKeyDefinition($metadataDbName, $keyName, $contentMapURI, $topicref)
+   (: Find the effective key definition for the key name.
+      This is a topicref element from a keyspace document.
+      :)
+   let $keydef := lmutil:findKeyDefinition(
+                             $metadataDbName, 
+                             $keyName, 
+                             $contentMapURI, 
+                             $topicref)                             
    let $targets := 
        if ($keydef)
-          then lmutil:resolveTopicRefFromResolvedMap($keydef)
+          then
+            let $topicrefInResolvedMap := 
+                      lmutil:getResolvedMapTopicrefForKeyspaceTopicref(
+                                                         $metadataDbName, 
+                                                         $keydef)
+            return lmutil:resolveTopicRefFromResolvedMap($topicrefInResolvedMap)
           else ()
               
    let $log := (if (not($keydef)) 
@@ -377,6 +387,20 @@ declare function lmutil:resolveIndirectLink(
               'link' : $linkItem, 
               'keydef' : $keydef
              }
+};
+
+(:~
+ : Gets the resolved-map topicref that corresponds to a topicref from
+ : a keyspace document.
+ :)
+ declare function lmutil:getResolvedMapTopicrefForKeyspaceTopicref(
+                                                 $metadataDbName, 
+                                                 $keydef) as element() {
+    let $resolvedMapURI := string(root($keydef)/*/@resolvedMap)
+    let $resID := string($keydef/@resID)
+    let $topicrefInResolvedMap := (collection($metadataDbName || 
+                        $resolvedMapURI)//*[@resID = $resID])
+    return $topicrefInResolvedMap
 };
 
 (:~
