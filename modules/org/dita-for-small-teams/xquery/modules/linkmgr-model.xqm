@@ -338,11 +338,19 @@ let $childScopes as map(*)* := $keyspaceMap('childScopes')
 let $resolvedMapMap as map(*) := $keyspaceMap('resolvedMapMap')
 let $ditaMap := $resolvedMapMap('map')
 let $contentMapDocURI := document-uri(root($ditaMap))
+(: NOTE: The definer ID has to be with respect to the resolve map,
+         not the content map, as the same content element could
+         occur multiple times in the resolved map, e.g., if the
+         same submap is included multiple times or as a result
+         of branch filtering.
+:)
+let $definerID := lmutil:constructResourceKeyForElement($definer)
 
 let $result :=
 <keyspace
   resolvedMap="{$resolvedMapMap('resolvedMapURI')}"
   contentMap="{document-uri(root($ditaMap))}"
+  spaceDefiner="{$definerID}"
 >{
  <scopeNames>{
    for $name in $scopeNames
@@ -352,7 +360,7 @@ let $result :=
  for $keyName in map:keys($keydefs) order by $keyName
      return <key name="{$keyName}">{
                for $keydef in $keydefs($keyName)
-                   let $keydefResID := lmutil:constructResourceKeyForElement($contentMapDocURI, $keydef)
+                   let $keydefResID := lmutil:constructResourceKeyForElement($keydef)
                    return element {name($keydef)} {
                      $keydef/@*,
                      $keydef/node()

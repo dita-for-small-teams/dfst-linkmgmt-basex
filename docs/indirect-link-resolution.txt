@@ -1,0 +1,7 @@
+Have to correlate topicrefs to key spaces, so for each key space, need ID of scope-defining
+element. 
+
+Find topicref in resolved map
+Find nearest ancestor scope-defining element
+Find key space within root-map's key space that defines the key
+Look at ancestor key spaces for highest definition of the key name

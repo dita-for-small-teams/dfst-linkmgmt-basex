@@ -216,7 +216,7 @@ declare function lmutil:getUses($elem as element(), $useParams) as element()* {
    
  :)
 declare function lmutil:constructResourceKeyForElement($elem as element()) as xs:string {
-   lmutil:constructResourceKeyForElement(document-uri(root($elem)), $elem)
+   lmutil:constructResourceKeyForElement(string(document-uri(root($elem))), $elem)
 };
 
 (: Given an element, construct the unique resource key for it. 
@@ -236,6 +236,7 @@ declare function lmutil:constructResourceKeyForElement($elem as element()) as xs
    
    The resource key is used to look up the element in where-used records, either
    as the element used or the element doing the use (links).
+   
    
  :)
 declare function lmutil:constructResourceKeyForElement(
