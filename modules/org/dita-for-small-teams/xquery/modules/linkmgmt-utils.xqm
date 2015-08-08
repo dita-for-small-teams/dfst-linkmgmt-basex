@@ -410,7 +410,8 @@ declare function lmutil:resolveIndirectLink(
  :
  : @param keyName The key name to look up.
  : @param topicref The topicref that establishes the map context (and thus
- :                 the starting key scope for the lookup)
+ :                 the starting key scope for the lookup). This topicref
+                   must be from the resolved map.
  : @return The key-defining topicref or empty sequence if no key definition 
  :             is found.
  :)
@@ -424,13 +425,26 @@ declare function lmutil:findKeyDefinition(
      the key space hierarchy.
    :)
   let $topicrefID := lmutil:constructResourceKeyForElement($contentMapURI, $topicref)
-  let $keyDefInKeySpace := collection($metadataDbName || 
-    $dfstcnst:keyspaces-dir)//keyspace/keys/key[@name = $keyName]/*[@resID = $topicrefID]
   
-  let $keys := for $keyspace in $keyDefInKeySpace/ancestor::keyspace
-                   return $keyspace/keys/key[@name = $keyName]
-  let $effectiveKeyDef := $keys[1]/*[1]                 
+(: Find the key-definer for the link-context topicref: :)
+let $definer := ($topicref/ancestor-or-self::*[
+           @keyscope or df:class(., 'map/map')])[last()]
+let $definerResID := lmutil:constructResourceKeyForElement($definer)      
+
+let $keySpace := ()
+
+(: Now get the key space for the key-space definer :)
+let $initialKeySpace := $keySpace//*[@spaceDefiner = $definerResID]
   
+  (: Now find the *highest* definition of the key name within the
+     ancestor-or-self key spaces starting with the initial key space.
+   :)
+  
+  (: Now find the first key definition for the key name. This is the
+     effective key definition: :)
+
+  (: TBD :)
+  let $effectiveKeyDef := ()
                             
   let $result := $effectiveKeyDef
   return $result

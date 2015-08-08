@@ -338,13 +338,15 @@ let $childScopes as map(*)* := $keyspaceMap('childScopes')
 let $resolvedMapMap as map(*) := $keyspaceMap('resolvedMapMap')
 let $ditaMap := $resolvedMapMap('map')
 let $contentMapDocURI := document-uri(root($ditaMap))
+let $resolvedMapURI := $resolvedMapMap?resolvedMapURI
+
 (: NOTE: The definer ID has to be with respect to the resolve map,
          not the content map, as the same content element could
          occur multiple times in the resolved map, e.g., if the
          same submap is included multiple times or as a result
          of branch filtering.
 :)
-let $definerID := lmutil:constructResourceKeyForElement($definer)
+let $definerID := lmutil:constructResourceKeyForElement($resolvedMapURI, $definer)
 
 let $result :=
 <keyspace
@@ -532,6 +534,7 @@ declare %updating function lmm:storeResolvedMap(
 declare function lmm:resolveMap(
                      $map as element()) as map(*) {
                      
+    let $resolvedMapURI := lmutil:getResolvedMapURIForMap($map)          
     
     let $resolvedMap := 
           element {name($map)} 
@@ -539,6 +542,7 @@ declare function lmm:resolveMap(
               attribute origMapURI { document-uri(root($map)) },
               attribute origMapDB { db:name($map) },
               attribute xml:base { encode-for-uri(document-uri(root($map))) },
+              attribute resID {lmutil:constructResourceKeyForElement($resolvedMapURI, $map)},
               $map/@*,
               for $node in $map/node() 
                   return lmm:resolveMapHandleNode($node)
@@ -547,7 +551,7 @@ declare function lmm:resolveMap(
        map{
            'map' : $map,
            'resolvedMap' : $resolvedMap,
-           'resolvedMapURI' : lmutil:getResolvedMapURIForMap($map),
+           'resolvedMapURI' : $resolvedMapURI,
            'log' : ()
           }
     return $result
@@ -584,7 +588,7 @@ declare function lmm:resolveMapCopy(
    let $result :=
      element {name($elem)} {
         if (df:class($elem, 'map/topicref'))
-           then attribute resID {lmutil:constructResourceKeyForElement($elem)}
+           then attribute contentResID {lmutil:constructResourceKeyForElement($elem)}
            else (),
         for $node in ($elem/@*, $elem/node())
             return lmm:resolveMapHandleNode($node)           
