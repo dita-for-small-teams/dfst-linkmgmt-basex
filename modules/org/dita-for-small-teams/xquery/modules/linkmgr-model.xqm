@@ -49,11 +49,15 @@ declare %updating function lmm:createIndirectLinkResourceRecords(
                                $logID as xs:string) {
     for $linkItem in $indirectLinks
         let $resolveResult as map(*) := lmutil:resolveIndirectLink($metadataDbName, $linkItem)
-        return lmm:createOrUpdateResourceUseRecord(
+        let $link := $linkItem?link
+        return (
+          lmm:createOrUpdateResourceUseRecord(
                    $metadataDbName,
                    $linkItem,
                    $resolveResult,
-                   $logID)
+                   $logID)(:,
+                 db:output((<p> + [INFO] Creating use record for indirect link: href="{string($link/@href)}" keyref="{string($link/@keyref)}"</p>)):) 
+                 ) 
 };
 
 (: Given a link and the resolved result, creates a resource use record for each
@@ -65,7 +69,6 @@ declare %updating function lmm:createOrUpdateResourceUseRecord(
                               $linkItem as map(*), 
                               $resolveResult as map(*),
                               $logID as xs:string) {                              
-   let $resolveResult as map(*) := lmutil:resolveDirectLink($linkItem)                              
    let $targets := $resolveResult('target')
    for $target in $targets
        return lmm:createOrUpdateResourceUseRecordForLinkTarget(
@@ -97,13 +100,52 @@ declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget(
            $linkItem as map(*), 
            $target as element(),
            $logID as xs:string) {
-   let $targetDoc := root($target)
-   let $link := $linkItem('link')
-   let $containingDir := concat($dfstcnst:where-used-dir, '/', 
+    let $link := $linkItem('link')
+    let $reskey := lmutil:constructResourceKeyForElement($link)
+    let $useRecord := lmm:constructUseRecord($metadataDbName, $reskey, $linkItem, $target)
+
+    let $containingDir := concat($dfstcnst:where-used-dir, '/', 
                                 lmutil:constructResourceKeyForElement($target), 
                                 '/')
-   let $reskey := lmutil:constructResourceKeyForElement($link)
-   let $recordFilename := concat('use-record_', $reskey, '.xml')
+    let $recordFilename := concat('use-record_', $reskey, '.xml')
+    let $useRecordUri := relpath:newFile($containingDir, $recordFilename)
+    
+    return try {
+       (
+       if (db:exists($metadataDbName, $useRecordUri)) 
+          then db:delete($metadataDbName, $useRecordUri)
+          else(),
+       db:replace($metadataDbName, 
+                  $useRecordUri,
+                  $useRecord) (:,
+       (: FIXME: Write record to log doc :)
+       db:output(<p> + [INFO] Stored use record "{$useRecordUri}"</p>) :) 
+       )
+    } catch * {
+       (: FIXME: Write record to log doc :)
+       error('LMI-UpdateUseRecord001', 
+             concat('Error storing use record to "', $useRecordUri, '": ', $err:description))
+    }
+};
+
+(:~
+ : Construct an element use record storage in the metadata database
+ :
+ : @param metadataDbName Metadata database name
+ : @param reskey Resource key for the link element. It serves as the ID of the use record.
+ : @linkItem Link instance data 
+ : @target The link target element to construct a use record for
+ :
+ : @return The constructed use record as a dfs:useRecord element
+ :)
+declare function lmm:constructUseRecord(           
+           $metadataDbName as xs:string, 
+           $reskey as xs:string,
+           $linkItem as map(*), 
+           $target as element()) as element() {
+   
+   let $link := $linkItem('link')           
+   let $targetDoc := root($target)
    let $format := if ($link/@format)
                      then string($link/@format)
                      else 'dita'
@@ -128,23 +170,8 @@ declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget(
                         root($link)/*/@title)[1])
                   else string($link/ancestor::*[df:class(., 'topic/topic')][1]/*[df:class(., 'topic/title')])}</title>
      </dfst:useRecord>
-    let $useRecordUri := relpath:newFile($containingDir, $recordFilename)
-    return try {
-       (
-       if (db:exists($metadataDbName, $useRecordUri)) 
-          then db:delete($metadataDbName, $useRecordUri)
-          else(),
-       db:replace($metadataDbName, 
-                  $useRecordUri,
-                  $useRecord) (:,
-       (: FIXME: Write record to log doc :)
-       db:output(<info>Stored use record "{$useRecordUri}"</info>) :)
-       )
-    } catch * {
-       (: FIXME: Write record to log doc :)
-       error('LMI-UpdateUseRecord001', 
-             concat('Error storing use record to "', $useRecordUri, '": ', $err:description))
-    }
+     
+   return $useRecord
 };
 
 (:~

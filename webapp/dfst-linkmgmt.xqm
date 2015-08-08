@@ -386,10 +386,14 @@ declare
 
     try {
                             
-      lmc:updateLinkManagementIndexesStage3($contentDbName, $metadataDbName, $logID),
+      (lmc:updateLinkManagementIndexesStage3($contentDbName, $metadataDbName, $logID),
+       db:output("Link management database updated"))
+      (:,
       db:output(web:redirect(concat("/repo/", $repo, "/", $branch),
                                        map { 'infoMessage' : 'Link management indexes updated'
-                                           }))      
+                                           }))
+                                           :)
+            
     } catch * {
           db:output(web:redirect("/error",
                                  map { 'contentDbName' : $contentDbName,

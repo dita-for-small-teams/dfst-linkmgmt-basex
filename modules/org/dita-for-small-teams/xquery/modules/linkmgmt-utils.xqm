@@ -360,23 +360,31 @@ declare function lmutil:resolveIndirectLink(
    let $keyName := df:getKeyNameForKeyref($link)
    let $rootMap := $linkItem?rootMap
    let $contentMapURI := string(root($topicref)/*/@origMapURI)
-   
-   (: Find the effective key definition for the key name.
-      This is a topicref element from a keyspace document.
-      :)
    let $keydef := lmutil:findKeyDefinition(
                              $metadataDbName, 
                              $keyName, 
                              $topicref)                             
-   let $targets := 
-       if ($keydef)
+   
+   return 
+     try {
+   (: Find the effective key definition for the key name.
+      This is a topicref element from a keyspace document.
+      :)
+   let $targets as element()* := 
+       if ($keydef and ($keydef/@href or $keydef/@keyref))
           then
             let $topicrefInResolvedMap := 
                       lmutil:getResolvedMapTopicrefForKeyspaceTopicref(
                                                          $metadataDbName, 
                                                          $keydef)
-            return lmutil:resolveTopicRefFromResolvedMap($topicrefInResolvedMap)
-          else ()
+            let $resolutionResult as element()* := lmutil:resolveTopicRefFromResolvedMap($topicrefInResolvedMap)                                                          
+            return $resolutionResult
+          else if ($keydef)
+             (: If there is a keydef but no reference then the key definition
+                is the target resource.
+              :)
+             then $keydef
+             else ()
               
    let $log := (if (not($keydef)) 
                    then <warn>No key definition found for key "{$keyName}"</warn>
@@ -387,6 +395,20 @@ declare function lmutil:resolveIndirectLink(
               'link' : $linkItem, 
               'keydef' : $keydef
              }
+   } catch * {
+        map { 'log' : <error code="{$err:code}" 
+                             module="{$err:module}"
+                             location="{$err:line-number}:{$err:column-number}"
+                             >
+                        <desc>{$err:description}</desc>
+                        <additional>{$err:additional}</additional>
+                        <details>keyName="{$keyName}"</details>
+                      </error>,
+              'link' : $linkItem, 
+              'keydef' : $keydef,
+              'target' : ()
+           }
+   }
 };
 
 (:~
@@ -421,7 +443,7 @@ declare function lmutil:findKeyDefinition(
      then find the effective key binding for the key name within
      the key space hierarchy.
    :)
-  let $topicrefID as xs:string := string($topicref/@resID)
+  let $topicrefID := string($topicref/@resID)
   
 (: Find the key-definer for the link-context topicref: :)
 let $definer := ($topicref/ancestor-or-self::*[
@@ -575,20 +597,28 @@ declare function lmutil:getMapBoundedObjectSet(
  : Resolves a topicref from a resolved map. Uses the additional metadata
  : in the resolved map to determine the target document that contains
  : the element.
+ :
+ : @param topicref A topicref from a resolved map to be resolved.
  :)
 declare function lmutil:resolveTopicRefFromResolvedMap($topicref as element()) 
                                                                     as element()? {
   let $baseURI := string(($topicref/ancestor::*[@origMapURI]/@origMapURI)[1])                          
-  let $targetURI := string($topicref/@href)
-  let $resolvedURI := relpath:resolveURI($targetURI, $baseURI)
-  let $result := try {
-    let $doc as document-node()? := doc($resolvedURI)
-    let $elem := if ($doc) then $doc/* else()
-    return $elem
-  } catch * {
-    (: Document not found :)
-    ()
-  }
+  
+  let $targetURI as xs:string := string($topicref/@href)
+  
+  let $result :=
+    if ($targetURI)
+       then
+          try {
+            let $resolvedURI := relpath:resolveURI($targetURI, $baseURI)
+            let $doc as document-node()? := doc($resolvedURI)
+            let $elem as element()? := if ($doc) then $doc/* else()
+            return $elem
+          } catch * {
+            (: Document not found :)
+            ()
+          }
+       else () (: No referenced resource :)
   return $result
 };
 
