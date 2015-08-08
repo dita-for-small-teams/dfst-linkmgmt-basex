@@ -248,7 +248,17 @@ declare %updating function lmm:storeKeySpace(
                      $metadataDbName as xs:string,
                      $logID as xs:string) {
   let $keySpaceURI := lmutil:getKeySpaceURIForKeySpace($keySpace)
-  return (db:replace($metadataDbName, $keySpaceURI, $keySpace) (: ,
+ (: FIXME: This is a hack. The map URI as stored and used for 
+            resource IDs must include the database name, but
+            for db:replace the path part must not include the
+            database name.
+            
+            Probably better to capture the path and metadata
+            name separately in the dataMap but that's a more
+            involved refactor.
+   :)
+  let $uriPath := substring-after($keySpaceURI, $metadataDbName)
+  return (db:replace($metadataDbName, $uriPath, $keySpace) (: ,
           FIXME: Write to log doc.
           db:output((<info>Stored key space "{$keySpaceURI}"</info>)):)
           )
