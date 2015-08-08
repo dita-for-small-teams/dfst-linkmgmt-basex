@@ -377,7 +377,6 @@ let $result :=
  for $keyName in map:keys($keydefs) order by $keyName
      return <key name="{$keyName}">{
                for $keydef in $keydefs($keyName)
-                   let $keydefResID := lmutil:constructResourceKeyForElement($keydef)
                    return element {name($keydef)} {
                      $keydef/@*,
                      $keydef/node()
@@ -610,10 +609,12 @@ declare function lmm:resolveMapHandleElement(
  :)
 declare function lmm:resolveMapCopy(
                     $elem as element()) as element()* {
+   let $metadataDbName := bxutil:getMetadataDbNameForDoc(root($elem))
    let $result :=
      element {name($elem)} {
         if (df:class($elem, 'map/topicref'))
-           then attribute contentResID {lmutil:constructResourceKeyForElement($elem)}
+           then (attribute contentResID {lmutil:constructResourceKeyForElement($elem)},
+                 attribute resID {lmutil:constructResourceKeyForElement($metadataDbName, $elem)})
            else (),
         for $node in ($elem/@*, $elem/node())
             return lmm:resolveMapHandleNode($node)           

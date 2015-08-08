@@ -367,7 +367,6 @@ declare function lmutil:resolveIndirectLink(
    let $keydef := lmutil:findKeyDefinition(
                              $metadataDbName, 
                              $keyName, 
-                             $contentMapURI, 
                              $topicref)                             
    let $targets := 
        if ($keydef)
@@ -417,13 +416,12 @@ declare function lmutil:resolveIndirectLink(
 declare function lmutil:findKeyDefinition(
                             $metadataDbName as xs:string,
                             $keyName as xs:string,
-                            $contentMapURI as xs:string,
                             $topicref as element()) as element()? {
-  (: Given a topicref, find the key space that it contributes to,
+  (: Given a topicref from a resolved map, find the key space that it contributes to,
      then find the effective key binding for the key name within
      the key space hierarchy.
    :)
-  let $topicrefID := lmutil:constructResourceKeyForElement($contentMapURI, $topicref)
+  let $topicrefID as xs:string := string($topicref/@resID)
   
 (: Find the key-definer for the link-context topicref: :)
 let $definer := ($topicref/ancestor-or-self::*[
