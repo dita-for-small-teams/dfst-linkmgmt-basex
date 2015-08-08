@@ -399,8 +399,7 @@ declare function lmutil:resolveIndirectLink(
                                                  $keydef) as element() {
     let $resolvedMapURI := string(root($keydef)/*/@resolvedMap)
     let $resID := string($keydef/@resID)
-    let $topicrefInResolvedMap := (collection($metadataDbName || 
-                        $resolvedMapURI)//*[@resID = $resID])
+    let $topicrefInResolvedMap := (collection($resolvedMapURI)//*[@resID = $resID])
     return $topicrefInResolvedMap
 };
 
@@ -431,20 +430,17 @@ let $definer := ($topicref/ancestor-or-self::*[
            @keyscope or df:class(., 'map/map')])[last()]
 let $definerResID := lmutil:constructResourceKeyForElement($definer)      
 
-let $keySpace := ()
-
 (: Now get the key space for the key-space definer :)
-let $initialKeySpace := $keySpace//*[@spaceDefiner = $definerResID]
+let $initialKeySpace := collection($metadataDbName)/keyspace/descendant-or-self::*[@spaceDefiner = $definerResID]
   
   (: Now find the *highest* definition of the key name within the
      ancestor-or-self key spaces starting with the initial key space.
    :)
+let $key := ($initialKeySpace/ancestor-or-self::keyspace/keys/key[@name = $keyName])[1]
   
   (: Now find the first key definition for the key name. This is the
      effective key definition: :)
-
-  (: TBD :)
-  let $effectiveKeyDef := ()
+  let $effectiveKeyDef := ($key/*[df:class(., 'map/topicref')])[1]
                             
   let $result := $effectiveKeyDef
   return $result
@@ -703,7 +699,7 @@ declare function lmutil:getResolvedMapForMap($map as element()) as element()? {
   let $resolvedMapURI as xs:string := lmutil:getResolvedMapURIForMap($map)
   let $metadataDbName as xs:string := bxutil:getMetadataDbNameForDoc(root($map))
   
-  let $resolvedMap := collection($metadataDbName || $resolvedMapURI)
+  let $resolvedMap := collection($resolvedMapURI)
   return $resolvedMap/*
 };
 
@@ -715,8 +711,10 @@ declare function lmutil:getResolvedMapForMap($map as element()) as element()? {
  :)
 declare function lmutil:getResolvedMapURIForMap(
                         $map as element()) as xs:string {
+  let $metadataDbName := bxutil:getMetadataDbNameForDoc(root($map))
   let $mapDocHash := replace(string(hash:md5(document-uri(root($map)))), '/', '~')
-  return $dfstcnst:resolved-map-dir ||
+  return $metadataDbName ||  
+         $dfstcnst:resolved-map-dir ||
          "/" || $mapDocHash || ".ditamap"
 };
 

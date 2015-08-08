@@ -295,7 +295,7 @@ declare function lmm:getKeySpaceForMap($contentMap as element()) as element()? {
     let $metadataDbName as xs:string := bxutil:getMetadataDbNameForDoc(root($contentMap))
     
     let $keyspaceURI := lmutil:getKeySpaceURIForResolvedMapURI($resolvedMapURI)
-    let $result := collection($metadataDbName || $keyspaceURI)/keyspace
+    let $result := collection($keyspaceURI)/keyspace
     return $result
 };
 
@@ -345,6 +345,11 @@ let $resolvedMapURI := $resolvedMapMap?resolvedMapURI
          occur multiple times in the resolved map, e.g., if the
          same submap is included multiple times or as a result
          of branch filtering.
+         
+   NOTE: Have to specify the resolved map URI explicitly here
+         because the definer element hasn't actually been 
+         writen to the repo so it doesn't have a document
+         URI yet.
 :)
 let $definerID := lmutil:constructResourceKeyForElement($resolvedMapURI, $definer)
 
@@ -499,7 +504,17 @@ declare %updating function lmm:storeResolvedMap(
   let $resolvedMap := $dataMap('resolvedMap')
   let $log := $dataMap('log')
   let $resolvedMapURI := $dataMap('resolvedMapURI')
-  return (db:replace($metadataDbName, $resolvedMapURI, $resolvedMap) (:,
+  (: FIXME: This is a hack. The map URI as stored and used for 
+            resource IDs must include the database name, but
+            for db:replace the path part must not include the
+            database name.
+            
+            Probably better to capture the path and metadata
+            name separately in the dataMap but that's a more
+            involved refactor.
+   :)
+  let $uriPath := substring-after($resolvedMapURI, $metadataDbName)
+  return (db:replace($metadataDbName, $uriPath, $resolvedMap) (:,
           FIXME: Write to log
           db:output(($log, <info>Stored resolved map "{$resolvedMapURI}"</info>)) :)
           )
