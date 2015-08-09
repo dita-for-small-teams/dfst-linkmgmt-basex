@@ -123,4 +123,31 @@ declare function lmc:getKeySpaceForMap($contentMap as document-node()) as elemen
    return $result
 
 };
+
+(:~
+ : Get links, direct and indirect, as indicated by the
+ : flags.
+ : 
+ : @param contentDbName Content database name to get the links for
+ : @param linkTypes List, possibly empty, of link types to include. If list
+ :                  is empty, include all link types.
+ : @param includeDirect If true, include direct links
+ : @param includeIndirect If true, include indirect links
+ :)
+ declare function lmc:getLinks($contentDbName as xs:string,
+                               $linkTypes as xs:string*,
+                               $includeDirect as xs:boolean,
+                               $includeIndirect as xs:boolean) as map(*)* {
+   let $directLinks as map(*)* := 
+       if ($includeDirect)
+          then lmutil:findAllDirectLinks($contentDbName)
+          else ()
+   let $indirectLinks as map(*)* := 
+       if ($includeDirect)
+          then lmutil:findAllIndirectLinks($contentDbName)
+          else ()
+   let $result := ($directLinks, $indirectLinks)
+   return $result
+};
+ 
 (: End of Module :)

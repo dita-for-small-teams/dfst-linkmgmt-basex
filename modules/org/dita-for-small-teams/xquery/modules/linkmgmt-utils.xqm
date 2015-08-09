@@ -128,7 +128,7 @@ declare function lmutil:constructLinkItemMap(
 };
                           
 
-(: Give a document, finds all references to that document that match the 
+(: Given a document, finds all references to that document that match the 
    type of uses as configured in the $useParams.
    
    @param doc Document to find uses of. 

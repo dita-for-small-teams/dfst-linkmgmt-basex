@@ -250,7 +250,9 @@ declare function linkmgr:listTopicWhereUsed($doc as document-node()) as node()* 
       <div class="listblock">
         <h4>Used by Content Reference</h4>
         {
-          let $useParams := map{'linktype' : ('#conref')
+          let $useParams := map{'linktype' : ('#conref'),
+                                'format' : ('dita'),
+                                'scope' : ('local')
                                }
           let $uses := lmc:getUses($doc, $useParams)
           return linkmgr:useRecordsToHtml($uses)          
@@ -329,7 +331,7 @@ declare
 };
 
 (:~
- : Document relationship table view
+ : Key space view
  :)
 declare
   %rest:path("/linkmgr/keyspaceView/{$docURI=.+}")
@@ -357,6 +359,185 @@ declare
       }
    </body>
  </html>
+};
+
+(:~
+ : List all link, direct, and indirect, in the repository.
+ : 
+ : @param infoMessage Informational message to be displayed on the page
+ : @param linkTypes Comma-separated list of link types to include in
+ : the list. '#conref' indicatates content reference links
+ : @param includeDirect If 'true', include direct links in the list. Default
+ : is 'true'
+ : @param includeIndirect If 'true', include indirect links in the list.
+ : Default is 'true' 
+ :)
+declare
+  %rest:path("/repo/{$repo}/{$branch}/listAllLinks")
+  %rest:query-param("infoMessage",    "{$infoMessage}")
+  %rest:query-param("linkTypes",    "{$linkTypes}")
+  %rest:query-param("includeDirect",    "{$includeDirect}")
+  %rest:query-param("includeIndirect",    "{$includeIndirect}")
+  %output:method("xhtml")
+  %output:omit-xml-declaration("no")
+  %output:doctype-public("-//W3C//DTD XHTML 1.0 Transitional//EN")
+  %output:doctype-system("http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd")
+  function linkmgr:branchListAllLinks($repo as xs:string, 
+                                   $branch as xs:string, 
+                                   $infoMessage as xs:string?,
+                                   $linkTypes as xs:string?,
+                                   $includeDirect as xs:boolean?,
+                                   $includeIndirect as xs:boolean?)
+  as element(Q{http://www.w3.org/1999/xhtml}html)
+{
+  <html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+      <title>DFST {$repo}/{$branch}: Link Report</title>
+      <link rel="stylesheet" type="text/css" href="/static/style.css"/>
+    </head>
+    <body>
+      <div class="right">
+      <p><a href="http://www.dita-for-small-teams.org" target="dfst-home">www.dita-for-small-teams.org</a></p>
+      <p><img src="/static/dita_logo.svg" width="150"/></p>
+      </div>
+      <div class="title-block">
+        <h2>{$repo}/{$branch} Link Report</h2>
+      </div>
+      <div class="management-actions">      
+        { if ($infoMessage and $infoMessage != '')
+             then <p>{$infoMessage}</p>
+             else ()
+        }
+        <div class="form">
+          <form>
+            <!-- Make form for setting link types and 
+                 include direct, include indirect check
+                 boxes.
+              -->
+          </form>
+        </div>
+      </div>
+      <div class="action-block">
+        <h3>Links</h3>
+        <div class="listblock-full">
+          <table class="listtable">
+            <thead>
+              <tr>
+                <th>Link Element</th>
+                <th>Target Doc</th>
+                <th>Target Element</th>
+                <th>Link Type</th>
+                <th>Scope</th>
+                <th>Format</th>
+                <th>Direct/Indirect</th>
+              </tr>
+            </thead>
+            <tbody>
+            { if (false())
+                 then <tr><td colspan="3">No maps found</td></tr>
+                 else linkmgr:listLinksInBranch(
+                            $repo, 
+                            $branch, 
+                            $linkTypes,
+                            $includeDirect,
+                            $includeIndirect)
+            }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </body>
+  </html>
+};
+
+declare function linkmgr:listLinksInBranch(
+                            $repo as xs:string, 
+                            $branch as xs:string, 
+                            $linkTypes  as xs:string?,
+                            $includeDirect as xs:boolean?,
+                            $includeIndirect as xs:boolean?) as node()* {
+                            
+  let $contentDbName := bxutil:getDbNameForRepoAndBranch($repo, $branch)
+  let $linkTypesList as xs:string* :=
+      if ($linkTypes)
+         then tokenize($linkTypes, ',')
+         else ()
+  let $includeDirectBoolean := true() (: Get from parameter :)
+  let $includeIndirectBoolean := true() (: Get from parameter :)
+  
+  let $links as map(*)* := lmc:getLinks(
+                                    $contentDbName,
+                                    $linkTypesList,
+                                    $includeDirectBoolean,
+                                    $includeIndirectBoolean)
+                                    
+  return
+    for $linkItem as map(*) in $links
+        let $link := $linkItem?link
+        let $linkType := 
+            if ($link/@conref != '')
+               then 'Content reference'
+               else 
+                 let $ditaType := tokenize($link/@class, ' ')[2]
+                 return tokenize($ditaType, '/')[2]
+        return
+          <tr>
+           <td>{
+           (: FIXME: Make this a link to the source element in 
+                     the containing document.
+            :)
+           linkmgr:formatLinkElementAsHTML($link)
+           }</td>
+           <td>{()}</td><!-- Target doc -->
+           <td>{()}</td><!-- Target element -->
+           <td>{$linkType}</td><!-- Link Type -->
+           <td>{()}</td><!-- Scope -->
+           <td>{()}</td><!-- Format -->
+           <td>{()}</td><!-- Direct/Indirect -->
+          </tr>
+          
+(:
+                <th>Link Element</th>
+                <th>Target Doc</th>
+                <th>Target Element</th>
+                <th>Link Type</th>
+                <th>Scope</th>
+                <th>Format</th>
+                <th>Direct/Indirect</th>
+:)
+};
+
+(:~
+ : Format DITA link elements for HTML presentation. 
+ :
+ :)
+declare function linkmgr:formatLinkElementAsHTML($elem as element()) as node()* {
+  <div class="serialized">{
+     if (normalize-space($elem) != '')   
+        then (
+         <span class="tag">{
+            '&lt;',
+            <span class="tagname">{name($elem)}</span>,
+            for $att in ($elem/@href, $elem/@keyref, $elem/@conref, $elem/@format, $elem/@scope)
+                return <span class="att"><br/>&#xa0;&#xa0;&#xa0;{name($att)}="{string($att)}"</span>,
+            '&gt;'
+           }</span>,
+         
+         <span class="element-content">{substring($elem, 1, 40)}</span>,
+         <span class="tag">{'&lt;/',
+             <span class="tagname">{name($elem)}</span>,
+             '&gt;'
+         }</span>
+         )
+         else 
+           <span class="tag">{
+            '&lt;',
+              <span class="tagname">{name($elem)}</span>,
+              for $att in ($elem/@href, $elem/@keyref, $elem/@conref, $elem/@format, $elem/@scope)
+                return <span class="att"><br/>&#xa0;&#xa0;&#xa0;{name($att)}="{string($att)}"</span>,
+            '/&gt;'
+           }</span>
+  }</div>
 };
 
 (:~
@@ -409,6 +590,10 @@ declare function linkmgr:makeLinkToDocSource($docURI as xs:string?) as node()* {
        else $docURI
 };
 
+(:~
+ : Formats an item in a tree structure as a list item. Puts
+ : it's children, if any, in a nested list.
+ :)
 declare function linkmgr:treeItemToHtml($treeItem as element()) as node()* {
     let $docURI := string($treeItem/properties/property[@name = 'uri'])
     return

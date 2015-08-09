@@ -118,7 +118,8 @@ declare function lmv:formatTopicmetaToHTML($topicmeta as element()?) as node()* 
 
 declare function lmv:formatKeydefAtts($keydef as element()) as node()* {
     let $ignoredAtts as xs:string* :=
-         ('class', 'processing-role', 'scope', 'keyref', 'href', 'keys', 'resID')
+         ('class', 'processing-role', 'scope', 'keyref', 'href', 'keys', 
+          'resID', 'contentResID')
     let $result :=
         for $att in $keydef/@*[not(name(.) = 
                               $ignoredAtts)]                     

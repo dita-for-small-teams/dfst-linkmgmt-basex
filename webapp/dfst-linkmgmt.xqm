@@ -96,6 +96,9 @@ declare
       [<a href="/repo/{$repo}/{$branch}/updateLinkManagementIndexes" 
             target="_updateLinkManagementIndexes"
             >Update Link Management Indexes</a>]
+      [<a href="/repo/{$repo}/{$branch}/listAllLinks" 
+            target="_listAllLinks"
+            >List all links</a>]
       { if ($infoMessage and $infoMessage != '')
            then <p>{$infoMessage}</p>
            else ()
