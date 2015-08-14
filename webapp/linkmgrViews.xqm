@@ -458,6 +458,7 @@ declare function linkmgr:listLinksInBranch(
                             $includeIndirect as xs:boolean?) as node()* {
                             
   let $contentDbName := bxutil:getDbNameForRepoAndBranch($repo, $branch)
+  let $metadataDbName := bxutil:getMetadataDbNameForRepoAndBranch($repo, $branch)
   let $linkTypesList as xs:string* :=
       if ($linkTypes)
          then tokenize($linkTypes, ',')
@@ -480,6 +481,9 @@ declare function linkmgr:listLinksInBranch(
                else 
                  let $ditaType := tokenize($link/@class, ' ')[2]
                  return tokenize($ditaType, '/')[2]
+        let $scope := df:getEffectiveScope($link)                 
+        let $format := df:getEffectiveFormat($link)
+        let $resolveResult := lmc:resolveLink($metadataDbName, $linkItem)
         return
           <tr>
            <td>{
@@ -489,10 +493,10 @@ declare function linkmgr:listLinksInBranch(
            linkmgr:formatLinkElementAsHTML($link)
            }</td>
            <td>{()}</td><!-- Target doc -->
-           <td>{()}</td><!-- Target element -->
+           <td>{linkmgr:formatTargetElementAsHTML($resolveResult)}</td><!-- Target element -->
            <td>{$linkType}</td><!-- Link Type -->
-           <td>{()}</td><!-- Scope -->
-           <td>{()}</td><!-- Format -->
+           <td>{$scope}</td><!-- Scope -->
+           <td>{$format}</td><!-- Format -->
            <td>{()}</td><!-- Direct/Indirect -->
           </tr>
           
@@ -538,6 +542,18 @@ declare function linkmgr:formatLinkElementAsHTML($elem as element()) as node()* 
             '/&gt;'
            }</span>
   }</div>
+};
+
+(:~
+ : Format DITA link elements for HTML presentation. 
+ :
+ : @param $resolveResult The resolution result for a link 
+ :)
+declare function linkmgr:formatTargetElementAsHTML($resolveResult as map(*)) as node()* {
+
+  let $target as element()? := $resolveResult?target
+  return
+    <div class="serialized">{serialize($target)}</div>
 };
 
 (:~

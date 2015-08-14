@@ -149,5 +149,14 @@ declare function lmc:getKeySpaceForMap($contentMap as document-node()) as elemen
    let $result := ($directLinks, $indirectLinks)
    return $result
 };
+
+(:~
+ : Resolve a direct or indirect link
+ :)
+declare function lmc:resolveLink($metadataDbName as xs:string, 
+                                 $linkItem as map(*)) as map(*) {
+  let $result := lmutil:resolveLink($metadataDbName, $linkItem)
+  return $result
+};
  
 (: End of Module :)

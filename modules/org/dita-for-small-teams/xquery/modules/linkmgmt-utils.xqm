@@ -81,7 +81,7 @@ declare function lmutil:findAllDirectLinks($dbName) as map(*)* {
                 collection($dbName)//*[@conref]
    (: Construct a link item map for each link element :)
    for $link in $links
-       return lmutil:constructLinkItemMap($link) 
+       return lmutil:constructLinkItemMap($link, false()) 
 };
 
 (:~
@@ -91,9 +91,10 @@ declare function lmutil:findAllDirectLinks($dbName) as map(*)* {
  : @return Link item map
  :)
 declare function lmutil:constructLinkItemMap(
-                        $link as element()) as map(*) {
+                        $link as element(),
+                        $isIndirect as xs:boolean) as map(*) {
   let $contentDocURI := document-uri(root($link))
-  let $result := lmutil:constructLinkItemMap($link, $contentDocURI, ())
+  let $result := lmutil:constructLinkItemMap($link, $contentDocURI, (), $isIndirect)
   return $result
 };
 
@@ -110,7 +111,8 @@ declare function lmutil:constructLinkItemMap(
 declare function lmutil:constructLinkItemMap(
                         $link as element(),
                         $contentDocURI as xs:string,
-                        $topicref as element()?) as map(*) {
+                        $topicref as element()?,
+                        $isIndirect as xs:boolean) as map(*) {
    let $linkItem := 
       map{'link': $link, 
           'resolvedMap': if ($topicref) then root($topicref)/* else (), 
@@ -122,7 +124,8 @@ declare function lmutil:constructLinkItemMap(
                         then string($link/@processing-role)
                         else 'normal' (: Default for topicref :)
                 else 'normal', (: non-topicref links :)
-          'linkContext': lmutil:getLinkContext($link)
+          'linkContext': lmutil:getLinkContext($link),
+          'isIndirect' : $isIndirect
          }
     return $linkItem
 };
@@ -298,6 +301,24 @@ declare function lmutil:getLinkContext($link as element()) as xs:string {
           then 'body'
      else 'unknown-context'
       
+};
+
+(:~
+ : Resolve a link item 
+ :
+ : @param linkItem A map containing a direct or indirect link item
+ : @return Resolution result map. The map will always have at least
+ : a 'log' member reporting resolution failure.
+ :)
+declare function lmutil:resolveLink(
+                    $metadataDbName as xs:string,
+                    $linkItem as map(*)) as map(*) {
+   let $isIndirect := $linkItem?isIndirect
+   let $result := 
+       if ($isIndirect)
+          then lmutil:resolveIndirectLink($metadataDbName, $linkItem)
+          else lmutil:resolveDirectLink($linkItem)
+   return $result 
 };
 
 (:~ 
@@ -551,7 +572,7 @@ declare function lmutil:getIndirectLinksForBOSMember($member as map(*)) as map(*
    let $linkElems := $topic//*[@keyref]
    let $linkItems := 
        for $elem in $linkElems
-           return lmutil:constructLinkItemMap($elem, $contentDocURI, $topicref)
+           return lmutil:constructLinkItemMap($elem, $contentDocURI, $topicref, true())
    return $linkItems
 };
 
