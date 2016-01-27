@@ -29,7 +29,7 @@ The project contains the following directories:
 * webapp/
 
   Contains the BaseX Web application for the link management. You can either use this directory as the BaseX 
-  Web application by setting WEBPATH to this directory your local .basex configuration or you can copy the 
+  Web application by setting WEBPATH to this directory in your local .basex configuration or you can copy the 
   contents of this directory to the BaseX installation's webapp/ directory.  
   
   If you set this directory as the WEBPATH directory, then when you start the basexhttp server it will create
