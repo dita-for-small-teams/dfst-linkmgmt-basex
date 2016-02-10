@@ -5,11 +5,10 @@
  :)
 module namespace html = 'dba/html';
 
-import module namespace Request = 'http://exquery.org/ns/request';
-import module namespace cons = 'dba/cons';
+import module namespace cons = 'dba/cons' at '../modules/cons.xqm';
 
 (: Number formats. :)
-declare variable $html:NUMBER := ('decimal','number', 'bytes');
+declare variable $html:NUMBER := ('decimal', 'number', 'bytes');
 
 (:~
  : Creates a checkbox.
@@ -213,7 +212,7 @@ declare function html:table(
           if(empty($sort) or $name = $sort) then (
             $value
           ) else (
-            html:link($value, Request:path(), map:merge(($param, map { 'sort': $name })))
+            html:link($value, "", map:merge(($param, map { 'sort': $name })))
           )
         }
       }
@@ -249,8 +248,9 @@ declare function html:table(
                  return $entry
         )
 
+        let $max := $cons:OPTION($cons:K-MAX-ROWS)
         for $entry at $c in $entries
-        return if($c <= $cons:MAX-ROWS) then (
+        return if($c <= $max) then (
           <tr>{
             for $header at $pos in $headers
             let $name := $header/name()
@@ -268,21 +268,20 @@ declare function html:table(
               )
               else .
             )
+
             return element td {
               attribute align { if($header/@type = $html:NUMBER) then 'right' else 'left' },
               if($pos = 1 and $buttons) then (
-                <input type="checkbox" name="{ $name }" value="{ $col }" onClick="buttons()"/>,
-                if(exists($link)) then (
-                  html:link($value, $link($value), map:merge(($param, map { $name: $value })))
-                ) else if($header/@type = 'id') then () else (
-                  $value
-                )
-              ) else (
+                <input type="checkbox" name="{ $name }" value="{ $col }" onClick="buttons()"/>
+              ) else (),
+              if($pos = 1 and exists($link)) then (
+                html:link($value, $link($value), map:merge(($param, map { $name: $value })))
+              ) else if($header/@type = 'id') then () else (
                 $value
               )
             }
           }</tr>
-        ) else if($c = $cons:MAX-ROWS + 1) then (
+        ) else if($c = $max + 1) then (
           <tr>
             <td>{
               if($buttons) then <input type="checkbox" disabled=""/> else ()
@@ -328,61 +327,29 @@ declare function html:focus(
 };
 
 (:~
- : Creates a link to the specified URI.
+ : Creates a link to the specified target.
  : @param  $text   link text
- : @param  $URI URI
+ : @param  $target target
  : @return link
  :)
 declare function html:link(
   $text   as xs:string,
-  $URI as xs:string
+  $target as xs:string
 ) as element(a) {
-  <a href="{ $URI }">{ $text }</a>
+  <a href="{ $target }">{ $text }</a>
 };
 
 (:~
- : Creates a link to the specified URI.
+ : Creates a link to the specified target.
  : @param  $text   link text
- : @param  $URI URI
- : @param  $target frame or page target.
- : @return link
- :)
-declare function html:linkToTarget(
-  $text   as xs:string,
-  $URI as xs:string,
-  $target as xs:string (: @target value :)
-) as element(a) {
-  <a href="{ $URI }" target="{$target}">{ $text }</a>
-};
-
-(:~
- : Creates a link to the specified URI.
- : @param  $text   link text
- : @param  $URI URI
+ : @param  $target target
  : @param  $params map with query parameters
  : @return link
  :)
 declare function html:link(
   $text   as xs:string,
-  $URI as xs:string,
-  $params as map(*)
-) as element(a) {
-  html:link($text, web:create-url($URI, $params))
-};
-
-
-(:~
- : Creates a link to the specified URI.
- : @param  $text   link text
- : @param  $URI URI
- : @param  $params map with query parameters
- : @return link
- :)
-declare function html:linkToTarget(
-  $text   as xs:string,
-  $URI as xs:string,
   $target as xs:string,
   $params as map(*)
 ) as element(a) {
-  html:linkToTarget($text, web:create-url($URI, $params), $target)
+  html:link($text, web:create-url($target, $params))
 };

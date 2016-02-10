@@ -693,7 +693,7 @@ declare function df:constructKeySpacesForMapTree($mapTree as element(mapTree)) {
 
 declare function df:getKeySpaceID($spaceDefiningElem as element(),
                                   $ancestorKeySpaces) as xs:string {
-   map:serialize(map {$spaceDefiningElem : ()})
+   serialize(map {$spaceDefiningElem : ()})
 };
 
 (:~
