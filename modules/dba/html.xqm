@@ -353,3 +353,36 @@ declare function html:link(
 ) as element(a) {
   html:link($text, web:create-url($target, $params))
 };
+
+(:~
+ : Creates a link to the specified URI.
+ : @param  $text   link text
+ : @param  $URI URI
+ : @param  $target frame or page target.
+ : @return link
+ :)
+declare function html:linkToTarget(
+  $text   as xs:string,
+  $URI as xs:string,
+  $target as xs:string (: @target value :)
+) as element(a) {
+  <a href="{ $URI }" target="{$target}">{ $text }</a>
+};
+
+
+(:~
+ : Creates a link to the specified URI.
+ : @param  $text   link text
+ : @param  $URI URI
+ : @param  $params map with query parameters
+ : @return link
+ :)
+declare function html:linkToTarget(
+  $text   as xs:string,
+  $URI as xs:string,
+  $target as xs:string,
+  $params as map(*)
+) as element(a) {
+  html:linkToTarget($text, web:create-url($URI, $params), $target)
+};
+

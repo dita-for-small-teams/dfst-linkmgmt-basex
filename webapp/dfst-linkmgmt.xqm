@@ -206,14 +206,14 @@ declare
                      else ''
         }</td>
         <td>
-        [{html:link('Navigation&#xa0;Tree', concat('/linkmgr/navtreeView/', document-uri($map)),
+        [{html:linkToTarget('Navigation&#xa0;Tree', concat('/linkmgr/navtreeView/', document-uri($map)),
          'navtree')}] 
-        [{html:link('Map&#xa0;Tree', concat('/linkmgr/maptreeView/', document-uri($map)), 'maptree')}] 
-        [{html:link('Dependencies', concat('/linkmgr/dependencyView/', document-uri($map)), 'dependencies')}] 
-        [{html:link('Reltables', concat('/linkmgr/reltableView/', document-uri($map)), 'reltables')}] 
-        [{html:link('Key&#xa0;Spaces', concat('/linkmgr/keyspaceView/', document-uri($map)), 'keyspaces')}] 
-        [{html:link('Preview', concat('/linkmgr/docview/', document-uri($map), '/preview'), 'preview')}]
-        [{html:link('Where&#xa0;Used?', concat('/linkmgr/whereUsedView/', $docURI), 'whereused')}]
+        [{html:linkToTarget('Map&#xa0;Tree', concat('/linkmgr/maptreeView/', document-uri($map)), 'maptree')}] 
+        [{html:linkToTarget('Dependencies', concat('/linkmgr/dependencyView/', document-uri($map)), 'dependencies')}] 
+        [{html:linkToTarget('Reltables', concat('/linkmgr/reltableView/', document-uri($map)), 'reltables')}] 
+        [{html:linkToTarget('Key&#xa0;Spaces', concat('/linkmgr/keyspaceView/', document-uri($map)), 'keyspaces')}] 
+        [{html:linkToTarget('Preview', concat('/linkmgr/docview/', document-uri($map), '/preview'), 'preview')}]
+        [{html:linkToTarget('Where&#xa0;Used?', concat('/linkmgr/whereUsedView/', $docURI), 'whereused')}]
         </td>
       </tr>
  };
@@ -231,9 +231,9 @@ declare
       return <tr>
         <td>{df:getTitleText($topic/*)}</td>
         <td>{linkmgr:makeLinkToDocSource(document-uri(root($topic)))}</td>
-        <td>[{html:link('Where&#xa0;Used?', concat('/linkmgr/whereUsedView/', $docURI), 'whereused')}] 
-            [{html:link('Dependencies', concat('/linkmgr/dependencyView/', $docURI), 'dependencies')}] 
-        [{html:link('Preview', concat('/linkmgr/docview/', $docURI, '/preview'), 'preview')}] 
+        <td>[{html:linkToTarget('Where&#xa0;Used?', concat('/linkmgr/whereUsedView/', $docURI), 'whereused')}] 
+            [{html:linkToTarget('Dependencies', concat('/linkmgr/dependencyView/', $docURI), 'dependencies')}] 
+        [{html:linkToTarget('Preview', concat('/linkmgr/docview/', $docURI, '/preview'), 'preview')}] 
             </td>
       </tr>
  };
