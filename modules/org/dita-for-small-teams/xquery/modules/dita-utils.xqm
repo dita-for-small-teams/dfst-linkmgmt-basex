@@ -182,14 +182,14 @@ declare function df:getTopicDocs($collectionSpec as xs:string) as document-node(
    Simply returns the text nodes of the title, filtering out elements that don't normally show up in output 
    (<data>, <indexterm>, etc.)
 :)
-declare function df:getTitleText($elem as element()) as xs:string {
+declare function df:getTitleText($elem as element()*) as xs:string {
    let $title := df:getTitleElement($elem)
    (: FIXME: Implement the filtering, which needs to be a general function :)
    return string($title)
 };
 
 (: Get the title element for the specified element where the element is expected to have topic/title direct child :)
-declare function df:getTitleElement($elem as element()) as element()? {
+declare function df:getTitleElement($elem as element()*) as element()? {
    ($elem/*[df:class(., 'topic/title')])[1]
 };
 
@@ -540,11 +540,13 @@ declare function df:getMapTreeItems($map as element()) as element(treeItem)* {
 
 declare function df:getMapDocForTreeItem($treeItem as element(treeItem)) as document-node()? {
    let $mapUri := string($treeItem/properties/property[@name = 'uri'])
-   return document { <map/> }
-   (:
-   let $map := doc($mapUri)
-   return $map
-   :)
+   return
+   try {
+     let $map := doc($mapUri)
+     return $map
+   } catch * { 
+     () 
+   }
 };
 
 (:~
@@ -855,19 +857,23 @@ declare function df:resolveUriReferenceToElement($refAtt as attribute()) as map(
    let $resolvedURI := if ($resourcePart) 
                           then relpath:newFile(relpath:getParent(base-uri($context)), $resourcePart)
                           else base-uri($context) (: Target is in same document :)
-   let $targetDoc := doc($resolvedURI)
-   let $targetElem := 
-       if ($targetDoc)
-           then if (df:isMap($targetDoc/*))
-                   then df:resolveUriReferenceToMapElement($targetDoc, $fragID)
-                   else if (df:isTopic($targetDoc/*))
-                        then df:resolveUriReferenceToTopicElement($targetDoc, $fragID)
-                        else (: Not a map or a topic, assume fragment ID is an ID reference :)
-                             $targetDoc//*[@id = $fragID]
-          else ()
-   return map{'target' : $targetElem, 
-               'log' : (<info>Found target for URI reference "{$uri}"</info>)}
-
+   return 
+   try {
+     let $targetDoc := doc($resolvedURI)
+     let $targetElem := 
+         if ($targetDoc)
+             then if (df:isMap($targetDoc/*))
+                     then df:resolveUriReferenceToMapElement($targetDoc, $fragID)
+                     else if (df:isTopic($targetDoc/*))
+                          then df:resolveUriReferenceToTopicElement($targetDoc, $fragID)
+                          else (: Not a map or a topic, assume fragment ID is an ID reference :)
+                               $targetDoc//*[@id = $fragID]
+            else ()
+     return map{'target' : $targetElem, 
+                 'log' : (<info>Found target for URI reference "{$uri}"</info>)}
+   } catch * {
+      map {}
+   }
 };
 
 (:

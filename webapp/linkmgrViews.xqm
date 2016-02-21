@@ -354,7 +354,7 @@ declare
       <h1>Key Spaces for Map "{$title}"</h1>
       {linkmgr:reportDocDetails($doc),
        if ($doc)
-          then lmv:formatKeySpacesForMap($doc)
+          then lmv:formatKeySpacesForMap($doc) (: <p>Key space construction turned off</p> :)
           else <p>No key space found for this map. Rebuild the link management indexes</p>
       }
    </body>

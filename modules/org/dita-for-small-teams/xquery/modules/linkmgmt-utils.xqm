@@ -438,7 +438,7 @@ declare function lmutil:resolveIndirectLink(
  :)
  declare function lmutil:getResolvedMapTopicrefForKeyspaceTopicref(
                                                  $metadataDbName, 
-                                                 $keydef) as element() {
+                                                 $keydef) as element()? {
     let $resolvedMapURI := string(root($keydef)/*/@resolvedMap)
     let $resID := string($keydef/@resID)
     let $topicrefInResolvedMap := (collection($resolvedMapURI)//*[@resID = $resID])
@@ -748,8 +748,15 @@ declare function lmutil:getResolvedMapForMap($map as element()) as element()? {
   let $resolvedMapURI as xs:string := lmutil:getResolvedMapURIForMap($map)
   let $metadataDbName as xs:string := bxutil:getMetadataDbNameForDoc(root($map))
   
-  let $resolvedMap := collection($resolvedMapURI)
-  return $resolvedMap/*
+  return
+  try {
+    let $resolvedMap := collection($resolvedMapURI)
+    return $resolvedMap/*
+  } catch * {
+    let $resolvedMap := () (: Don't crater if the file's not found :)
+    return $resolvedMap/*
+  }
+  
 };
 
 (:~

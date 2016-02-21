@@ -61,17 +61,22 @@ declare function lmv:formatKeySpacesForMap($doc) as node()* {
                            let $defCount := count($key/*[df:class(., 'map/topicref')])
                            let $firstDef := $keydefs[1]
                            return 
-                             (<tr>
-                               <td>
-                               {if ($defCount gt 1)
-                                   then attribute rowspan {$defCount}
-                                   else ()}
-                               {string($key/@name)}
-                               </td>
-                               {lmv:makeKeyDefTableEntries($firstDef)}
-                             </tr>,
-                             for $keyDef in $keydefs[position() > 1]
-                                 return lmv:makeKeyDefTableEntries($keyDef)
+                             (
+                             if ($defCount gt 0)
+                                then 
+                                     (<tr>
+                                       <td>
+                                       {if ($defCount gt 1)
+                                           then attribute rowspan {$defCount}
+                                           else ()}
+                                       {string($key/@name)}
+                                       </td>
+                                       {lmv:makeKeyDefTableEntries($firstDef)}
+                                     </tr>,
+                                     for $keyDef in $keydefs[position() > 1]
+                                         return lmv:makeKeyDefTableEntries($keyDef)
+                                     )
+                                else ()
                              )
                 }
                 </tbody>
@@ -79,7 +84,7 @@ declare function lmv:formatKeySpacesForMap($doc) as node()* {
             </div>
 };
 
-declare function lmv:makeKeyDefTableEntries($keydef as element()) as element()* {
+declare function lmv:makeKeyDefTableEntries($keydef as element()*) as element()* {
    let $result := (
      <td>{(: Directly-addressed resource :)
        string($keydef/@href)
