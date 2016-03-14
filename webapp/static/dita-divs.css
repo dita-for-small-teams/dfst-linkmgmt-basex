@@ -4,6 +4,183 @@ body {
   font-family: Verdana,sans-serif;
 }
 
+   
+/* ===================
+   Highlight domain
+   =================== */
+
+*[class~="hi-d/i"] {
+  font-style: italic;
+}
+   
+*[class~="hi-d/b"] {
+  font-weight: bold;
+}
+   
+*[class~="hi-d/u"] {
+  text-decoration: underline;
+}
+   
+*[class~="hi-d/tt"] {
+  font-family: courier, monospace;
+}
+
+/* ===================
+   software domain
+   =================== */
+
+*[class~="sw-d/filepath"] {
+  display: inline;
+  font-family: courier, monospace;
+}
+
+*[class~="sw-d/varname"] {
+  display: inline;
+  font-style: italic;
+}
+
+
+*[class~="sw-d/cmdname"] {
+  display: inline;
+  font-family: courier, fixed, monospace;
+}
+
+*[class~="sw-d/userinput"] {
+  display: inline;
+  font-family: courier, fixed, monospace;
+  color: green;
+}
+
+/* ===================
+   programming domain
+   =================== */
+
+*[class~="pr-d/synph"] {
+  display: block;
+  margin-top: 12pt; 
+  text-indent: 12pt;
+  font-family: courier, fixed, monospace;
+}
+
+*[class~="pr-d/kwd"] {
+  display: inline;  
+  font-weight: bold;
+}
+
+*[class~="pr-d/kwd"] {
+  display: inline;  
+  font-weight: bold;
+}
+
+*[class~="pr-d/var"] {
+  display: inline;  
+  font-style: italic;
+}
+
+
+*[class~="pr-d/codeblock"],
+*[class~="pr-d/codeph"] {
+  font-family: Courier, monospace;
+}   
+
+*[class~="pr-d/codeblock"] {
+  background-color: lightgrey;
+}
+
+
+/* ===================
+   user interface domain
+   =================== */
+   
+*[class~="ui-d/uicontrol"] {
+  display: inline;
+  font-weight: bold;
+}
+
+
+/* ========
+   Lists
+   ======== */
+   
+*[class~="topic/ol"] {
+  list-style: decimal outside none;
+}
+
+*[class~="topic/li"] > *[class~="topic/p"]:first-child {
+  display: inline;
+  text-indent: 0pt;
+}
+
+*[class~="topic/ol"] > *[class~="topic/li"]{
+  display: list-item;
+  margin-top: 12pt;
+  margin-left: 16pt;
+  text-indent: -16pt;
+  
+  list-style-position: inside;
+  list-style-type: decimal;
+  color: blue;
+}
+
+*[class~="topic/ul"] > *[class~="topic/li"]{
+  display: list-item;
+  
+  list-style-position: inside;
+  margin-top: 6pt;
+  /* color: green; */
+}
+
+*[class~="task/stepsection"] {
+  display: block;
+  color: black !important;
+}
+
+/* ========
+   Tables
+   ======== */
+
+*[class~="topic/table"],
+*[class~="topic/simpletable"]
+{
+  display: table;
+  border-top: solid 1pt blue;
+  border-bottom: solid 1pt blue;
+  margin-top: 6pt;
+}
+
+*[class~="topic/tbody"],
+*[class~="topic/thead"],
+*[class~="topic/sthead"],
+*[class~="topic/stbody"]
+{
+  display: table-row-group;
+}
+
+*[class~="topic/thead"],
+*[class~="topic/sthead"] {
+  font-weight: bold;
+  background-color: #000099;
+  color: white;
+}
+
+
+*[class~="topic/row"],
+*[class~="topic/strow"]
+{
+  display: table-row;  
+}
+
+*[class~="topic/entry"],
+*[class~="topic/stentry"]
+{
+  display: table-cell;
+  border-bottom: blue 1pt solid;
+  border-right: blue 1pt solid;
+  border-left: blue 1pt solid;
+  padding: 4pt;
+}
+
+
 /*
  * Default styling
  */
@@ -15,6 +192,11 @@ body {
 .attribute {
   display: none;
 }
+
+*[class~="topic/ph"] {
+  display: inline;
+}
+
 
 *[class~="topic/indexterm"] {
   display: none;
@@ -113,6 +295,24 @@ span[data-attname="conkeyref"]
   display: inline;
 }
 
+*[class~="topic/dd"]  *[class~="topic/p"] {
+  display: block;
+  margin-top: 6pt;
+}
+
+
+/* ========
+   Preformatted
+   ======== */
+   
+*[class~="topic/pre"] {
+  display: block;
+  white-space: pre;
+  margin-top: 6pt;
+  margin-top: 6pt;
+}   
+
+
 /*
  * Titles
  */
@@ -167,7 +367,6 @@ span[data-attname="conkeyref"]
 *[class~="topic/p"], *[class~="topic/shortdesc"] {
   display: block;
   margin-top: 6pt;
-  margin-left: 12pt;
 }
 
 *[class~="topic/author"]:before {
@@ -183,9 +382,12 @@ span[data-attname="conkeyref"]
 *[class~="topic/note"] {
   display: block;
   margin-top: 6pt;
-  text-indent: 12pt;
-  border: solid 1pt blue
   
+  border-top: 2pt solid black;
+  border-bottom: 2pt solid black;
+  padding: 4pt;
+  margin-right: 24pt;
+  margin-left: 24pt;
 }
 
 /* ====
@@ -207,143 +409,4 @@ span[data-attname="conkeyref"]
 *[class~="d4p-ruby-d/rp"] {
   display: none !important;
 }
-
-   
-/* ===================
-   Highlight domain
-   =================== */
-
-*[class~="hi-d/i"] {
-  font-style: italic;
-}
-   
-*[class~="hi-d/b"] {
-  font-weight: bold;
-}
-   
-*[class~="hi-d/u"] {
-  text-decoration: underline;
-}
-   
-*[class~="hi-d/tt"] {
-  font-family: courier, monospace;
-}
-
-/* ===================
-   software domain
-   =================== */
-
-*[class~="sw-d/filepath"] {
-  display: inline;
-  font-family: courier, monospace;
-}
-
-*[class~="sw-d/varname"] {
-  display: inline;
-  font-style: italic;
-}
-
-
-*[class~="sw-d/cmdname"] {
-  display: inline;
-  font-family: courier, fixed, monospace;
-}
-
-*[class~="sw-d/userinput"] {
-  display: inline;
-  font-family: courier, fixed, monospace;
-  color: green;
-}
-
-/* ===================
-   programming domain
-   =================== */
-
-*[class~="pr-d/synph"] {
-  display: block;
-  margin-top: 12pt; 
-  text-indent: 12pt;
-  font-family: courier, fixed, monospace;
-}
-
-*[class~="pr-d/kwd"] {
-  display: inline;  
-  font-weight: bold;
-}
-
-*[class~="pr-d/kwd"] {
-  display: inline;  
-  font-weight: bold;
-}
-
-*[class~="pr-d/var"] {
-  display: inline;  
-  font-style: italic;
-}
-
-/* ===================
-   user interface domain
-   =================== */
-   
-*[class~="ui-d/uicontrol"] {
-  display: inline;
-  font-weight: bold;
-}
-
-
-/* ========
-   Lists
-   ======== */
-   
-*[class~="topic/ol"] {
-  list-style: decimal outside none;
-}
-
-*[class~="topic/li"] > *[class~="topic/p"]:first-child {
-  display: inline;
-  text-indent: 0pt;
-}
-
-*[class~="topic/ol"] > *[class~="topic/li"]{
-  display: list-item;
-  margin-top: 12pt;
-  text-indent: 0pt;
-  list-style-position: outside;
-  list-style-type: decimal;
-  color: blue;
-}
-
-*[class~="topic/ul"] > *[class~="topic/li"]{
-  display: list-item;
-  text-indent: 0pt;
-  list-style-position: outside;
-  color: green;
-}
-
-*[class~="task/stepsection"] {
-  display: block;
-  color: black !important;
-}
-
-/* ========
-   Tables
-   ======== */
-
-*[class~="topic/table"] {
-  display: table;
-}
-
-*[class~="topic/tbody"],
-*[class~="topic/thead"] {
-  display: table-row-group;
-}
-
-*[class~="topic/row"] {
-  display: table-row;
-}
-
-*[class~="topic/entry"] {
-  display: table-cell;
-}
-
 
