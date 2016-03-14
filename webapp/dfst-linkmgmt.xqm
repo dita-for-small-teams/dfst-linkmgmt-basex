@@ -233,7 +233,7 @@ declare
         <td>{linkmgr:makeLinkToDocSource(document-uri(root($topic)))}</td>
         <td>[{lmutil:linkToTarget('Where&#xa0;Used?', concat('/linkmgr/whereUsedView/', $docURI), 'whereused')}] 
             [{lmutil:linkToTarget('Dependencies', concat('/linkmgr/dependencyView/', $docURI), 'dependencies')}] 
-        [{lmutil:linkToTarget('Preview', concat('/linkmgr/docview/', $docURI, '/preview'), 'preview')}] 
+            [{lmutil:linkToTarget('Preview', concat('/linkmgr/docview/', $docURI, '/preview'), 'preview')}] 
             </td>
       </tr>
  };
@@ -308,10 +308,15 @@ declare
                                        'logID' : $logID
                                      }))
       } catch * {
+      (: FIXME: Format the parts of the error message in a useful way :)
           db:output(web:redirect("/error",
                                  map { 'contentDbName' : $contentDbName,
                                        'metadataDbName' : $metadataDbName,
-                                       'error' : $err:description,
+                                       'description' : $err:description, 
+                                       'module' : $err:module, 
+                                       'line-number' : $err:line-number, 
+                                       'column-number' : $err:column-number, 
+                                       'additional' : $err:additional,
                                        'logID' : $logID
                                        
                                      }))
@@ -356,7 +361,11 @@ declare
           db:output(web:redirect("/error",
                                  map { 'contentDbName' : $contentDbName,
                                        'metadataDbName' : $metadataDbName,
-                                       'error' : $err:description,
+                                       'description' : $err:description, 
+                                       'module' : $err:module, 
+                                       'line-number' : $err:line-number, 
+                                       'column-number' : $err:column-number, 
+                                       'additional' : $err:additional,
                                        'logID' : $logID
                                        
                                      }))
@@ -401,7 +410,11 @@ declare
           db:output(web:redirect("/error",
                                  map { 'contentDbName' : $contentDbName,
                                        'metadataDbName' : $metadataDbName,
-                                       'error' : $err:description,
+                                       'description' : $err:description, 
+                                       'module' : $err:module, 
+                                       'line-number' : $err:line-number, 
+                                       'column-number' : $err:column-number, 
+                                       'additional' : $err:additional,
                                        'logID' : $logID
                                        
                                      }))
@@ -417,7 +430,11 @@ declare
   %rest:path("/error")
   %rest:query-param("contentDbName",    "{$contentDbName}")
   %rest:query-param("metadataDbName", "{$metadataDbName}")
-  %rest:query-param("error", "{$error}")
+  %rest:query-param("description", "{$description}") 
+  %rest:query-param("module", "{$module}") 
+  %rest:query-param("line-number", "{$line-number}") 
+  %rest:query-param("column-number", "{$column-number}") 
+  %rest:query-param("additional", "{$additional}")
   %rest:GET
   %output:method("xhtml")
   %output:omit-xml-declaration("no")
@@ -425,7 +442,11 @@ declare
   %output:doctype-system("http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd")
   function page:reportError($contentDbName as xs:string?,
                             $metadataDbName as xs:string?,
-                            $error as xs:string?
+                            $description as xs:string?,
+                            $module as xs:string?,
+                            $line-number as xs:string?,
+                            $column-number as xs:string?,
+                            $additional as xs:string?
                            ) {
   <html>
    <head>
@@ -437,7 +458,11 @@ declare
       <p>Error</p>
       <p>content database: {$contentDbName}</p>
       <p>Metadata database: {$metadataDbName}</p>
-      <p>Error message: {$error}</p>
+      <p><span class="module">{$module}</span> [<span class="line-number">{$line-number}</span>:<span class="column-number">{$column-number}</span>]: {$description}</p>
+      <p>Trace:</p>
+      <code>{
+      $additional
+      }</code>
     </div>
    </body>
   </html>
