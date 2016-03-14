@@ -677,7 +677,7 @@ declare function lmm:resolveMapHandleTopicref(
 declare function lmm:resolveMapHandleMapRef(
                         $elem as element()) as element()* {
   let $resolutionMap as map(*) := df:resolveTopicRef($elem)
-  let $submap := $resolutionMap('target')
+  let $submap as element()? := $resolutionMap('target')
   (: FIXME: add resolution messages to log once we get logging infrastructure in place :)
   return 
     <dfst:submap 
@@ -686,7 +686,10 @@ declare function lmm:resolveMapHandleMapRef(
       origMapClass="{string($submap/@class)}"
       class="+ map/topicref map-d/topicgroup dfst-d/submap "
     >      
-      {lmm:constructMergedKeyscopeAtt($elem, $submap)}
+      {
+      (: This call is failing with message "cannot promote item()* to element()*. :)
+      (: lmm:constructMergedKeyscopeAtt($elem, $submap) :)
+      }
      <topicmeta class="- map/topicmeta ">
        <navtitle class="- map/navtitle ">{($submap/*[df:class(., 'topic/title')], string($submap/@title))[1]}</navtitle>
      </topicmeta>
