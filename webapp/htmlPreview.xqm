@@ -12,7 +12,7 @@
 module namespace preview='http://basex.org/modules/htmlpreview';
 
 import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-utils";
-import module namespace linkutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
+import module namespace lmutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
 import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-utils";
 
 declare function preview:elementToHTML($element as element()) as node()* {
@@ -90,12 +90,14 @@ declare function preview:nodeToHTML($node as node()) as node()* {
 };
 
 declare function preview:htmlFromElement($elem as element()) as node()* {
-  
-  <div class="{$elem/@class}">
-    {for $att in $elem/@* except ($elem/@class)
+
+  let $effectiveElem as element() := lmutil:resolveContentReference($elem)
+  return 
+  <div class="{$effectiveElem/@class}">
+    {for $att in $effectiveElem/@* except ($effectiveElem/@class)
          return preview:attributeToHTML($att)
     }
-    {for $node in $elem/node()
+    {for $node in $effectiveElem/node()
          return preview:nodeToHTML($node)
     }
   </div>

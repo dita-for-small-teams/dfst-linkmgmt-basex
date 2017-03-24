@@ -38,7 +38,7 @@ declare
 {
   <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-      <title>DITA for Small Teams Link Manager</title>
+      <title>Dev DITA for Small Teams Link Manager</title>
       <link rel="stylesheet" type="text/css" href="static/style.css"/>
     </head>
     <body>
@@ -47,7 +47,7 @@ declare
       <p><img src="static/dita_logo.svg" width="150"/></p>
       </div>
       <div class="title-block">
-        <h2>DITA for Small Teams Link Manager</h2>
+        <h2>Dev 0.9.3 DITA for Small Teams Link Manager</h2>
       </div>
       <div class="action-block">
         <div>
@@ -214,6 +214,7 @@ declare
         [{lmutil:linkToTarget('Key&#xa0;Spaces', concat('/linkmgr/keyspaceView/', document-uri($map)), 'keyspaces')}] 
         [{lmutil:linkToTarget('Preview', concat('/linkmgr/docview/', document-uri($map), '/preview'), 'preview')}]
         [{lmutil:linkToTarget('Where&#xa0;Used?', concat('/linkmgr/whereUsedView/', $docURI), 'whereused')}]
+        [{lmutil:linkToTarget('Edit', lmutil:getOxygenWebAuthorUrl($repo, $branch, $docURI), 'edit')}]
         </td>
       </tr>
  };
@@ -234,6 +235,7 @@ declare
         <td>[{lmutil:linkToTarget('Where&#xa0;Used?', concat('/linkmgr/whereUsedView/', $docURI), 'whereused')}] 
             [{lmutil:linkToTarget('Dependencies', concat('/linkmgr/dependencyView/', $docURI), 'dependencies')}] 
             [{lmutil:linkToTarget('Preview', concat('/linkmgr/docview/', $docURI, '/preview'), 'preview')}] 
+            [{lmutil:linkToTarget('Edit', lmutil:getOxygenWebAuthorUrl($repo, $branch, $docURI), 'edit')}]
             </td>
       </tr>
  };

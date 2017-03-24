@@ -285,10 +285,12 @@ declare %updating function lmm:storeKeySpace(
             involved refactor.
    :)
   let $uriPath := substring-after($keySpaceURI, $metadataDbName)
-  return (db:replace($metadataDbName, $uriPath, $keySpace) (: ,
-          FIXME: Write to log doc.
-          db:output((<info>Stored key space "{$keySpaceURI}"</info>)):)
-          )
+  return if ($uriPath != '')
+            then (db:replace($metadataDbName, $uriPath, $keySpace) (: ,
+                 FIXME: Write to log doc.
+                 db:output((<info>Stored key space "{$keySpaceURI}"</info>)):)
+                 )
+            else db:output((<error>No uriPath from keySpaceURI "{$keySpaceURI}".</error>))
 };
 
 (:~

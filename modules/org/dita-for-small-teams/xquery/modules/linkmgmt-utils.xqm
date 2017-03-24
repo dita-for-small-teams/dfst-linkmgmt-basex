@@ -81,20 +81,20 @@ declare function lmutil:findAllDirectLinks($dbName) as map(*)* {
                 collection($dbName)//*[@conref]
    (: Construct a link item map for each link element :)
    for $link in $links
-       return lmutil:constructLinkItemMap($link, false()) 
+       return lmutil:constructLinkItemMap($link) 
 };
 
 (:~
  : Constructs a link item map for a direct link.
  :
  : @param link The link element
+ : @param isIndirect Set to true if the link is indirect (key reference)
  : @return Link item map
  :)
 declare function lmutil:constructLinkItemMap(
-                        $link as element(),
-                        $isIndirect as xs:boolean) as map(*) {
+                        $link as element()) as map(*) {
   let $contentDocURI := document-uri(root($link))
-  let $result := lmutil:constructLinkItemMap($link, $contentDocURI, (), $isIndirect)
+  let $result := lmutil:constructLinkItemMap($link, $contentDocURI, (), false())
   return $result
 };
 
@@ -834,5 +834,55 @@ declare function lmutil:linkToTarget(
   lmutil:linkToTarget($text, web:create-url($URI, $params), $target)
 };
 
+(:~
+ : Resolve any content reference made by element. If element is not a content
+ : reference or if content reference cannot be resolved, original element is returned.
+ : 
+ : @param elem Element to resolve references on
+ : @param topicref Topic reference that establishes the referencing context.
+ :)
+declare function lmutil:resolveContentReference($elem as element()) as element()? {
+  $elem
+};
+
+(:~
+ : Create an Oxygen Web Author link to the specified document.
+ :
+ : @param repo Git repository name
+ : @param branch Git branch
+ : @param docURI URI of the document that contains the element.
+ : @return URI that links to the Oxygen Web Author
+ :)
+declare function lmutil:getOxygenWebAuthorUrl(
+   $repo as xs:string,
+   $branch as xs:string,
+   $docURI as xs:string
+) as xs:string {
+(:
+Correct URI:
+
+http://localhost:8080/oxygenxml-web-author/app/oxygen.html?url=github%3A%2F%2FgetFileList%2Fhttp%253A%252F%252Fgitlab-dfst%252Fekimber%252Fthunderbird.git%2Fmaster%2FIntegrator_admin.ditamap
+
+webAuthorBase: http://localhost:8080/oxygenxml-web-author/app/oxygen.html?url=github%3A%2F%2FgetFileList%2F
+gitRepobase:   http%253A%252F%252Fgitlab-dfst%252F
+docUriEscaped: ekimber%252Fthunderbird.git%2Fmaster%2FIntegrator_admin.ditamap
+docURI:        /repo/thunderbird/dfst%5Ethunderbird%5Edevelop/en/key-use-description.dita
+
+%5E = "^"
+
+http://localhost:8080/oxygenxml-web-author/app/oxygen.html?url=github%3A%2F%2FgetFileList%2Fhttp%253A%252F%252Fgitlab-dfst%252Fekimber%252Fthunderbird.git%2F
+
+:)
+  let $webAuthorBase := 'http://localhost:8080/oxygenxml-web-author/app/oxygen.html?url=github%3A%2F%2FgetFileList%2F'
+  let $gitRepoBase := 'http%253A%252F%252Fgitlab-dfst%252F'
+  let $userName := 'ekimber' (: FIXME: We'll have to implement authentication or user name registration at least :)
+  let $docPathTokens := tokenize($docURI, '/')
+  let $selectedTokens := $docPathTokens[position() gt 2]
+  let $docAuthorUri := concat($userName, '%252F', 
+                              $repo, '.git', '%2F',                               
+                              string-join(($branch, $selectedTokens), '%2F'))
+  
+  return concat($webAuthorBase, $gitRepoBase, $docAuthorUri)
+};
 
 (: End of Module :)
