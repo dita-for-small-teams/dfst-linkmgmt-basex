@@ -5,7 +5,7 @@
  :)
 module namespace html = 'dba/html';
 
-import module namespace cons = 'dba/cons' at '../modules/cons.xqm';
+import module namespace cons = 'dba/cons' at 'cons.xqm';
 
 (: Number formats. :)
 declare variable $html:NUMBER := ('decimal', 'number', 'bytes');
