@@ -12,6 +12,8 @@
    
 
    ===================================================== :)
+   
+xquery version "3.1";
 
 module namespace lmutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
 
@@ -873,9 +875,13 @@ docURI:        /repo/thunderbird/dfst%5Ethunderbird%5Edevelop/en/key-use-descrip
 http://localhost:8080/oxygenxml-web-author/app/oxygen.html?url=github%3A%2F%2FgetFileList%2Fhttp%253A%252F%252Fgitlab-dfst%252Fekimber%252Fthunderbird.git%2F
 
 :)
-  let $webAuthorBase := 'http://localhost:8080/oxygenxml-web-author/app/oxygen.html?url=github%3A%2F%2FgetFileList%2F'
+  let $webAuthorPort := (fn:environment-variable('OXWEBAUTHOR_PORT'), '8080')[1]
+  let $webAuthorBase := concat('http://localhost:', $webAuthorPort, '/oxygenxml-web-author/app/oxygen.html?url=github%3A%2F%2FgetFileList%2F')
   let $gitRepoBase := 'http%253A%252F%252Fgitlab-dfst%252F'
-  let $userName := 'ekimber' (: FIXME: We'll have to implement authentication or user name registration at least :)
+  (: FIXME: Right now just using the current user on the system running the Docker container.
+     Need to implement proper user login. :)
+  let $userName := (fn:environment-variable('USER'), fn:environment-variable('USERNAME'), 'root')[1]
+  
   let $docPathTokens := tokenize($docURI, '/')
   let $selectedTokens := $docPathTokens[position() gt 2]
   let $docAuthorUri := concat($userName, '%252F', 
