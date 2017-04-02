@@ -23,7 +23,7 @@ module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-ut
  : branches in that repository.
  : 
  : This function depends on the DFST BaseX database naming convention
- : of "dfst^{repo}^{branch}
+ : of "d4st^{repo}^{branch}
  :
  :
  :)
@@ -33,7 +33,7 @@ module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-ut
   let $repos := 
       for $db in db:list-details() order by string($db)  
           let $tokens := tokenize(string($db), '\^')
-          return if ($tokens[1] = "dfst")
+          return if ($tokens[1] = "d4st")
              then <repo name="{$tokens[2]}" branch="{$tokens[3]}"/>
              else ()
              
@@ -48,7 +48,7 @@ module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-ut
  (: Constructs the BaseX database name for git repository and branch pair :)
  declare function bxutil:getDbNameForRepoAndBranch($repo, $branch) {
    let $sep := '^'
-   return concat('dfst', $sep, $repo, $sep, $branch) 
+   return concat('d4st', $sep, $repo, $sep, $branch) 
  };
  
  (: Constructs the BaseX metadata database name for git repository and branch pair 
@@ -58,7 +58,7 @@ module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-ut
   :)
  declare function bxutil:getMetadataDbNameForRepoAndBranch($repo, $branch) {
    let $sep := '^'
-   return concat('_dfst', $sep, 'metadata', $sep, $repo, $sep, $branch) 
+   return concat('_d4st', $sep, 'metadata', $sep, $repo, $sep, $branch) 
  };
  
  (: Gets the metadata database name for given document.
@@ -74,7 +74,7 @@ module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-ut
  (: Gets the git repository for a document  :)
  declare function bxutil:getGitRepoForDoc($doc as document-node()) {
     let $uri := document-uri($doc)
-    return if (starts-with($uri, 'dfst^'))
+    return if (starts-with($uri, 'd4st^'))
        then 
          let $db := tokenize($uri, '/')[1]         
          let $gitMetadata := bxutil:getGitMetadata($db)
@@ -85,7 +85,7 @@ module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-ut
  (: Gets the git repository for a document  :)
  declare function bxutil:getGitBranchForDoc($doc as document-node()) {
     let $uri := document-uri($doc)
-    return if (starts-with($uri, 'dfst^'))
+    return if (starts-with($uri, 'd4st^'))
        then 
          let $db := tokenize($uri, '/')[1]         
          let $gitMetadata := bxutil:getGitMetadata($db)
@@ -96,7 +96,7 @@ module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-ut
  (: Gets the git repository for a document  :)
  declare function bxutil:getGitCommitForDoc($doc as document-node()) {
     let $uri := document-uri($doc)
-    return if (starts-with($uri, 'dfst^'))
+    return if (starts-with($uri, 'd4st^'))
        then 
          let $db := tokenize($uri, '/')[1]         
          let $gitMetadata := bxutil:getGitMetadata($db)
@@ -105,8 +105,8 @@ module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-ut
  };
  
  (: Gets the git metadata document for the database :)
- declare function bxutil:getGitMetadata($db as xs:string) as element(dfst_metadata)? {
-   let $uri as xs:string := concat($db, '/.dfst/metadata.xml')
+ declare function bxutil:getGitMetadata($db as xs:string) as element(d4st_metadata)? {
+   let $uri as xs:string := concat($db, '/.d4st/metadata.xml')
    return 
    try {
      doc($uri)/*

@@ -18,7 +18,7 @@ import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-
 import module namespace linkmgr='http://basex.org/modules/linkmgr' at "linkmgrViews.xqm";
 import module namespace lmm="http://dita-for-small-teams.org/xquery/modules/linkmgr-model";
 import module namespace lmc="http://dita-for-small-teams.org/xquery/modules/linkmgr-controller";
-import module namespace dfstcnst="http://dita-for-small-teams.org/xquery/modules/dfst-constants";
+import module namespace d4stcnst="http://dita-for-small-teams.org/xquery/modules/d4st-constants";
 
 
 
@@ -43,11 +43,11 @@ declare
     </head>
     <body>
       <div class="right">
-      <p><a href="http://www.dita-for-small-teams.org" target="dfst-home">www.dita-for-small-teams.org</a></p>
+      <p><a href="http://www.d4st.org" target="d4st-home">www.d4st.org</a></p>
       <p><img src="static/dita_logo.svg" width="150"/></p>
       </div>
       <div class="title-block">
-        <h2>[Rel 0.9.6] dev DITA for Small Teams Link Manager</h2>
+        <h2>[Rel 0.9.7] dev DITA for Small Teams Link Manager</h2>
       </div>
       <div class="action-block">
         <div>
@@ -81,12 +81,12 @@ declare
 {
   <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-      <title>DFST {$repo}/{$branch}</title>
+      <title>D4ST {$repo}/{$branch}</title>
       <link rel="stylesheet" type="text/css" href="/static/style.css"/>
     </head>
     <body>
       <div class="right">
-      <p><a href="http://www.dita-for-small-teams.org" target="dfst-home">www.dita-for-small-teams.org</a></p>
+      <p><a href="http://www.dita-for-small-teams.org" target="d4st-home">www.d4st.org</a></p>
       <p><img src="/static/dita_logo.svg" width="150"/></p>
       </div>
       <div class="title-block">

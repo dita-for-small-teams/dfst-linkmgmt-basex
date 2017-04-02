@@ -26,9 +26,9 @@ import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-
 import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-utils";
 import module namespace lmutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
 import module namespace lmm="http://dita-for-small-teams.org/xquery/modules/linkmgr-model";
-import module namespace dfstcnst="http://dita-for-small-teams.org/xquery/modules/dfst-constants";
+import module namespace d4stcnst="http://dita-for-small-teams.org/xquery/modules/d4st-constants";
 
-declare namespace dfst="http://dita-for-small-teams.org";
+declare namespace d4st="http://dita-for-small-teams.org";
 
 (:~
  : Do stage one of link management index update: Find all direct
@@ -48,9 +48,9 @@ declare %updating function lmc:updateLinkManagementIndexesStage1(
     let $directLinks := lmutil:findAllDirectLinks($contentDbName)
 
     return
-      (db:delete($metadataDbName, $dfstcnst:where-used-dir),
-       db:delete($metadataDbName, $dfstcnst:resolved-map-dir),
-       db:delete($metadataDbName, $dfstcnst:keyspaces-dir),
+      (db:delete($metadataDbName, $d4stcnst:where-used-dir),
+       db:delete($metadataDbName, $d4stcnst:resolved-map-dir),
+       db:delete($metadataDbName, $d4stcnst:keyspaces-dir),
        (: FIXME: Initialize the update log document :)
        (: Now create new resource use records for direct links :)
        

@@ -21,12 +21,12 @@
 
 module namespace lmm="http://dita-for-small-teams.org/xquery/modules/linkmgr-model";
 
-declare namespace dfst="http://dita-for-small-teams.org";
+declare namespace d4st="http://dita-for-small-teams.org";
 
 import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-utils";
 import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-utils";
 import module namespace lmutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
-import module namespace dfstcnst="http://dita-for-small-teams.org/xquery/modules/dfst-constants";
+import module namespace d4stcnst="http://dita-for-small-teams.org/xquery/modules/d4st-constants";
 import module namespace relpath="http://dita-for-small-teams.org/xquery/modules/relpath-utils";
 
 declare %updating function lmm:createDirectLinkResourceRecords(
@@ -104,7 +104,7 @@ declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget(
     let $reskey := lmutil:constructResourceKeyForElement($link)
     let $useRecord := lmm:constructUseRecord($metadataDbName, $reskey, $linkItem, $target)
 
-    let $containingDir := concat($dfstcnst:where-used-dir, '/', 
+    let $containingDir := concat($d4stcnst:where-used-dir, '/', 
                                 lmutil:constructResourceKeyForElement($target), 
                                 '/')
     let $recordFilename := concat('use-record_', $reskey, '.xml')
@@ -156,7 +156,7 @@ declare function lmm:constructUseRecord(
                      
    (: df:getTitleForLinkElementContainer($link) :)                     
    let $useRecord := 
-     <dfst:useRecord resourceKey="{$reskey}"
+     <d4st:useRecord resourceKey="{$reskey}"
                      targetDoc="{document-uri($targetDoc)}"
                      usingDoc="{document-uri(root($link))}"
                      linkType="{df:getBaseLinkType($link)}"
@@ -169,7 +169,7 @@ declare function lmm:constructUseRecord(
                   then string((root($link)/*/*[df:class(., 'topic/title')] |
                         root($link)/*/@title)[1])
                   else string($link/ancestor::*[df:class(., 'topic/topic')][1]/*[df:class(., 'topic/title')])}</title>
-     </dfst:useRecord>
+     </d4st:useRecord>
      
    return $useRecord
 };
@@ -668,11 +668,11 @@ declare function lmm:resolveMapHandleTopicref(
 (:~
  : Handle local-scope map references.
  :
- : Constructs a <dfst:submap> element that captures the details about the original
+ : Constructs a <d4st:submap> element that captures the details about the original
  : submap and then applies the identity tranform to the topicref and reltable
  : children of the submap.
  :
- : The dfst:submap element sets the xml:base attribute to the URI of the submap document
+ : The d4st:submap element sets the xml:base attribute to the URI of the submap document
  : so that URI references copied from the included map will be correct.
  :
  :)
@@ -682,11 +682,11 @@ declare function lmm:resolveMapHandleMapRef(
   let $submap as element()? := $resolutionMap('target')
   (: FIXME: add resolution messages to log once we get logging infrastructure in place :)
   return 
-    <dfst:submap 
+    <d4st:submap 
       xml:base="{document-uri(root($submap))}"
       origMapURI="{document-uri(root($submap))}"
       origMapClass="{string($submap/@class)}"
-      class="+ map/topicref map-d/topicgroup dfst-d/submap "
+      class="+ map/topicref map-d/topicgroup d4st-d/submap "
     >      
       {
       (: This call is failing with message "cannot promote item()* to element()*. :)
@@ -698,7 +698,7 @@ declare function lmm:resolveMapHandleMapRef(
       {for $e in $submap/*[df:class(., 'map/topicref') or df:class(., 'map/reltable')]
           return lmm:resolveMapHandleElement($e)
       }
-    </dfst:submap>
+    </d4st:submap>
 };
 
 (:~

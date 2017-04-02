@@ -20,10 +20,10 @@ import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-
 import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-utils";
 import module namespace lmutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
 import module namespace lmm="http://dita-for-small-teams.org/xquery/modules/linkmgr-model";
-import module namespace dfstcnst="http://dita-for-small-teams.org/xquery/modules/dfst-constants";
+import module namespace d4stcnst="http://dita-for-small-teams.org/xquery/modules/d4st-constants";
 import module namespace lmc="http://dita-for-small-teams.org/xquery/modules/linkmgr-controller";
 
-declare namespace dfst="http://dita-for-small-teams.org";
+declare namespace d4st="http://dita-for-small-teams.org";
 
 declare function lmv:formatKeySpacesForMap($doc) as node()* {
       let $thead := 

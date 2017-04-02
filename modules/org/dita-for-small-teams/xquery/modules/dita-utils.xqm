@@ -806,13 +806,13 @@ declare function df:addKeyDefinitionsToKeySpace(
  : Constructs a single key-name-to-topicref-and-resource binding map.
  :
  : map {
- :        "topicref": db:open-pre("dfst^dfst-sample-project^develop",33),
+ :        "topicref": db:open-pre("d4st^d4st-sample-project^develop",33),
  :        "keyName": "topic-01",
  :        "scope": "local",
  :        "format": "dita",
  :        "resourceURI": "topics/topic-01.xml",
  :        "resolutionStatus": "resolved",
- :        "targetResource": db:open-pre("dfst^dfst-sample-project^develop",134)
+ :        "targetResource": db:open-pre("d4st^d4st-sample-project^develop",134)
  :     }
  :
  :)

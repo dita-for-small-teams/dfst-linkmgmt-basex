@@ -35,7 +35,7 @@ declare
     </head>
     <body>
       <div class="right">
-      <p><a href="http://www.dita-for-small-teams.org" target="dfst-home">www.dita-for-small-teams.org</a></p>
+      <p><a href="http://www.dita-for-small-teams.org" target="d4st-home">www.dita-for-small-teams.org</a></p>
       <p><img src="/static/dita_logo.svg" width="150"/></p>
       </div>
       <div class="title-block">

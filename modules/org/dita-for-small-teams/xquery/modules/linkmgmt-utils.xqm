@@ -17,11 +17,11 @@ xquery version "3.1";
 
 module namespace lmutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
 
-declare namespace dfst="http://dita-for-small-teams.org";
+declare namespace d4st="http://dita-for-small-teams.org";
 
 import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-utils";
 import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-utils";
-import module namespace dfstcnst="http://dita-for-small-teams.org/xquery/modules/dfst-constants";
+import module namespace d4stcnst="http://dita-for-small-teams.org/xquery/modules/d4st-constants";
 import module namespace relpath="http://dita-for-small-teams.org/xquery/modules/relpath-utils";
 
 
@@ -194,9 +194,9 @@ declare function lmutil:getUses($elem as element(), $useParams) as element()* {
         
       :)
     let $dbName := bxutil:getMetadataDbNameForDoc(root($elem))
-    let $collection := $dbName || $dfstcnst:where-used-dir || '/' || $resKey
+    let $collection := $dbName || $d4stcnst:where-used-dir || '/' || $resKey
     let $records := collection($collection)
-                       /dfst:useRecord[lmutil:useRecordMatcher(., $linktypes, $formats, $scopes)]
+                       /d4st:useRecord[lmutil:useRecordMatcher(., $linktypes, $formats, $scopes)]
     return $records
 
 };
@@ -772,7 +772,7 @@ declare function lmutil:getResolvedMapURIForMap(
   let $metadataDbName := bxutil:getMetadataDbNameForDoc(root($map))
   let $mapDocHash := replace(string(hash:md5(document-uri(root($map)))), '/', '~')
   return $metadataDbName ||  
-         $dfstcnst:resolved-map-dir ||
+         $d4stcnst:resolved-map-dir ||
          "/" || $mapDocHash || ".ditamap"
 };
 
@@ -863,21 +863,21 @@ declare function lmutil:getOxygenWebAuthorUrl(
 (:
 Correct URI:
 
-http://localhost:8080/oxygenxml-web-author/app/oxygen.html?url=github%3A%2F%2FgetFileList%2Fhttp%253A%252F%252Fgitlab-dfst%252Fekimber%252Fthunderbird.git%2Fmaster%2FIntegrator_admin.ditamap
+http://localhost:8080/oxygenxml-web-author/app/oxygen.html?url=github%3A%2F%2FgetFileList%2Fhttp%253A%252F%252Fgitlab-d4st%252Fekimber%252Fthunderbird.git%2Fmaster%2FIntegrator_admin.ditamap
 
 webAuthorBase: http://localhost:8080/oxygenxml-web-author/app/oxygen.html?url=github%3A%2F%2FgetFileList%2F
-gitRepobase:   http%253A%252F%252Fgitlab-dfst%252F
+gitRepobase:   http%253A%252F%252Fgitlab-d4st%252F
 docUriEscaped: ekimber%252Fthunderbird.git%2Fmaster%2FIntegrator_admin.ditamap
-docURI:        /repo/thunderbird/dfst%5Ethunderbird%5Edevelop/en/key-use-description.dita
+docURI:        /repo/thunderbird/d4st%5Ethunderbird%5Edevelop/en/key-use-description.dita
 
 %5E = "^"
 
-http://localhost:8080/oxygenxml-web-author/app/oxygen.html?url=github%3A%2F%2FgetFileList%2Fhttp%253A%252F%252Fgitlab-dfst%252Fekimber%252Fthunderbird.git%2F
+http://localhost:8080/oxygenxml-web-author/app/oxygen.html?url=github%3A%2F%2FgetFileList%2Fhttp%253A%252F%252Fgitlab-d4st%252Fekimber%252Fthunderbird.git%2F
 
 :)
   let $webAuthorPort := (fn:environment-variable('OXYWEBAUTHOR_PORT'), '8080')[1]
   let $webAuthorBase := concat('http://localhost:', $webAuthorPort, '/oxygenxml-web-author/app/oxygen.html?url=github%3A%2F%2FgetFileList%2F')
-  let $gitRepoBase := 'http%253A%252F%252Fgitlab-dfst%252F'
+  let $gitRepoBase := 'http%253A%252F%252Fgitlab-d4st%252F'
   (: FIXME: Right now just using the current user on the system running the Docker container.
      Need to implement proper user login. :)
   let $userName := (fn:environment-variable('USER'), fn:environment-variable('USERNAME'), 'root')[1]
