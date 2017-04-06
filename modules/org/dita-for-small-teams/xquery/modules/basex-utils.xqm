@@ -106,7 +106,7 @@ module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-ut
  
  (: Gets the git metadata document for the database :)
  declare function bxutil:getGitMetadata($db as xs:string) as element(d4st_metadata)? {
-   let $uri as xs:string := concat($db, '/.d4st/metadata.xml')
+   let $uri as xs:string := concat($db, '/_d4st/metadata.xml')
    return 
    try {
      doc($uri)/*
