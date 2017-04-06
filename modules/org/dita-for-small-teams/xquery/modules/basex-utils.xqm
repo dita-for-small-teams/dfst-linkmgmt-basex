@@ -74,9 +74,9 @@ module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-ut
  (: Gets the git repository for a document  :)
  declare function bxutil:getGitRepoForDoc($doc as document-node()) {
     let $uri := document-uri($doc)
-    return if (starts-with($uri, 'd4st^'))
+    return if (starts-with($uri, '/d4st^'))
        then 
-         let $db := tokenize($uri, '/')[1]         
+         let $db := tokenize($uri, '/')[2] (: URL is '/foo/bar' so db is 2nd token :)         
          let $gitMetadata := bxutil:getGitMetadata($db)
          return string($gitMetadata/gitstate/repo)
        else 'No associated git repository'
@@ -85,9 +85,9 @@ module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-ut
  (: Gets the git repository for a document  :)
  declare function bxutil:getGitBranchForDoc($doc as document-node()) {
     let $uri := document-uri($doc)
-    return if (starts-with($uri, 'd4st^'))
+    return if (starts-with($uri, '/d4st^'))
        then 
-         let $db := tokenize($uri, '/')[1]         
+         let $db := tokenize($uri, '/')[2]   (: URL is '/foo/bar' so db is 2nd token :)      
          let $gitMetadata := bxutil:getGitMetadata($db)
          return string($gitMetadata/gitstate/branch)
        else 'No associated git repository'
@@ -96,9 +96,9 @@ module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-ut
  (: Gets the git repository for a document  :)
  declare function bxutil:getGitCommitForDoc($doc as document-node()) {
     let $uri := document-uri($doc)
-    return if (starts-with($uri, 'd4st^'))
+    return if (starts-with($uri, '/d4st^'))
        then 
-         let $db := tokenize($uri, '/')[1]         
+         let $db := tokenize($uri, '/')[2] (: URL is '/foo/bar' so db is 2nd token :)         
          let $gitMetadata := bxutil:getGitMetadata($db)
          return string($gitMetadata/gitstate/commit)
        else 'No associated git repository'
@@ -122,7 +122,7 @@ module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-ut
  };
 
  declare function bxutil:getPathForDocURI($uri as xs:string) as xs:string? {
-   string-join(tokenize($uri, '/')[position() gt 1], '/')
+   string-join(tokenize($uri, '/')[position() gt 2], '/') (: URI is '/foo/bar' so db is 2nd token :)
  };
  
  (:~
