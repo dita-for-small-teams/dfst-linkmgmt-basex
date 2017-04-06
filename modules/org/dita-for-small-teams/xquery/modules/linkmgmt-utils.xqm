@@ -667,7 +667,7 @@ declare function lmutil:getRootMaps($dbName as xs:string) as element()* {
  :
  : Note that there are many ways that root mapness could be determined.
  : The logic used here is any map that has no direct map local-scope references
- : or any peer-scope references. This is based on the presumption that a root
+ : or that has any peer-scope references. This is based on the presumption that a root
  : map would not normally be useable as local-scope submap. DITA 1.3's new 
  : meaning for scope="peer" on topicrefs to maps explicitly means "the referenced
  : map is a root map". 
@@ -771,7 +771,7 @@ declare function lmutil:getResolvedMapURIForMap(
                         $map as element()) as xs:string {
   let $metadataDbName := bxutil:getMetadataDbNameForDoc(root($map))
   let $mapDocHash := replace(string(hash:md5(document-uri(root($map)))), '/', '~')
-  return $metadataDbName ||  
+  return "/" || $metadataDbName ||  
          $d4stcnst:resolved-map-dir ||
          "/" || $mapDocHash || ".ditamap"
 };

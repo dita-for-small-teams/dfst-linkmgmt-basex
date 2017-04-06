@@ -123,8 +123,8 @@ declare %updating function lmm:createOrUpdateResourceUseRecordForLinkTarget(
        )
     } catch * {
        (: FIXME: Write record to log doc :)
-       error('LMI-UpdateUseRecord001', 
-             concat('Error storing use record to "', $useRecordUri, '": ', $err:description))
+       (:error('LMI-UpdateUseRecord001', 
+             concat('Error storing use record to "', $useRecordUri, '": ', $err:description)):)
     }
 };
 

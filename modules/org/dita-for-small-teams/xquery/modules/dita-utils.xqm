@@ -324,11 +324,13 @@ declare function df:resolveTopicOrMapUri($topicref as element(), $targetUri as x
          then
            let $baseUri := base-uri($topicref)
            let $resolvedUri :=
-               if (not(starts-with($baseUri, '/')))
-                  then (: Handle BaseX way of managing document URLs :)
-                     let $parentUri := relpath:getParent($baseUri)
-                     return relpath:newFile($parentUri, $targetResourcePart)
-                  else resolve-uri($targetResourcePart, $baseUri)           
+                (: Handle BaseX way of managing document URLs 
+                   Because the baseUri includes the database name,
+                   resolve-uri() fails with an "invalid URI" failure.
+                   So we construct the full URI ourselves
+                :)
+               let $parentUri := relpath:getParent($baseUri)
+               return relpath:newFile($parentUri, $targetResourcePart)
            return 
              try {
                (: In BaseX, the collection() function will return a document

@@ -47,7 +47,7 @@ declare
       <p><img src="static/dita_logo.svg" width="150"/></p>
       </div>
       <div class="title-block">
-        <h2>[Rel 0.9.7] dev DITA for Small Teams Link Manager</h2>
+        <h2>[Rel 0.9.7a] dev DITA for Small Teams Link Manager</h2>
       </div>
       <div class="action-block">
         <div>
