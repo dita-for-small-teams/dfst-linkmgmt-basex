@@ -38,7 +38,7 @@ declare
 {
   <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-      <title>Dev DITA for Small Teams Link Manager</title>
+      <title>DITA for Small Teams Link Manager</title>
       <link rel="stylesheet" type="text/css" href="static/style.css"/>
     </head>
     <body>
@@ -47,7 +47,7 @@ declare
       <p><img src="static/dita_logo.svg" width="150"/></p>
       </div>
       <div class="title-block">
-        <h2>[Rel 0.9.7a] dev DITA for Small Teams Link Manager</h2>
+        <h2>[Rel 0.9.7] DITA for Small Teams Link Manager</h2>
       </div>
       <div class="action-block">
         <div>
