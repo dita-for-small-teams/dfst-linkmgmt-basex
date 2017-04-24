@@ -372,8 +372,9 @@ declare function df:getEffectiveTargetUri($rootMap, $refElem as element()) as xs
    let $resultBase := 
       if (string($refElem/@copy-to) != '' and not(df:inChunk($refElem))) 
          then (: Copy-to in effect, not in a chunk :)
-            let $copyTo as xs:string := $refElem/@copy-to        
-            let $fullUri as xs:string := string(resolve-uri($copyTo, base-uri($refElem)))
+            let $copyTo as xs:string := string($refElem/@copy-to)      
+            let $fullUri as xs:string := 
+                 relpath:newFile(relpath:getParent(base-uri($refElem)), $copyTo)
             return relpath:getRelativePath(relpath:getParent(base-uri($refElem)), $fullUri)
          else $baseUri
    return $resultBase
