@@ -532,7 +532,7 @@ declare function df:getMapTreeItems($map as element()) as element(treeItem)* {
  :)
  declare function df:inChunk($context) as xs:boolean {
    let $nearestChunkSpecifier as element()? := $context/ancestor::*[@chunk != ''][1]
-   let $chunkSpec as xs:string := $nearestChunkSpecifier/@chunk
+   let $chunkSpec as xs:string? := string($nearestChunkSpecifier/@chunk)
    let $result := 
        contains($chunkSpec, 'to-content') and
               (contains($chunkSpec, 'select-branch') or
