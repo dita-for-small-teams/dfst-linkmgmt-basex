@@ -11,6 +11,7 @@
  :)
 module namespace linkmgr='http://basex.org/modules/linkmgr';
 
+import module namespace db='http://basex.org/modules/db';
 import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-utils";
 import module namespace linkutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
 import module namespace lmc="http://dita-for-small-teams.org/xquery/modules/linkmgr-controller";
@@ -19,20 +20,19 @@ import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-
 import module namespace preview='http://basex.org/modules/htmlpreview' at "htmlPreview.xqm";
 
 declare
-  %rest:path("/linkmgr/update")
+  %updating
+  %rest:path("/update")
   %rest:POST
-  %rest:form-param("path", "{$path}" "(no path)")
-  %rest:form-param("dbName","{$dbName}", "(no dbName)")
-  function linkmgr:addFile($path as xs:string, $dbName as xs:string)
-  as element(response)
-{
-  let $new_doc := doc($path)
-  db:add($dbName, $new_doc, $path)
-  return
-    <response>
-      <path>$path</path>
-      <dbName>$dbName</dbName>
-    </response>
+  %rest:form-param("path", "{$path}", "(no path)")
+  %rest:form-param("dbname","{$dbname}", "(no dbname)")
+function linkmgr:addFile(
+  $path as xs:string, $dbname as xs:string
+) {
+  try {
+    db:add($dbname, doc($path), $path)
+  } catch * {
+    (: FIXME: Write record to log doc :)
+  }
 };
 
 
@@ -762,3 +762,4 @@ declare function linkmgr:useRecordToHtml($use as element()) {
     <td>[Action] [Action] [Action]</td>
   </tr>
 };
+(: test test :)
