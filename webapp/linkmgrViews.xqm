@@ -12,6 +12,7 @@
 module namespace linkmgr='http://basex.org/modules/linkmgr';
 
 import module namespace db='http://basex.org/modules/db';
+import module namespace jobs='http://basex.org/modules/jobs';
 import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-utils";
 import module namespace linkutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
 import module namespace lmc="http://dita-for-small-teams.org/xquery/modules/linkmgr-controller";
@@ -20,18 +21,18 @@ import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-
 import module namespace preview='http://basex.org/modules/htmlpreview' at "htmlPreview.xqm";
 
 declare
-  %updating
+(:  %updating - made redundant by jobs:eval? :)
   %rest:path("/update")
   %rest:POST
-  %rest:form-param("path", "{$path}", "(no path)")
+  %rest:form-param("gitURL", "{$gitURL}", "(no gitURL)")
   %rest:form-param("dbname","{$dbname}", "(no dbname)")
 function linkmgr:addFile(
-  $path as xs:string, $dbname as xs:string
+  $gitURL as xs:string, $dbname as xs:string
 ) {
   try {
-    db:add($dbname, doc($path), $path)
+    jobs:eval("db:add({$dbname}, {doc($gitURL)})")
   } catch * {
-    (: FIXME: Write record to log doc :)
+    (: FIXME: where should response go for asynchronous job? :)
   }
 };
 
