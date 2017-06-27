@@ -11,6 +11,7 @@
  :)
 module namespace linkmgr='http://basex.org/modules/linkmgr';
 
+import module namespace json='http://basex.org/modules/json';
 import module namespace db='http://basex.org/modules/db';
 import module namespace jobs='http://basex.org/modules/jobs';
 import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-utils";
@@ -20,15 +21,25 @@ import module namespace lmv="http://dita-for-small-teams.org/xquery/modules/link
 import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-utils";
 import module namespace preview='http://basex.org/modules/htmlpreview' at "htmlPreview.xqm";
 
+declare function linkmgr:getProjectID($private_token as xs:string, $project_name as xs:string) {
+  let $project_map = json:parse(doc("http://gitlab-d4st/projects"), $options as map(xs:string, xs:string))
+  where $project_map (: find the one that matches project name :)
+}
+
 declare
 (:  %updating - made redundant by jobs:eval? :)
   %rest:path("/update")
   %rest:POST
-  %rest:form-param("gitURL", "{$gitURL}", "(no gitURL)")
+  %rest:form-param("urlPath", "{$urlPath}", "(no urlPath)")
+  %rest:form-param("repoName", "{$repoName}", "(no repoName)")
+  %rest:form-param("branch", "{$branch}", "(no branch)")
   %rest:form-param("dbname","{$dbname}", "(no dbname)")
 function linkmgr:addFile(
-  $gitURL as xs:string, $dbname as xs:string
+  $path as xs:string, $repoName as xs:string, $branch as xs:string, $dbname as xs:string
 ) {
+  let $private_token = linkmgr:getPrivateToken() (: TODO placeholder! :)
+  let $projectID = linkmgr:getProjectID($private_token, $repoName)
+  let $gitURL = "http://gitlab-d4st/api/v4/projects/{$projectID}/repository/files/{$path}/raw?ref={$branch}&amp;private_token={$private_token}'"
   try {
     jobs:eval("db:add({$dbname}, {doc($gitURL)})")
   } catch * {
