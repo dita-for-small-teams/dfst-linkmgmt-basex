@@ -5,18 +5,48 @@
  :
  : Copyright (c) 2015 DITA for Small Teams (dita-for-small-teams.org)
  :
- : See the BaseX RESTXQ documentation for details on how the RESTXQ 
+ : See the BaseX RESTXQ documentation for details on how the RESTXQ
  : mechanism works.
  :
  :)
 module namespace linkmgr='http://basex.org/modules/linkmgr';
 
+import module namespace json='http://basex.org/modules/json';
+import module namespace db='http://basex.org/modules/db';
+import module namespace jobs='http://basex.org/modules/jobs';
 import module namespace bxutil="http://dita-for-small-teams.org/xquery/modules/basex-utils";
 import module namespace linkutil="http://dita-for-small-teams.org/xquery/modules/linkmgmt-utils";
 import module namespace lmc="http://dita-for-small-teams.org/xquery/modules/linkmgr-controller";
 import module namespace lmv="http://dita-for-small-teams.org/xquery/modules/linkmgr-view";
 import module namespace df="http://dita-for-small-teams.org/xquery/modules/dita-utils";
 import module namespace preview='http://basex.org/modules/htmlpreview' at "htmlPreview.xqm";
+
+declare function linkmgr:getProjectID($private_token as xs:string, $project_name as xs:string) {
+  let $project_map = json:parse(doc("http://gitlab-d4st/projects"), $options as map(xs:string, xs:string))
+  where $project_map (: find the one that matches project name :)
+}
+
+declare
+(:  %updating - made redundant by jobs:eval? :)
+  %rest:path("/update")
+  %rest:POST
+  %rest:form-param("urlPath", "{$urlPath}", "(no urlPath)")
+  %rest:form-param("repoName", "{$repoName}", "(no repoName)")
+  %rest:form-param("branch", "{$branch}", "(no branch)")
+  %rest:form-param("dbname","{$dbname}", "(no dbname)")
+function linkmgr:addFile(
+  $path as xs:string, $repoName as xs:string, $branch as xs:string, $dbname as xs:string
+) {
+  let $private_token = linkmgr:getPrivateToken() (: TODO placeholder! :)
+  let $projectID = linkmgr:getProjectID($private_token, $repoName)
+  let $gitURL = "http://gitlab-d4st/api/v4/projects/{$projectID}/repository/files/{$path}/raw?ref={$branch}&amp;private_token={$private_token}'"
+  try {
+    jobs:eval("db:add({$dbname}, {doc($gitURL)})")
+  } catch * {
+    (: FIXME: where should response go for asynchronous job? :)
+  }
+};
+
 
 declare
   %rest:path("/linkmgr/maptreeView/{$docURI=.+}")
@@ -39,8 +69,8 @@ declare
       <h1>Map Tree for "{df:getTitleText($map/*)}"</h1>
       {linkmgr:reportDocDetails($map)}
       <div class="tree">
-       { 
-        linkmgr:treeToHtml($tree)        
+       {
+        linkmgr:treeToHtml($tree)
        }
       </div>
    </body>
@@ -205,7 +235,7 @@ declare function linkmgr:listMapWhereUsed($doc as document-node()) as node()* {
                                 'scope' : ('local')
                                }
           let $uses := lmc:getUses($doc, $useParams)
-          return linkmgr:useRecordsToHtml($uses)          
+          return linkmgr:useRecordsToHtml($uses)
         }
       </div>
       <div class="listblock">
@@ -217,7 +247,7 @@ declare function linkmgr:listMapWhereUsed($doc as document-node()) as node()* {
                                 'scope' : ('peer')
                                }
           let $uses := lmc:getUses($doc, $useParams)
-          return linkmgr:useRecordsToHtml($uses)          
+          return linkmgr:useRecordsToHtml($uses)
         }
       </div>
     </div>
@@ -233,7 +263,7 @@ declare function linkmgr:listTopicWhereUsed($doc as document-node()) as node()* 
                                 'scope' : ('local')
                                }
           let $uses := lmc:getUses($doc, $useParams)
-          return linkmgr:useRecordsToHtml($uses)          
+          return linkmgr:useRecordsToHtml($uses)
         }
       </div>
       <div class="listblock">
@@ -244,7 +274,7 @@ declare function linkmgr:listTopicWhereUsed($doc as document-node()) as node()* 
                                 'scope' : ('local')
                                }
           let $uses := lmc:getUses($doc, $useParams)
-          return linkmgr:useRecordsToHtml($uses)          
+          return linkmgr:useRecordsToHtml($uses)
         }
       </div>
       <div class="listblock">
@@ -255,7 +285,7 @@ declare function linkmgr:listTopicWhereUsed($doc as document-node()) as node()* 
                                 'scope' : ('local')
                                }
           let $uses := lmc:getUses($doc, $useParams)
-          return linkmgr:useRecordsToHtml($uses)          
+          return linkmgr:useRecordsToHtml($uses)
         }
       </div>
     </div>
@@ -363,14 +393,14 @@ declare
 
 (:~
  : List all link, direct, and indirect, in the repository.
- : 
+ :
  : @param infoMessage Informational message to be displayed on the page
  : @param linkTypes Comma-separated list of link types to include in
  : the list. '#conref' indicatates content reference links
  : @param includeDirect If 'true', include direct links in the list. Default
  : is 'true'
  : @param includeIndirect If 'true', include indirect links in the list.
- : Default is 'true' 
+ : Default is 'true'
  :)
 declare
   %rest:path("/repo/{$repo}/{$branch}/listAllLinks")
@@ -382,8 +412,8 @@ declare
   %output:omit-xml-declaration("no")
   %output:doctype-public("-//W3C//DTD XHTML 1.0 Transitional//EN")
   %output:doctype-system("http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd")
-  function linkmgr:branchListAllLinks($repo as xs:string, 
-                                   $branch as xs:string, 
+  function linkmgr:branchListAllLinks($repo as xs:string,
+                                   $branch as xs:string,
                                    $infoMessage as xs:string?,
                                    $linkTypes as xs:string?,
                                    $includeDirect as xs:boolean?,
@@ -403,14 +433,14 @@ declare
       <div class="title-block">
         <h2>{$repo}/{$branch} Link Report</h2>
       </div>
-      <div class="management-actions">      
+      <div class="management-actions">
         { if ($infoMessage and $infoMessage != '')
              then <p>{$infoMessage}</p>
              else ()
         }
         <div class="form">
           <form>
-            <!-- Make form for setting link types and 
+            <!-- Make form for setting link types and
                  include direct, include indirect check
                  boxes.
               -->
@@ -436,8 +466,8 @@ declare
             { if (false())
                  then <tr><td colspan="3">No maps found</td></tr>
                  else linkmgr:listLinksInBranch(
-                            $repo, 
-                            $branch, 
+                            $repo,
+                            $branch,
                             $linkTypes,
                             $includeDirect,
                             $includeIndirect)
@@ -451,12 +481,12 @@ declare
 };
 
 declare function linkmgr:listLinksInBranch(
-                            $repo as xs:string, 
-                            $branch as xs:string, 
+                            $repo as xs:string,
+                            $branch as xs:string,
                             $linkTypes  as xs:string?,
                             $includeDirect as xs:boolean?,
                             $includeIndirect as xs:boolean?) as node()* {
-                            
+
   let $contentDbName := bxutil:getDbNameForRepoAndBranch($repo, $branch)
   let $metadataDbName := bxutil:getMetadataDbNameForRepoAndBranch($repo, $branch)
   let $linkTypesList as xs:string* :=
@@ -465,29 +495,29 @@ declare function linkmgr:listLinksInBranch(
          else ()
   let $includeDirectBoolean := true() (: Get from parameter :)
   let $includeIndirectBoolean := true() (: Get from parameter :)
-  
+
   let $links as map(*)* := lmc:getLinks(
                                     $contentDbName,
                                     $linkTypesList,
                                     $includeDirectBoolean,
                                     $includeIndirectBoolean)
-                                    
+
   return
     for $linkItem as map(*) in $links
         let $link := $linkItem?link
-        let $linkType := 
+        let $linkType :=
             if ($link/@conref != '')
                then 'Content reference'
-               else 
+               else
                  let $ditaType := tokenize($link/@class, ' ')[2]
                  return tokenize($ditaType, '/')[2]
-        let $scope := df:getEffectiveScope($link)                 
+        let $scope := df:getEffectiveScope($link)
         let $format := df:getEffectiveFormat($link)
         let $resolveResult := lmc:resolveLink($metadataDbName, $linkItem)
         return
           <tr>
            <td>{
-           (: FIXME: Make this a link to the source element in 
+           (: FIXME: Make this a link to the source element in
                      the containing document.
             :)
            linkmgr:formatLinkElementAsHTML($link)
@@ -499,7 +529,7 @@ declare function linkmgr:listLinksInBranch(
            <td>{$format}</td><!-- Format -->
            <td>{()}</td><!-- Direct/Indirect -->
           </tr>
-          
+
 (:
                 <th>Link Element</th>
                 <th>Target Doc</th>
@@ -512,12 +542,12 @@ declare function linkmgr:listLinksInBranch(
 };
 
 (:~
- : Format DITA link elements for HTML presentation. 
+ : Format DITA link elements for HTML presentation.
  :
  :)
 declare function linkmgr:formatLinkElementAsHTML($elem as element()) as node()* {
   <div class="serialized">{
-     if (normalize-space($elem) != '')   
+     if (normalize-space($elem) != '')
         then (
          <span class="tag">{
             '&lt;',
@@ -526,14 +556,14 @@ declare function linkmgr:formatLinkElementAsHTML($elem as element()) as node()* 
                 return <span class="att"><br/>&#xa0;&#xa0;&#xa0;{name($att)}="{string($att)}"</span>,
             '&gt;'
            }</span>,
-         
+
          <span class="element-content">{substring($elem, 1, 40)}</span>,
          <span class="tag">{'&lt;/',
              <span class="tagname">{name($elem)}</span>,
              '&gt;'
          }</span>
          )
-         else 
+         else
            <span class="tag">{
             '&lt;',
               <span class="tagname">{name($elem)}</span>,
@@ -545,9 +575,9 @@ declare function linkmgr:formatLinkElementAsHTML($elem as element()) as node()* 
 };
 
 (:~
- : Format DITA link elements for HTML presentation. 
+ : Format DITA link elements for HTML presentation.
  :
- : @param $resolveResult The resolution result for a link 
+ : @param $resolveResult The resolution result for a link
  :)
 declare function linkmgr:formatTargetElementAsHTML($resolveResult as map(*)) as node()* {
 
@@ -600,8 +630,8 @@ declare function linkmgr:treeToHtml($tree as element(mapTree)) as node()* {
 
 declare function linkmgr:makeLinkToDocSource($docURI as xs:string?) as node()* {
      if ($docURI != '')
-       then <a 
-         target="sourceView" 
+       then <a
+         target="sourceView"
          href="/linkmgr/docview/{$docURI}/src">{bxutil:getPathForDocURI($docURI)}</a>
        else $docURI
 };
@@ -614,12 +644,12 @@ declare function linkmgr:treeItemToHtml($treeItem as element()) as node()* {
     let $docURI := string($treeItem/properties/property[@name = 'uri'])
     return
     <li class="treeitem">
-      <span class="label">{string($treeItem/label)}</span> 
+      <span class="label">{string($treeItem/label)}</span>
       <span class="uri">[{linkmgr:makeLinkToDocSource($docURI)}]</span>
-      {if ($treeItem/children) 
+      {if ($treeItem/children)
           then
              <ul class="tree">{
-             for $child in $treeItem/children/treeItem 
+             for $child in $treeItem/children/treeItem
                    return linkmgr:treeItemToHtml($child)
              }</ul>
           else ()
@@ -638,7 +668,7 @@ declare function linkmgr:getMapNavTree($doc) as node()* {
 
 (: Constructs a navigation tree list item for a sub amp :)
 declare function linkmgr:getNavTreeForSubmap($topicref) as node()* {
-   
+
    let $mapElem := df:resolveTopicRef($topicref)('target')
    return if ($mapElem)
       then linkmgr:getNavTreeForTopicrefChildren($mapElem)
@@ -650,9 +680,9 @@ declare function linkmgr:getNavTreeForTopicGroup($topicref) as node()* {
   linkmgr:getNavTreeForTopicrefChildren($topicref)
 };
 
-declare function linkmgr:getNavTreeForTopicrefChildren($context as element()) as node()* { 
+declare function linkmgr:getNavTreeForTopicrefChildren($context as element()) as node()* {
   for $child in $context/*[df:class(., 'map/topicref')][not(df:isResourceOnly(.))]
-      return 
+      return
         if (df:isTopicGroup($child))
            then linkmgr:getNavTreeForTopicGroup($child)
            else if (df:isMapRef($child))
@@ -666,14 +696,14 @@ declare function linkmgr:getNavTreeForTopicref($topicref) as node()* {
   let $format := df:getEffectiveAttributeValue($topicref, 'format')
   let $targetResource :=
       if ($format = 'dita')
-         then 
+         then
             try {
              df:resolveTopicRef($topicref)('target')
             } catch * {
              ()
             }
-         else () 
-  let $resourceRef := 
+         else ()
+  let $resourceRef :=
       if ($topicref/@keyref != '')
         then concat('Keyref [', $topicref/@keyref, ']')
         else concat('URI ref "', $topicref/@href, '"')
@@ -684,21 +714,21 @@ declare function linkmgr:getNavTreeForTopicref($topicref) as node()* {
       <span class="navtitle">{
         if ($navTitle != '')
            then $navTitle
-           else if ($format = 'dita') 
+           else if ($format = 'dita')
                    then '{Resource not resolved}'
                    else concat($format, ' resource')
-      }</span>      
+      }</span>
       {
       (: FIXME: Is the resource can't be resolved, need to resolve the topicref
                 to the URI of the ultimate target, if there is one.
        :)
-      
+
       if (not(df:isTopicHead($topicref)))
-           then 
+           then
             <span class="resource">{
             if ($targetResource)
                 then linkmgr:makeLinkToDocSource(document-uri(root($targetResource)))
-                else $resourceRef               
+                else $resourceRef
             }]</span>
            else ''}
       {if ($childNavTree)
@@ -744,3 +774,4 @@ declare function linkmgr:useRecordToHtml($use as element()) {
     <td>[Action] [Action] [Action]</td>
   </tr>
 };
+(: test test :)
